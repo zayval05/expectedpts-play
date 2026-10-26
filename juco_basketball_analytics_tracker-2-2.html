@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JUCO Basketball Analytics & Shot Tracking Engine</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Oswald for Sports Style -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Oswald', 'sans-serif'],
+          },
+          colors: {
+            court: {
+              wood: '#2a1e16',
+              border: '#1a130e',
+              line: '#ffffff',
+              paint: '#3b2518',
+              key: '#8c281f',
+              accent: '#d97706',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+    }
+    .court-container {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .court-pin {
+      transition: transform 0.15s ease-out;
+      cursor: pointer;
+    }
+    .court-pin:hover {
+      transform: scale(1.4);
+      z-index: 30;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+</head <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Mobile & iPad Fullscreen Meta Tags -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JUCO Analytics">
+
+  <title>JUCO Basketball Analytics & Shot Tracking Engine</title>
+
+  <!-- Prevent Touch Highlight & Accidental Zooming on iPad -->
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: text;
+    }
+  </style>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  ...>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md px-4 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Mode Pill -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-amber-500 text-slate-950 p-2 rounded-lg font-black text-xl font-display flex items-center justify-center shadow-lg shadow-amber-500/20">
+          JUCO
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            Analytics & Shot Tracker
+            <span class="text-xs font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v2.4 Live</span>
+          </h1>
+          <p class="text-xs text-slate-400">Courtside Expected Points (xP) & SQI Engine</p>
+        </div>
+      </div>
+
+      <!-- Quick Session Status & Main Actions -->
+      <div class="flex items-center flex-wrap gap-2">
+        
+        <!-- Live Status Counter Badge -->
+        <div id="statusBadge" class="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="sessionCountText">0 Possessions Logged</span>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-medium">
+          <button id="tabTrackerBtn" onclick="switchTab('tracker')" class="px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all">
+            Tracker
+          </button>
+          <button id="tabAnalyticsBtn" onclick="switchTab('analytics')" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all">
+            Analytics
+          </button>
+          <button id="tabLogBtn" onclick="switchTab('log')" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all">
+            Game Log
+          </button>
+        </div>
+
+        <!-- Management Dropdown Controls -->
+        <div class="flex items-center space-x-2">
+          <!-- Reset Controls Button (Prominent) -->
+          <button onclick="openResetModal()" class="flex items-center gap-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Reset Options
+          </button>
+
+          <!-- Roster Manager -->
+          <button onclick="openRosterModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
+            Roster
+          </button>
+
+          <!-- Playbook Manager -->
+          <button onclick="openPlaybookModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
+            Playbook
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- VIEW TAB 1: TRACKER (Court + Input Panel) -->
+    <div id="tabTracker" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT: SVG HARDWOOD COURT (7 Cols) -->
+      <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <h2 class="text-sm font-semibold tracking-wide uppercase text-slate-300">Interactive Shot Location</h2>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <label class="flex items-center gap-1.5 text-slate-400 cursor-pointer">
+              <input type="checkbox" id="toggleShotPins" checked onchange="renderCourtOverlay()" class="rounded bg-slate-800 border-slate-700 text-amber-500 focus:ring-0">
+              Show Shot Chart Pins
+            </label>
+            <span id="clickCoordinates" class="font-mono text-slate-500 text-[11px]">Click Court to Plot</span>
+          </div>
+        </div>
+
+        <!-- SVG Court Canvas Container -->
+        <div class="relative w-full aspect-[50/47] bg-[#1d150f] rounded-xl border border-slate-800 overflow-hidden shadow-inner court-container cursor-crosshair">
+          
+          <svg id="courtSvg" viewBox="0 0 500 470" class="w-full h-full" onclick="handleCourtClick(event)">
+            <defs>
+              <!-- Hardwood Pattern -->
+              <pattern id="hardwood" width="40" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+                <rect width="40" height="20" fill="#2d2017"/>
+                <line x1="0" y1="0" x2="40" y2="0" stroke="#231810" stroke-width="1"/>
+                <line x1="0" y1="10" x2="40" y2="10" stroke="#231810" stroke-width="1"/>
+                <line x1="20" y1="0" x2="20" y2="10" stroke="#231810" stroke-width="0.8"/>
+                <line x1="0" y1="10" x2="0" y2="20" stroke="#231810" stroke-width="0.8"/>
+              </pattern>
+            </defs>
+
+            <!-- Court Base Floor -->
+            <rect width="500" height="470" fill="url(#hardwood)"/>
+            <rect width="500" height="470" fill="none" stroke="#3d2a1d" stroke-width="8"/>
+
+            <!-- Key Box / Paint Area -->
+            <rect x="170" y="10" width="160" height="190" fill="#3b2016" fill-opacity="0.6" stroke="#ffffff" stroke-width="2.5"/>
+            
+            <!-- Free Throw Circle -->
+            <path d="M 170 200 A 80 80 0 0 0 330 200" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="6,6"/>
+            <path d="M 170 200 A 80 80 0 0 1 330 200" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+
+            <!-- Restricted Area Arc -->
+            <path d="M 210 52.5 A 40 40 0 0 0 290 52.5" fill="none" stroke="#ffffff" stroke-width="2"/>
+
+            <!-- Backboard & Hoop Assembly -->
+            <!-- Backboard -->
+            <line x1="210" y1="40" x2="290" y2="40" stroke="#ffffff" stroke-width="4"/>
+            <!-- Rim Connector -->
+            <line x1="250" y1="40" x2="250" y2="45" stroke="#e2e8f0" stroke-width="3"/>
+            <!-- Hoop Rim -->
+            <circle cx="250" cy="52.5" r="7.5" fill="none" stroke="#f97316" stroke-width="3"/>
+
+            <!-- 3-Point Arc (Standard College 20'9" / 22'1.75" scale) -->
+            <!-- Straight Corner Lines -->
+            <line x1="30" y1="10" x2="30" y2="130" stroke="#ffffff" stroke-width="2.5"/>
+            <line x1="470" y1="10" x2="470" y2="130" stroke="#ffffff" stroke-width="2.5"/>
+            <!-- 3PT Radius Arc from Rim -->
+            <path d="M 30 130 A 221.5 221.5 0 0 0 470 130" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+
+            <!-- Halfcourt Line & Circle Segment -->
+            <line x1="0" y1="465" x2="500" y2="465" stroke="#ffffff" stroke-width="3"/>
+            <path d="M 190 465 A 60 60 0 0 1 310 465" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+
+            <!-- Overlay Pins Layer Group -->
+            <g id="courtOverlayGroup"></g>
+
+            <!-- Active Selected Target Marker -->
+            <g id="activeTargetMarker" style="display: none;">
+              <circle cx="0" cy="0" r="12" fill="none" stroke="#f59e0b" stroke-width="2" class="animate-ping"/>
+              <circle cx="0" cy="0" r="6" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
+              <line x1="-16" y1="0" x2="16" y2="0" stroke="#f59e0b" stroke-width="1.5"/>
+              <line x1="0" y1="-16" x2="0" y2="16" stroke="#f59e0b" stroke-width="1.5"/>
+            </g>
+          </svg>
+
+        </div>
+
+        <!-- Spatial Math Readout Bar -->
+        <div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
+          <div>
+            <span class="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Location</span>
+            <span id="readoutLocation" class="font-bold text-amber-400">Select Court Point</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Side / Angle</span>
+            <span id="readoutSide" class="font-bold text-slate-200">-</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Est. Distance</span>
+            <span id="readoutDistance" class="font-bold text-slate-200">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: LOGGING FORM PANEL (5 Cols) -->
+      <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl space-y-4">
+        
+        <div>
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              Log Possession / Shot
+            </h2>
+            <span id="xpPreviewBadge" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-mono font-bold px-2.5 py-1 rounded-md">
+              Est xP: --
+            </span>
+          </div>
+
+          <form id="possessionForm" onsubmit="handlePossessionSubmit(event)" class="space-y-4">
+            
+            <!-- Player Select -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Player</label>
+              <select id="formPlayer" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors">
+                <!-- Populated via JS -->
+              </select>
+            </div>
+
+            <!-- Play Call Select -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Playbook Call / Set</label>
+              <select id="formPlay" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors">
+                <!-- Populated via JS -->
+              </select>
+            </div>
+
+            <!-- Primary Outcome -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Possession Outcome</label>
+              <select id="formOutcome" required onchange="updateFormFields()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors">
+                <option value="Made FG">Made Field Goal</option>
+                <option value="Missed FG">Missed Field Goal</option>
+                <option value="Shooting Foul">Shooting Foul Drawn (FTs)</option>
+                <option value="Turnover">Turnover</option>
+                <option value="Non-Shooting Foul">Non-Shooting Foul</option>
+              </select>
+            </div>
+
+            <!-- Shot Type Chips (6 Types) -->
+            <div id="shotTypeSection">
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Shot Type</label>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" onclick="selectShotType('Catch & Shoot')" class="shot-type-chip px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 text-xs font-medium hover:border-slate-600 transition-all text-center" data-val="Catch & Shoot">Catch & Shoot</button>
+                <button type="button" onclick="selectShotType('Off the Dribble')" class="shot-type-chip px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 text-xs font-medium hover:border-slate-600 transition-all text-center" data-val="Off the Dribble">Off Dribble</button>
+                <button type="button" onclick="selectShotType('Layup')" class="shot-type-chip px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 text-xs font-medium hover:border-slate-600 transition-all text-center" data-val="Layup">Layup</button>
+                <button type="button" onclick="selectShotType('Dunk')" class="shot-type-chip px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 text-xs font-medium hover:border-slate-600 transition-all text-center" data-val="Dunk">Dunk</button>
+                <button type="button" onclick="selectShotType('Post Shot')" class="shot-type-chip px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 text-xs font-medium hover:border-slate-600 transition-all text-center" data-val="Post Shot">Post Shot</button>
+                <button type="button" onclick="selectShotType('Other')" class="shot-type-chip px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 text-xs font-medium hover:border-slate-600 transition-all text-center" data-val="Other">Other</button>
+              </div>
+            </div>
+
+            <!-- Contest Level Buttons -->
+            <div id="contestSection">
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Contest Level</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="selectContest(3)" class="contest-chip p-2 rounded-lg border border-emerald-900/60 bg-emerald-950/40 text-emerald-300 text-xs font-medium hover:bg-emerald-900/60 transition-all text-center flex flex-col items-center" data-val="3">
+                  <span class="font-bold">3 - Open</span>
+                  <span class="text-[10px] text-emerald-400/80">Clean Look</span>
+                </button>
+                <button type="button" onclick="selectContest(2)" class="contest-chip p-2 rounded-lg border border-amber-900/60 bg-amber-950/40 text-amber-300 text-xs font-medium hover:bg-amber-900/60 transition-all text-center flex flex-col items-center" data-val="2">
+                  <span class="font-bold">2 - Slight</span>
+                  <span class="text-[10px] text-amber-400/80">Late Contest</span>
+                </button>
+                <button type="button" onclick="selectContest(1)" class="contest-chip p-2 rounded-lg border border-rose-900/60 bg-rose-950/40 text-rose-300 text-xs font-medium hover:bg-rose-900/60 transition-all text-center flex flex-col items-center" data-val="1">
+                  <span class="font-bold">1 - Heavy</span>
+                  <span class="text-[10px] text-rose-400/80">Hand in Face</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Free Throw / Actual Pts Input -->
+            <div id="actualPtsSection" class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Actual Points Scored</label>
+                <input type="number" id="formActualPts" min="0" max="4" value="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-amber-500">
+              </div>
+              <div id="ftTripContainer" class="hidden">
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">FT Trip Result</label>
+                <select id="formFtResult" onchange="calcFtActualPts()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                  <option value="2/2">2/2 Made (2 pts)</option>
+                  <option value="1/2">1/2 Made (1 pt)</option>
+                  <option value="0/2">0/2 Made (0 pts)</option>
+                  <option value="3/3">3/3 Made (3 pts)</option>
+                  <option value="2/3">2/3 Made (2 pts)</option>
+                  <option value="1/3">1/3 Made (1 pt)</option>
+                  <option value="0/3">0/3 Made (0 pts)</option>
+                  <option value="1/1 And-1">And-1 Made (+1 pt)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              Log Possession Entry
+            </button>
+          </form>
+        </div>
+
+        <!-- Quick Tip Footnote -->
+        <p class="text-[11px] text-slate-500 text-center italic border-t border-slate-800/80 pt-3">
+          JUCO xP Engine converts shot type, contest rating, and distance into expected points in real time.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- VIEW TAB 2: ANALYTICS DASHBOARD -->
+    <div id="tabAnalytics" class="hidden space-y-6">
+      
+      <!-- Key KPI Cards Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-xs text-slate-400 font-medium block">Total Possessions</span>
+          <span id="kpiPossessions" class="text-2xl font-bold font-display text-white mt-1 block">0</span>
+          <span class="text-[10px] text-slate-500">Logged entries</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-xs text-slate-400 font-medium block">Actual Points</span>
+          <span id="kpiActualPts" class="text-2xl font-bold font-display text-emerald-400 mt-1 block">0</span>
+          <span id="kpiPps" class="text-[10px] text-slate-500">0.00 PPS</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-xs text-slate-400 font-medium block">Expected Points (xP)</span>
+          <span id="kpiExpectedPts" class="text-2xl font-bold font-display text-amber-400 mt-1 block">0.00</span>
+          <span class="text-[10px] text-slate-500">JUCO Quality Baseline</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-xs text-slate-400 font-medium block">POE (Points Over Exp)</span>
+          <span id="kpiPoe" class="text-2xl font-bold font-display text-white mt-1 block">+0.00</span>
+          <span id="kpiPoeSub" class="text-[10px] text-slate-500">Shot Making Efficiency</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-xs text-slate-400 font-medium block">SQI (Shot Quality)</span>
+          <span id="kpiSqi" class="text-2xl font-bold font-display text-cyan-400 mt-1 block">0.00</span>
+          <span class="text-[10px] text-slate-500">Avg xP / Attempt</span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <span class="text-xs text-slate-400 font-medium block">Execution Rating</span>
+          <span id="kpiExecution" class="text-2xl font-bold font-display text-indigo-400 mt-1 block">0%</span>
+          <span class="text-[10px] text-slate-500">Open or High xP looks</span>
+        </div>
+
+      </div>
+
+      <!-- Breakdown Analytics Tables -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Player Breakdown Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+          <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+            <span>Player Efficiency Breakdown</span>
+            <span class="text-xs font-normal text-slate-400">Min. 1 attempt</span>
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th class="p-2.5">Player</th>
+                  <th class="p-2.5 text-center">POSS</th>
+                  <th class="p-2.5 text-center">PTS</th>
+                  <th class="p-2.5 text-center">xP</th>
+                  <th class="p-2.5 text-center">POE</th>
+                  <th class="p-2.5 text-center">SQI</th>
+                </tr>
+              </thead>
+              <tbody id="playerAnalyticsTable" class="divide-y divide-slate-800 text-slate-300">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Playbook Efficiency Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+          <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+            <span>Playbook Execution & SQI</span>
+            <span class="text-xs font-normal text-slate-400">By Set Call</span>
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th class="p-2.5">Play Set</th>
+                  <th class="p-2.5 text-center">Run Count</th>
+                  <th class="p-2.5 text-center">PTS</th>
+                  <th class="p-2.5 text-center">Avg xP</th>
+                  <th class="p-2.5 text-center">Open %</th>
+                  <th class="p-2.5 text-center">TO %</th>
+                </tr>
+              </thead>
+              <tbody id="playAnalyticsTable" class="divide-y divide-slate-800 text-slate-300">
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Zone Analytics Heatmap Grid -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+        <h3 class="text-sm font-bold text-white mb-3">Court Zone Production Matrix</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="zoneAnalyticsGrid">
+          <!-- JS Populated -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VIEW TAB 3: POSSESSION LOG & FT EDITOR TABLE -->
+    <div id="tabLog" class="hidden space-y-4">
+      
+      <!-- Log Controls Bar -->
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 flex-1 min-w-[240px]">
+          <input type="text" id="logSearchInput" oninput="renderPossessionLogTable()" placeholder="Search player, play, outcome..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+          <select id="logOutcomeFilter" onchange="renderPossessionLogTable()" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
+            <option value="ALL">All Outcomes</option>
+            <option value="Made FG">Made FG</option>
+            <option value="Missed FG">Missed FG</option>
+            <option value="Shooting Foul">Shooting Foul</option>
+            <option value="Turnover">Turnover</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+          <span id="logFilteredCount">Showing 0 entries</span>
+        </div>
+      </div>
+
+      <!-- Log Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-3 text-center">#</th>
+                <th class="p-3">Player</th>
+                <th class="p-3">Play</th>
+                <th class="p-3">Outcome</th>
+                <th class="p-3">Location / Side</th>
+                <th class="p-3">Shot Type</th>
+                <th class="p-3 text-center">Contest</th>
+                <th class="p-3 text-center">Actual PTS</th>
+                <th class="p-3 text-center">xP</th>
+                <th class="p-3 text-center">POE</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="possessionLogTable" class="divide-y divide-slate-800/80 text-slate-300 font-mono">
+              <!-- JS Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: RESET & GAME CLEAR OPTIONS -->
+  <div id="resetModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-5">
+      
+      <!-- Close X -->
+      <button onclick="closeResetModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+        <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Reset & Clear Options</h3>
+          <p class="text-xs text-slate-400">Manage game session data & storage state</p>
+        </div>
+      </div>
+
+      <!-- Action Cards -->
+      <div class="space-y-3">
+        
+        <!-- Action 1: Clear Possessions (Start New Game) -->
+        <button onclick="triggerResetAction('clear_possessions')" class="w-full text-left p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/50 transition-all group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-400 group-hover:text-amber-300">Clear All Possessions (Start New Game)</span>
+            <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded">Recommended</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Wipes logged shots, turnovers, and court pins to 0 entries. <strong class="text-slate-200">Preserves your current Roster and Playbook.</strong></p>
+        </button>
+
+        <!-- Action 2: Load Sample Demo Game Data -->
+        <button onclick="triggerResetAction('load_sample')" class="w-full text-left p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/50 transition-all group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-400 group-hover:text-blue-300">Load Sample Demo Game Data</span>
+            <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded">26 Entries</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Populates the tracker with 26 pre-loaded JUCO sample possessions for testing analytics charts.</p>
+        </button>
+
+        <!-- Action 3: Factory Reset Everything -->
+        <button onclick="triggerResetAction('factory_reset')" class="w-full text-left p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-rose-500/50 hover:bg-slate-800/50 transition-all group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-rose-400 group-hover:text-rose-300">Factory Reset Everything</span>
+            <span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded">Full Wipe</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Resets all game possessions, Roster players, and Playbook sets back to default initial state.</p>
+        </button>
+
+      </div>
+
+      <div class="pt-2 text-right">
+        <button onclick="closeResetModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-all">
+          Cancel
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: CUSTOM ACTION CONFIRMATION (Replaces confirm()) -->
+  <div id="confirmModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div id="confirmIconContainer" class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <h3 id="confirmTitle" class="text-base font-bold text-white">Confirm Reset Action</h3>
+      </div>
+
+      <p id="confirmMessage" class="text-xs text-slate-300 leading-relaxed">
+        Are you sure you want to proceed with this action?
+      </p>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeConfirmModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-all">
+          Cancel
+        </button>
+        <button id="confirmExecuteBtn" onclick="executeConfirmedReset()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-rose-600/20 transition-all">
+          Confirm Action
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ROSTER MANAGER -->
+  <div id="rosterModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
+      <button onclick="closeRosterModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        Roster Manager
+      </h3>
+
+      <!-- Add Player Form -->
+      <form onsubmit="handleAddPlayer(event)" class="grid grid-cols-12 gap-2">
+        <input type="text" id="newPlayerNum" placeholder="#" required class="col-span-3 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+        <input type="text" id="newPlayerName" placeholder="Player Name" required class="col-span-6 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+        <button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-all">
+          + Add
+        </button>
+      </form>
+
+      <!-- Roster List -->
+      <div class="max-h-60 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
+        <div id="rosterListContainer"></div>
+      </div>
+
+      <div class="text-right pt-2">
+        <button onclick="closeRosterModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PLAYBOOK MANAGER -->
+  <div id="playbookModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
+      <button onclick="closePlaybookModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Playbook Manager
+      </h3>
+
+      <!-- Add Play Form -->
+      <form onsubmit="handleAddPlay(event)" class="grid grid-cols-12 gap-2">
+        <input type="text" id="newPlayCode" placeholder="Code (e.g. ATO-1)" required class="col-span-4 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+        <input type="text" id="newPlayName" placeholder="Set / Action Name" required class="col-span-5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+        <button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-all">
+          + Add Play
+        </button>
+      </form>
+
+      <!-- Playbook List -->
+      <div class="max-h-60 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
+        <div id="playbookListContainer"></div>
+      </div>
+
+      <div class="text-right pt-2">
+        <button onclick="closePlaybookModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- MAIN JAVASCRIPT LOGIC ENGINE -->
+  <script>
+    // ==========================================
+    // CONSTANTS & LOCAL STORAGE KEYS
+    // ==========================================
+    const STORAGE_KEYS = {
+      POSSESSIONS: 'juco_possessions',
+      ROSTER: 'juco_roster',
+      PLAYBOOK: 'juco_playbook'
+    };
+
+    // Default Roster Template
+    const DEFAULT_ROSTER = [
+      { id: '1', num: '1', name: 'M. Johnson', pos: 'PG' },
+      { id: '2', num: '3', name: 'D. Williams', pos: 'SG' },
+      { id: '3', num: '11', name: 'T. Davis', pos: 'SF' },
+      { id: '4', num: '23', name: 'K. Miller', pos: 'PF' },
+      { id: '5', num: '34', name: 'J. Carter', pos: 'C' },
+      { id: '6', num: '5', name: 'A. Brown', pos: 'G' },
+      { id: '7', num: '12', name: 'C. Wilson', pos: 'F' }
+    ];
+
+    // Default Playbook Template
+    const DEFAULT_PLAYBOOK = [
+      { id: 'p1', code: 'P&R High', name: 'High Ball Screen Roll/Pop' },
+      { id: 'p2', code: 'Horns-2', name: 'Horns Flare Action' },
+      { id: 'p3', code: 'ISO Mid', name: 'Isolation Mid Post' },
+      { id: 'p4', code: 'ATO-5', name: 'After Timeout Baseline Screen' },
+      { id: 'p5', code: 'Transition', name: 'Primary Early Offense' },
+      { id: 'p6', code: 'Motion 4-1', name: '4-Out Pace Motion' }
+    ];
+
+    // 26 Pre-loaded Sample JUCO Game Possessions
+    function getSamplePossessions() {
+      return [
+        { id: 101, player: 'M. Johnson', play: 'P&R High', outcome: 'Made FG', location: 'Paint', side: 'M', dist: 4, type: 'Layup', contest: 3, actualPts: 2, xp: 1.38, poe: 0.62, x: 250, y: 55 },
+        { id: 102, player: 'D. Williams', play: 'Horns-2', outcome: 'Made FG', location: 'Corner 3', side: 'R', dist: 23, type: 'Catch & Shoot', contest: 3, actualPts: 3, xp: 1.18, poe: 1.82, x: 470, y: 60 },
+        { id: 103, player: 'K. Miller', play: 'ISO Mid', outcome: 'Missed FG', location: 'Wing Midrange', side: 'L', dist: 15, type: 'Off the Dribble', contest: 1, actualPts: 0, xp: 0.54, poe: -0.54, x: 120, y: 160 },
+        { id: 104, player: 'J. Carter', play: 'P&R High', outcome: 'Shooting Foul', location: 'Paint', side: 'M', dist: 2, type: 'Post Shot', contest: 2, actualPts: 2, xp: 1.40, poe: 0.60, x: 245, y: 48 },
+        { id: 105, player: 'T. Davis', play: 'Motion 4-1', outcome: 'Turnover', location: 'Wing 3', side: 'L', dist: 24, type: 'Catch & Shoot', contest: 2, actualPts: 0, xp: 0.00, poe: 0.00, x: 80, y: 220 },
+        { id: 106, player: 'M. Johnson', play: 'Transition', outcome: 'Made FG', location: 'Paint', side: 'M', dist: 1, type: 'Dunk', contest: 3, actualPts: 2, xp: 1.45, poe: 0.55, x: 250, y: 40 },
+        { id: 107, player: 'D. Williams', play: 'ATO-5', outcome: 'Made FG', location: 'Wing 3', side: 'R', dist: 23, type: 'Catch & Shoot', contest: 2, actualPts: 3, xp: 0.98, poe: 2.02, x: 410, y: 210 },
+        { id: 108, player: 'A. Brown', play: 'P&R High', outcome: 'Missed FG', location: 'Elbow / Top Midrange', side: 'M', dist: 17, type: 'Off the Dribble', contest: 2, actualPts: 0, xp: 0.74, poe: -0.74, x: 250, y: 200 },
+        { id: 109, player: 'J. Carter', play: 'ISO Mid', outcome: 'Made FG', location: 'Paint', side: 'L', dist: 5, type: 'Post Shot', contest: 2, actualPts: 2, xp: 0.88, poe: 1.12, x: 210, y: 70 },
+        { id: 110, player: 'T. Davis', play: 'Horns-2', outcome: 'Made FG', location: 'Slot 3', side: 'L', dist: 24, type: 'Catch & Shoot', contest: 3, actualPts: 3, xp: 1.11, poe: 1.89, x: 170, y: 280 },
+        { id: 111, player: 'M. Johnson', play: 'Transition', outcome: 'Shooting Foul', location: 'Paint', side: 'R', dist: 3, type: 'Layup', contest: 1, actualPts: 1, xp: 1.25, poe: -0.25, x: 280, y: 60 },
+        { id: 112, player: 'D. Williams', play: 'Motion 4-1', outcome: 'Missed FG', location: 'Corner 3', side: 'L', dist: 22, type: 'Catch & Shoot', contest: 1, actualPts: 0, xp: 0.72, poe: -0.72, x: 30, y: 70 },
+        { id: 113, player: 'K. Miller', play: 'P&R High', outcome: 'Made FG', location: 'Paint', side: 'R', dist: 6, type: 'Layup', contest: 3, actualPts: 2, xp: 1.30, poe: 0.70, x: 290, y: 80 },
+        { id: 114, player: 'C. Wilson', play: 'Transition', outcome: 'Turnover', location: 'Slot 3', side: 'R', dist: 23, type: 'Off the Dribble', contest: 1, actualPts: 0, xp: 0.00, poe: 0.00, x: 330, y: 290 },
+        { id: 115, player: 'M. Johnson', play: 'ATO-5', outcome: 'Made FG', location: 'Wing Midrange', side: 'R', dist: 14, type: 'Off the Dribble', contest: 3, actualPts: 2, xp: 0.90, poe: 1.10, x: 380, y: 150 },
+        { id: 116, player: 'D. Williams', play: 'P&R High', outcome: 'Made FG', location: 'Slot 3', side: 'M', dist: 25, type: 'Catch & Shoot', contest: 2, actualPts: 3, xp: 0.92, poe: 2.08, x: 250, y: 310 },
+        { id: 117, player: 'J. Carter', play: 'ISO Mid', outcome: 'Missed FG', location: 'Paint', side: 'M', dist: 4, type: 'Post Shot', contest: 1, actualPts: 0, xp: 0.68, poe: -0.68, x: 250, y: 65 },
+        { id: 118, player: 'T. Davis', play: 'Motion 4-1', outcome: 'Made FG', location: 'Corner 3', side: 'R', dist: 22, type: 'Catch & Shoot', contest: 3, actualPts: 3, xp: 1.18, poe: 1.82, x: 470, y: 80 },
+        { id: 119, player: 'A. Brown', play: 'Transition', outcome: 'Made FG', location: 'Paint', side: 'L', dist: 2, type: 'Layup', contest: 3, actualPts: 2, xp: 1.38, poe: 0.62, x: 230, y: 50 },
+        { id: 120, player: 'K. Miller', play: 'Horns-2', outcome: 'Shooting Foul', location: 'Paint', side: 'M', dist: 3, type: 'Post Shot', contest: 2, actualPts: 2, xp: 1.35, poe: 0.65, x: 250, y: 58 },
+        { id: 121, player: 'M. Johnson', play: 'P&R High', outcome: 'Missed FG', location: 'Wing 3', side: 'L', dist: 24, type: 'Off the Dribble', contest: 2, actualPts: 0, xp: 0.82, poe: -0.82, x: 100, y: 220 },
+        { id: 122, player: 'D. Williams', play: 'ATO-5', outcome: 'Made FG', location: 'Baseline Midrange', side: 'L', dist: 13, type: 'Catch & Shoot', contest: 3, actualPts: 2, xp: 0.98, poe: 1.02, x: 110, y: 60 },
+        { id: 123, player: 'J. Carter', play: 'P&R High', outcome: 'Made FG', location: 'Paint', side: 'M', dist: 1, type: 'Dunk', contest: 3, actualPts: 2, xp: 1.45, poe: 0.55, x: 250, y: 38 },
+        { id: 124, player: 'T. Davis', play: 'Motion 4-1', outcome: 'Missed FG', location: 'Slot 3', side: 'R', dist: 24, type: 'Catch & Shoot', contest: 1, actualPts: 0, xp: 0.66, poe: -0.66, x: 330, y: 280 },
+        { id: 125, player: 'C. Wilson', play: 'ISO Mid', outcome: 'Missed FG', location: 'Wing Midrange', side: 'R', dist: 16, type: 'Off the Dribble', contest: 1, actualPts: 0, xp: 0.54, poe: -0.54, x: 390, y: 160 },
+        { id: 126, player: 'M. Johnson', play: 'Transition', outcome: 'Made FG', location: 'Paint', side: 'M', dist: 3, type: 'Layup', contest: 2, actualPts: 2, xp: 1.12, poe: 0.88, x: 250, y: 55 }
+      ];
+    }
+
+    // ==========================================
+    // APP STATE VARIABLES
+    // ==========================================
+    let possessions = [];
+    let roster = [];
+    let playbook = [];
+
+    let currentSelectedPoint = { x: 250, y: 52.5, location: 'Paint', side: 'M', dist: 2 };
+    let selectedShotType = 'Layup';
+    let selectedContest = 3;
+    let currentResetActionPending = null;
+
+    // ==========================================
+    // INITIALIZATION & LOCAL STORAGE FIX
+    // ==========================================
+    window.onload = function() {
+      initAppData();
+    };
+
+    function initAppData() {
+      // 1. Load Possessions with PERSISTENT EMPTY STATE FIX
+      const rawPoss = localStorage.getItem(STORAGE_KEYS.POSSESSIONS);
+      if (rawPoss !== null) {
+        try {
+          possessions = JSON.parse(rawPoss);
+        } catch (e) {
+          possessions = getSamplePossessions();
+          savePossessionsToStorage();
+        }
+      } else {
+        // First load ever: load sample data
+        possessions = getSamplePossessions();
+        savePossessionsToStorage();
+      }
+
+      // 2. Load Roster
+      const rawRoster = localStorage.getItem(STORAGE_KEYS.ROSTER);
+      if (rawRoster !== null) {
+        try { roster = JSON.parse(rawRoster); } catch (e) { roster = DEFAULT_ROSTER; saveRosterToStorage(); }
+      } else {
+        roster = DEFAULT_ROSTER;
+        saveRosterToStorage();
+      }
+
+      // 3. Load Playbook
+      const rawPlaybook = localStorage.getItem(STORAGE_KEYS.PLAYBOOK);
+      if (rawPlaybook !== null) {
+        try { playbook = JSON.parse(rawPlaybook); } catch (e) { playbook = DEFAULT_PLAYBOOK; savePlaybookToStorage(); }
+      } else {
+        playbook = DEFAULT_PLAYBOOK;
+        savePlaybookToStorage();
+      }
+
+      // Sync UI elements
+      populateDropdowns();
+      selectShotType('Layup');
+      selectContest(3);
+      
+      // Full UI Re-render
+      reRenderAllUI();
+    }
+
+    function savePossessionsToStorage() {
+      localStorage.setItem(STORAGE_KEYS.POSSESSIONS, JSON.stringify(possessions));
+    }
+
+    function saveRosterToStorage() {
+      localStorage.setItem(STORAGE_KEYS.ROSTER, JSON.stringify(roster));
+    }
+
+    function savePlaybookToStorage() {
+      localStorage.setItem(STORAGE_KEYS.PLAYBOOK, JSON.stringify(playbook));
+    }
+
+    // Re-render entire interface
+    function reRenderAllUI() {
+      updateSessionHeader();
+      renderCourtOverlay();
+      renderAnalyticsDashboard();
+      renderPossessionLogTable();
+    }
+
+    function updateSessionHeader() {
+      const count = possessions.length;
+      const countText = document.getElementById('sessionCountText');
+      if (countText) {
+        countText.textContent = count === 0 ? '0 Entries (Clean Game)' : `${count} Possessions Logged`;
+      }
+    }
+
+    // ==========================================
+    // TAB NAVIGATION
+    // ==========================================
+    function switchTab(tabName) {
+      document.getElementById('tabTracker').classList.add('hidden');
+      document.getElementById('tabAnalytics').classList.add('hidden');
+      document.getElementById('tabLog').classList.add('hidden');
+
+      document.getElementById('tabTrackerBtn').className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+      document.getElementById('tabAnalyticsBtn').className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+      document.getElementById('tabLogBtn').className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+
+      if (tabName === 'tracker') {
+        document.getElementById('tabTracker').classList.remove('hidden');
+        document.getElementById('tabTrackerBtn').className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+      } else if (tabName === 'analytics') {
+        document.getElementById('tabAnalytics').classList.remove('hidden');
+        document.getElementById('tabAnalyticsBtn').className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+        renderAnalyticsDashboard();
+      } else if (tabName === 'log') {
+        document.getElementById('tabLog').classList.remove('hidden');
+        document.getElementById('tabLogBtn').className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+        renderPossessionLogTable();
+      }
+    }
+
+    // ==========================================
+    // COURT SPATIAL MATH & SELECTION
+    // ==========================================
+    function handleCourtClick(e) {
+      const svg = document.getElementById('courtSvg');
+      const rect = svg.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * 500);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * 470);
+
+      // Rim location on SVG canvas: X=250, Y=52.5
+      const rimX = 250;
+      const rimY = 52.5;
+
+      // Distance in SVG px (~10px = 1ft scale)
+      const distPx = Math.sqrt(Math.pow(x - rimX, 2) + Math.pow(y - rimY, 2));
+      const distFt = Math.round(distPx / 10);
+
+      // Determine Location & Side
+      let location = 'Paint';
+      let side = 'M';
+
+      if (x < 210) side = 'L';
+      else if (x > 290) side = 'R';
+      else side = 'M';
+
+      // Check 3PT Arc (221.5 px radius or y < 130 and x near corners)
+      const is3pt = (y < 130 && (x < 30 || x > 470)) || (y >= 130 && distPx >= 221.5);
+      const isPaint = (x >= 170 && x <= 330 && y <= 200);
+
+      if (is3pt) {
+        if (y < 130) location = 'Corner 3';
+        else if (x < 170 || x > 330) location = 'Wing 3';
+        else location = 'Slot 3';
+      } else if (isPaint) {
+        location = 'Paint';
+      } else {
+        // Midrange Zones
+        if (y < 130) location = 'Baseline Midrange';
+        else if (x < 170 || x > 330) location = 'Wing Midrange';
+        else location = 'Elbow / Top Midrange';
+      }
+
+      currentSelectedPoint = { x, y, location, side, dist: distFt };
+
+      // Update Marker Visual
+      const marker = document.getElementById('activeTargetMarker');
+      marker.setAttribute('transform', `translate(${x}, ${y})`);
+      marker.style.display = 'block';
+
+      // Update Readout Bar
+      document.getElementById('readoutLocation').textContent = location;
+      document.getElementById('readoutSide').textContent = side === 'L' ? 'Left Side' : side === 'R' ? 'Right Side' : 'Middle / Center';
+      document.getElementById('readoutDistance').textContent = `~${distFt} ft`;
+      document.getElementById('clickCoordinates').textContent = `X:${x} Y:${y}`;
+
+      // Auto-suggest Shot Type based on spatial zone
+      if (location === 'Paint' && distFt <= 4) selectShotType('Layup');
+      else if (is3pt) selectShotType('Catch & Shoot');
+
+      updateXpPreview();
+    }
+
+    // Render Pins on SVG Court
+    function renderCourtOverlay() {
+      const overlayGroup = document.getElementById('courtOverlayGroup');
+      overlayGroup.innerHTML = '';
+
+      const showPins = document.getElementById('toggleShotPins').checked;
+      if (!showPins || possessions.length === 0) return;
+
+      possessions.forEach((p, idx) => {
+        if (!p.x || !p.y) return;
+
+        let color = '#38bdf8'; // Default blue
+        let iconSymbol = '●';
+
+        if (p.outcome === 'Made FG') {
+          color = '#22c55e'; // Green
+        } else if (p.outcome === 'Missed FG') {
+          color = '#ef4444'; // Red
+        } else if (p.outcome === 'Shooting Foul') {
+          color = '#f59e0b'; // Amber
+        } else if (p.outcome === 'Turnover') {
+          color = '#64748b'; // Slate
+        }
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'court-pin');
+        g.setAttribute('transform', `translate(${p.x}, ${p.y})`);
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('r', '5');
+        circle.setAttribute('fill', color);
+        circle.setAttribute('stroke', '#ffffff');
+        circle.setAttribute('stroke-width', '1.5');
+
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = `#${idx + 1} - ${p.player} (${p.outcome}): ${p.actualPts} pts (xP: ${p.xp})`;
+
+        g.appendChild(circle);
+        g.appendChild(title);
+        overlayGroup.appendChild(g);
+      });
+    }
+
+    // ==========================================
+    // EXPECTED POINTS (xP) CALCULATION ENGINE
+    // ==========================================
+    function calculateXp(location, shotType, contestLevel, outcome) {
+      if (outcome === 'Turnover') return 0.00;
+      if (outcome === 'Non-Shooting Foul') return 0.00;
+
+      const is3pt = location.includes('3');
+      const isPaint = location === 'Paint';
+
+      let baseVal = is3pt ? 3.0 : 2.0;
+      let basePct = 0.45; // Default FG%
+
+      if (isPaint) {
+        if (shotType === 'Dunk') basePct = 0.82;
+        else if (shotType === 'Layup') basePct = 0.65;
+        else basePct = 0.52;
+      } else if (is3pt) {
+        if (location.includes('Corner')) basePct = 0.39;
+        else basePct = 0.36;
+      } else {
+        // Midrange
+        if (shotType === 'Catch & Shoot') basePct = 0.44;
+        else basePct = 0.38;
+      }
+
+      // Contest Multiplier
+      let contestMult = 1.0;
+      if (contestLevel === 3) contestMult = 1.15; // Open
+      else if (contestLevel === 2) contestMult = 0.95; // Slight
+      else if (contestLevel === 1) contestMult = 0.70; // Heavy
+
+      let xp = baseVal * basePct * contestMult;
+
+      if (outcome === 'Shooting Foul') {
+        xp = is3pt ? 2.10 : 1.40; // FT Expectation (~70% FT team)
+      }
+
+      return parseFloat(xp.toFixed(2));
+    }
+
+    function updateXpPreview() {
+      const outcome = document.getElementById('formOutcome').value;
+      const xp = calculateXp(currentSelectedPoint.location, selectedShotType, selectedContest, outcome);
+      document.getElementById('xpPreviewBadge').textContent = `Est xP: ${xp.toFixed(2)}`;
+    }
+
+    // ==========================================
+    // FORM CONTROLS & CHIPS
+    // ==========================================
+    function selectShotType(type) {
+      selectedShotType = type;
+      document.querySelectorAll('.shot-type-chip').forEach(btn => {
+        if (btn.getAttribute('data-val') === type) {
+          btn.className = "shot-type-chip px-2 py-1.5 rounded-lg border border-amber-500 bg-amber-500/20 text-amber-300 text-xs font-bold transition-all text-center";
+        } else {
+          btn.className = "shot-type-chip px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-400 text-xs font-medium hover:border-slate-600 transition-all text-center";
+        }
+      });
+      updateXpPreview();
+    }
+
+    function selectContest(level) {
+      selectedContest = level;
+      document.querySelectorAll('.contest-chip').forEach(btn => {
+        const val = parseInt(btn.getAttribute('data-val'));
+        if (val === level) {
+          btn.classList.add('ring-2', 'ring-white', 'scale-105');
+        } else {
+          btn.classList.remove('ring-2', 'ring-white', 'scale-105');
+        }
+      });
+      updateXpPreview();
+    }
+
+    function updateFormFields() {
+      const outcome = document.getElementById('formOutcome').value;
+      const ftContainer = document.getElementById('ftTripContainer');
+      const actualInput = document.getElementById('formActualPts');
+
+      if (outcome === 'Shooting Foul') {
+        ftContainer.classList.remove('hidden');
+        calcFtActualPts();
+      } else {
+        ftContainer.classList.add('hidden');
+        if (outcome === 'Made FG') {
+          actualInput.value = currentSelectedPoint.location.includes('3') ? 3 : 2;
+        } else if (outcome === 'Missed FG' || outcome === 'Turnover' || outcome === 'Non-Shooting Foul') {
+          actualInput.value = 0;
+        }
+      }
+      updateXpPreview();
+    }
+
+    function calcFtActualPts() {
+      const ftVal = document.getElementById('formFtResult').value;
+      const actualInput = document.getElementById('formActualPts');
+      if (ftVal.startsWith('3/3')) actualInput.value = 3;
+      else if (ftVal.startsWith('2/2') || ftVal.startsWith('2/3')) actualInput.value = 2;
+      else if (ftVal.startsWith('1/2') || ftVal.startsWith('1/3') || ftVal.includes('And-1')) actualInput.value = 1;
+      else actualInput.value = 0;
+    }
+
+    function populateDropdowns() {
+      const playerSel = document.getElementById('formPlayer');
+      const playSel = document.getElementById('formPlay');
+
+      playerSel.innerHTML = roster.map(p => `<option value="${p.name}">#${p.num} - ${p.name} (${p.pos})</option>`).join('');
+      playSel.innerHTML = playbook.map(p => `<option value="${p.code}">${p.code} - ${p.name}</option>`).join('');
+    }
+
+    // Handle Form Submit
+    function handlePossessionSubmit(e) {
+      e.preventDefault();
+
+      const player = document.getElementById('formPlayer').value;
+      const play = document.getElementById('formPlay').value;
+      const outcome = document.getElementById('formOutcome').value;
+      const actualPts = parseInt(document.getElementById('formActualPts').value) || 0;
+
+      const xp = calculateXp(currentSelectedPoint.location, selectedShotType, selectedContest, outcome);
+      const poe = parseFloat((actualPts - xp).toFixed(2));
+
+      const newEntry = {
+        id: Date.now(),
+        player,
+        play,
+        outcome,
+        location: currentSelectedPoint.location,
+        side: currentSelectedPoint.side,
+        dist: currentSelectedPoint.dist,
+        type: selectedShotType,
+        contest: selectedContest,
+        actualPts,
+        xp,
+        poe,
+        x: currentSelectedPoint.x,
+        y: currentSelectedPoint.y
+      };
+
+      possessions.unshift(newEntry); // Add to top
+      savePossessionsToStorage();
+
+      reRenderAllUI();
+      showToast(`Logged #${possessions.length}: ${player} (${outcome})`, 'success');
+    }
+
+    // ==========================================
+    // ANALYTICS CALCULATION ENGINE
+    // ==========================================
+    function renderAnalyticsDashboard() {
+      const total = possessions.length;
+      if (total === 0) {
+        // Clean 0.00 State
+        document.getElementById('kpiPossessions').textContent = '0';
+        document.getElementById('kpiActualPts').textContent = '0';
+        document.getElementById('kpiPps').textContent = '0.00 PPS';
+        document.getElementById('kpiExpectedPts').textContent = '0.00';
+        document.getElementById('kpiPoe').textContent = '+0.00';
+        document.getElementById('kpiSqi').textContent = '0.00';
+        document.getElementById('kpiExecution').textContent = '0%';
+        
+        document.getElementById('playerAnalyticsTable').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500 italic">No possessions logged yet. Click court to add entries.</td></tr>`;
+        document.getElementById('playAnalyticsTable').innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500 italic">No play data recorded yet.</td></tr>`;
+        document.getElementById('zoneAnalyticsGrid').innerHTML = `<div class="col-span-3 p-6 text-center text-slate-500 border border-slate-800 rounded-xl">No zone metrics available.</div>`;
+        return;
+      }
+
+      let totalActual = 0;
+      let totalXp = 0;
+      let openLooks = 0;
+
+      const playerMap = {};
+      const playMap = {};
+      const zoneMap = { Paint: { attempts: 0, pts: 0, xp: 0 }, Midrange: { attempts: 0, pts: 0, xp: 0 }, '3PT': { attempts: 0, pts: 0, xp: 0 } };
+
+      possessions.forEach(p => {
+        totalActual += p.actualPts;
+        totalXp += p.xp;
+        if (p.contest === 3) openLooks++;
+
+        // Player breakdown
+        if (!playerMap[p.player]) playerMap[p.player] = { poss: 0, pts: 0, xp: 0 };
+        playerMap[p.player].poss += 1;
+        playerMap[p.player].pts += p.actualPts;
+        playerMap[p.player].xp += p.xp;
+
+        // Play breakdown
+        if (!playMap[p.play]) playMap[p.play] = { runs: 0, pts: 0, xp: 0, openCount: 0, toCount: 0 };
+        playMap[p.play].runs += 1;
+        playMap[p.play].pts += p.actualPts;
+        playMap[p.play].xp += p.xp;
+        if (p.contest === 3) playMap[p.play].openCount += 1;
+        if (p.outcome === 'Turnover') playMap[p.play].toCount += 1;
+
+        // Zone breakdown
+        let zGroup = 'Midrange';
+        if (p.location === 'Paint') zGroup = 'Paint';
+        else if (p.location.includes('3')) zGroup = '3PT';
+
+        zoneMap[zGroup].attempts += 1;
+        zoneMap[zGroup].pts += p.actualPts;
+        zoneMap[zGroup].xp += p.xp;
+      });
+
+      const poe = totalActual - totalXp;
+      const sqi = totalXp / total;
+      const pps = totalActual / total;
+      const executionPct = Math.round((openLooks / total) * 100);
+
+      // Render KPIs
+      document.getElementById('kpiPossessions').textContent = total;
+      document.getElementById('kpiActualPts').textContent = totalActual;
+      document.getElementById('kpiPps').textContent = `${pps.toFixed(2)} PPS`;
+      document.getElementById('kpiExpectedPts').textContent = totalXp.toFixed(2);
+      
+      const poeEl = document.getElementById('kpiPoe');
+      poeEl.textContent = `${poe >= 0 ? '+' : ''}${poe.toFixed(2)}`;
+      poeEl.className = `text-2xl font-bold font-display mt-1 block ${poe >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      document.getElementById('kpiSqi').textContent = sqi.toFixed(2);
+      document.getElementById('kpiExecution').textContent = `${executionPct}%`;
+
+      // Render Player Table
+      const playerRows = Object.keys(playerMap).map(name => {
+        const stats = playerMap[name];
+        const pPoe = stats.pts - stats.xp;
+        const pSqi = stats.xp / stats.poss;
+        return `
+          <tr class="hover:bg-slate-800/40">
+            <td class="p-2.5 font-semibold text-slate-200">${name}</td>
+            <td class="p-2.5 text-center font-mono">${stats.poss}</td>
+            <td class="p-2.5 text-center font-mono text-emerald-400 font-bold">${stats.pts}</td>
+            <td class="p-2.5 text-center font-mono text-amber-400">${stats.xp.toFixed(2)}</td>
+            <td class="p-2.5 text-center font-mono ${pPoe >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${pPoe >= 0 ? '+' : ''}${pPoe.toFixed(2)}</td>
+            <td class="p-2.5 text-center font-mono text-cyan-400">${pSqi.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+      document.getElementById('playerAnalyticsTable').innerHTML = playerRows;
+
+      // Render Play Table
+      const playRows = Object.keys(playMap).map(code => {
+        const stats = playMap[code];
+        const avgXp = stats.xp / stats.runs;
+        const openPct = Math.round((stats.openCount / stats.runs) * 100);
+        const toPct = Math.round((stats.toCount / stats.runs) * 100);
+        return `
+          <tr class="hover:bg-slate-800/40">
+            <td class="p-2.5 font-semibold text-amber-400">${code}</td>
+            <td class="p-2.5 text-center font-mono">${stats.runs}</td>
+            <td class="p-2.5 text-center font-mono text-emerald-400 font-bold">${stats.pts}</td>
+            <td class="p-2.5 text-center font-mono text-cyan-400">${avgXp.toFixed(2)}</td>
+            <td class="p-2.5 text-center font-mono text-emerald-300">${openPct}%</td>
+            <td class="p-2.5 text-center font-mono text-rose-400">${toPct}%</td>
+          </tr>
+        `;
+      }).join('');
+      document.getElementById('playAnalyticsTable').innerHTML = playRows;
+
+      // Render Zone Heatmap Grid Cards
+      const zoneCards = Object.keys(zoneMap).map(zName => {
+        const zData = zoneMap[zName];
+        const zPps = zData.attempts > 0 ? (zData.pts / zData.attempts).toFixed(2) : '0.00';
+        const zSqi = zData.attempts > 0 ? (zData.xp / zData.attempts).toFixed(2) : '0.00';
+        return `
+          <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+              <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">${zName} Zone</span>
+              <span class="text-xs font-mono text-amber-400 font-bold">${zData.attempts} Attempts</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+              <div class="bg-slate-900 p-2 rounded-lg">
+                <span class="text-[10px] text-slate-400 block">Actual PPS</span>
+                <span class="font-mono font-bold text-emerald-400 text-sm">${zPps}</span>
+              </div>
+              <div class="bg-slate-900 p-2 rounded-lg">
+                <span class="text-[10px] text-slate-400 block">Zone SQI</span>
+                <span class="font-mono font-bold text-cyan-400 text-sm">${zSqi}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('zoneAnalyticsGrid').innerHTML = zoneCards;
+    }
+
+    // ==========================================
+    // LOG TABLE & INLINE EDITING
+    // ==========================================
+    function renderPossessionLogTable() {
+      const search = document.getElementById('logSearchInput').value.toLowerCase();
+      const outcomeFilter = document.getElementById('logOutcomeFilter').value;
+
+      const filtered = possessions.filter(p => {
+        const matchesSearch = p.player.toLowerCase().includes(search) || p.play.toLowerCase().includes(search) || p.location.toLowerCase().includes(search);
+        const matchesOutcome = outcomeFilter === 'ALL' || p.outcome === outcomeFilter;
+        return matchesSearch && matchesOutcome;
+      });
+
+      document.getElementById('logFilteredCount').textContent = `Showing ${filtered.length} of ${possessions.length} entries`;
+
+      if (filtered.length === 0) {
+        document.getElementById('possessionLogTable').innerHTML = `<tr><td colspan="11" class="p-6 text-center text-slate-500 italic">No matching possession entries found.</td></tr>`;
+        return;
+      }
+
+      const rows = filtered.map((p, idx) => {
+        return `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="p-3 text-center text-slate-500 font-mono text-[11px]">${possessions.length - idx}</td>
+            <td class="p-3 font-sans font-semibold text-slate-200">${p.player}</td>
+            <td class="p-3 text-amber-400 font-sans font-medium">${p.play}</td>
+            <td class="p-3 font-sans">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${getOutcomeBadgeClass(p.outcome)}">${p.outcome}</span>
+            </td>
+            <td class="p-3 text-slate-300 font-sans text-xs">${p.location} (${p.side})</td>
+            <td class="p-3 text-slate-400 font-sans text-xs">${p.type}</td>
+            <td class="p-3 text-center font-sans">
+              <span class="px-1.5 py-0.5 rounded text-[10px] ${p.contest === 3 ? 'bg-emerald-950 text-emerald-400' : p.contest === 2 ? 'bg-amber-950 text-amber-400' : 'bg-rose-950 text-rose-400'}">
+                ${p.contest === 3 ? 'Open' : p.contest === 2 ? 'Slight' : 'Heavy'}
+              </span>
+            </td>
+            <td class="p-3 text-center">
+              <input type="number" min="0" max="4" value="${p.actualPts}" onchange="updateEntryPts(${p.id}, this.value)" class="w-12 bg-slate-950 border border-slate-700 rounded px-1.5 py-1 text-center font-bold text-emerald-400 text-xs focus:border-amber-500 focus:outline-none">
+            </td>
+            <td class="p-3 text-center text-amber-400">${p.xp.toFixed(2)}</td>
+            <td class="p-3 text-center ${p.poe >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${p.poe >= 0 ? '+' : ''}${p.poe.toFixed(2)}</td>
+            <td class="p-3 text-right">
+              <button onclick="deleteSinglePossession(${p.id})" class="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-950/40 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('possessionLogTable').innerHTML = rows;
+    }
+
+    function getOutcomeBadgeClass(outcome) {
+      if (outcome === 'Made FG') return 'bg-emerald-950 text-emerald-400 border border-emerald-800';
+      if (outcome === 'Missed FG') return 'bg-rose-950 text-rose-400 border border-rose-800';
+      if (outcome === 'Shooting Foul') return 'bg-amber-950 text-amber-400 border border-amber-800';
+      return 'bg-slate-800 text-slate-300 border border-slate-700';
+    }
+
+    function updateEntryPts(id, newPts) {
+      const val = parseInt(newPts) || 0;
+      const entry = possessions.find(p => p.id === id);
+      if (entry) {
+        entry.actualPts = val;
+        entry.poe = parseFloat((val - entry.xp).toFixed(2));
+        savePossessionsToStorage();
+        reRenderAllUI();
+        showToast(`Updated entry actual points to ${val}`, 'info');
+      }
+    }
+
+    function deleteSinglePossession(id) {
+      possessions = possessions.filter(p => p.id !== id);
+      savePossessionsToStorage();
+      reRenderAllUI();
+      showToast('Entry deleted', 'info');
+    }
+
+    // ==========================================
+    // RESET & CLEAR OPTIONS ENGINE
+    // ==========================================
+    function openResetModal() {
+      document.getElementById('resetModal').classList.remove('hidden');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.add('hidden');
+    }
+
+    function triggerResetAction(actionType) {
+      currentResetActionPending = actionType;
+      closeResetModal();
+
+      const titleEl = document.getElementById('confirmTitle');
+      const msgEl = document.getElementById('confirmMessage');
+      const confirmBtn = document.getElementById('confirmExecuteBtn');
+
+      if (actionType === 'clear_possessions') {
+        titleEl.textContent = 'Clear All Game Possessions?';
+        msgEl.innerHTML = 'This will wipe all logged shots, court overlay pins, and analytics stats to <strong>0 entries</strong>.<br><br>Your custom <strong>Roster and Playbook will be preserved.</strong>';
+        confirmBtn.textContent = 'Clear Possessions';
+        confirmBtn.className = 'px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-lg shadow-amber-500/20 transition-all';
+      } else if (actionType === 'load_sample') {
+        titleEl.textContent = 'Load Sample Demo Game Data?';
+        msgEl.innerHTML = 'This will replace current entries with <strong>26 JUCO sample game possessions</strong> for testing analytics graphs.';
+        confirmBtn.textContent = 'Load Sample Data';
+        confirmBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-blue-600/20 transition-all';
+      } else if (actionType === 'factory_reset') {
+        titleEl.textContent = 'Factory Reset Entire Application?';
+        msgEl.innerHTML = 'Warning: This will perform a full reset of <strong>all possessions, custom Rosters, and Playbooks</strong> back to default initial state.';
+        confirmBtn.textContent = 'Factory Reset';
+        confirmBtn.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-rose-600/20 transition-all';
+      }
+
+      document.getElementById('confirmModal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.add('hidden');
+      currentResetActionPending = null;
+    }
+
+    // Execution of Confirmed Reset Actions
+    function executeConfirmedReset() {
+      if (!currentResetActionPending) return;
+
+      if (currentResetActionPending === 'clear_possessions') {
+        // 1. Wipe possessions array to []
+        possessions = [];
+        
+        // 2. Persistent Empty State Fix: Store '[]' in localStorage
+        savePossessionsToStorage();
+
+        // 3. Instant UI Re-render
+        reRenderAllUI();
+
+        showToast('All game possessions cleared. Ready for new game!', 'success');
+
+      } else if (currentResetActionPending === 'load_sample') {
+        possessions = getSamplePossessions();
+        savePossessionsToStorage();
+        reRenderAllUI();
+        showToast('Loaded 26 sample JUCO game possessions.', 'info');
+
+      } else if (currentResetActionPending === 'factory_reset') {
+        possessions = [];
+        roster = DEFAULT_ROSTER;
+        playbook = DEFAULT_PLAYBOOK;
+
+        savePossessionsToStorage();
+        saveRosterToStorage();
+        savePlaybookToStorage();
+
+        populateDropdowns();
+        reRenderAllUI();
+        showToast('Factory reset complete. App initialized to fresh state.', 'warning');
+      }
+
+      closeConfirmModal();
+    }
+
+    // ==========================================
+    // ROSTER MANAGER MODAL
+    // ==========================================
+    function openRosterModal() {
+      renderRosterList();
+      document.getElementById('rosterModal').classList.remove('hidden');
+    }
+
+    function closeRosterModal() {
+      document.getElementById('rosterModal').classList.add('hidden');
+    }
+
+    function renderRosterList() {
+      const container = document.getElementById('rosterListContainer');
+      container.innerHTML = roster.map((p, idx) => `
+        <div class="flex items-center justify-between p-2.5 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-mono bg-slate-800 text-amber-400 font-bold px-2 py-0.5 rounded">#${p.num}</span>
+            <span class="font-semibold text-slate-200">${p.name}</span>
+            <span class="text-slate-500">(${p.pos})</span>
+          </div>
+          <button onclick="removePlayer('${p.id}')" class="text-rose-400 hover:text-rose-300 font-bold text-xs">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    function handleAddPlayer(e) {
+      e.preventDefault();
+      const num = document.getElementById('newPlayerNum').value.trim();
+      const name = document.getElementById('newPlayerName').value.trim();
+      if (!num || !name) return;
+
+      roster.push({ id: Date.now().toString(), num, name, pos: 'G' });
+      saveRosterToStorage();
+      populateDropdowns();
+      renderRosterList();
+
+      document.getElementById('newPlayerNum').value = '';
+      document.getElementById('newPlayerName').value = '';
+      showToast(`Added #${num} ${name} to roster`, 'success');
+    }
+
+    function removePlayer(id) {
+      roster = roster.filter(p => p.id !== id);
+      saveRosterToStorage();
+      populateDropdowns();
+      renderRosterList();
+      showToast('Player removed from roster', 'info');
+    }
+
+    // ==========================================
+    // PLAYBOOK MANAGER MODAL
+    // ==========================================
+    function openPlaybookModal() {
+      renderPlaybookList();
+      document.getElementById('playbookModal').classList.remove('hidden');
+    }
+
+    function closePlaybookModal() {
+      document.getElementById('playbookModal').classList.add('hidden');
+    }
+
+    function renderPlaybookList() {
+      const container = document.getElementById('playbookListContainer');
+      container.innerHTML = playbook.map(p => `
+        <div class="flex items-center justify-between p-2.5 text-xs">
+          <div>
+            <span class="font-mono text-amber-400 font-bold mr-2">${p.code}</span>
+            <span class="text-slate-300">${p.name}</span>
+          </div>
+          <button onclick="removePlay('${p.id}')" class="text-rose-400 hover:text-rose-300 font-bold text-xs">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    function handleAddPlay(e) {
+      e.preventDefault();
+      const code = document.getElementById('newPlayCode').value.trim();
+      const name = document.getElementById('newPlayName').value.trim();
+      if (!code || !name) return;
+
+      playbook.push({ id: Date.now().toString(), code, name });
+      savePlaybookToStorage();
+      populateDropdowns();
+      renderPlaybookList();
+
+      document.getElementById('newPlayCode').value = '';
+      document.getElementById('newPlayName').value = '';
+      showToast(`Added play call: ${code}`, 'success');
+    }
+
+    function removePlay(id) {
+      playbook = playbook.filter(p => p.id !== id);
+      savePlaybookToStorage();
+      populateDropdowns();
+      renderPlaybookList();
+      showToast('Play removed from playbook', 'info');
+    }
+
+    // ==========================================
+    // TOAST NOTIFICATION SYSTEM
+    // ==========================================
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      let bgColor = 'bg-slate-900 border-slate-700 text-slate-200';
+      if (type === 'success') bgColor = 'bg-emerald-950 border-emerald-700 text-emerald-200';
+      else if (type === 'warning') bgColor = 'bg-amber-950 border-amber-700 text-amber-200';
+      else if (type === 'error') bgColor = 'bg-rose-950 border-rose-700 text-rose-200';
+
+      toast.className = `pointer-events-auto border px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 ${bgColor}`;
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${type === 'success' ? 'bg-emerald-400' : type === 'warning' ? 'bg-amber-400' : 'bg-blue-400'}"></span>
+        <span>${msg}</span>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
