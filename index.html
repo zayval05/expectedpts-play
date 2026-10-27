@@ -61,7 +61,7 @@
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
             Track the Play. Measure the Look.
-            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.7 Auth Ready</span>
+            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.8 Stable</span>
           </h1>
           
           <div class="flex items-center gap-2 mt-0.5">
@@ -125,4 +125,141 @@
             Create multiple teams and playbooks below. Switch active squads or playbooks anytime—your game files will use the selected active settings!
           </p>
         </div>
-        <div class="
+        <div class="flex items-center gap-2 w-full md:w-auto">
+          <button onclick="switchTab('tracker')" class="flex-1 md:flex-initial bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-xs transition-all flex items-center justify-center gap-2">
+            <span>Start Tracking Live Game</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Setup Grid (Teams & Playbooks) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        
+        <!-- MULTI-TEAM & ROSTER SETUP CARD -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Teams & Roster Manager</h3>
+                <span class="text-[10px] text-slate-400">Select active team or add new teams</span>
+              </div>
+            </div>
+            <span id="rosterCountBadge" class="text-xs font-mono font-bold text-amber-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">0 Players</span>
+          </div>
+
+          <!-- Active Team Selector & Create Team -->
+          <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Active Team</label>
+              <button type="button" onclick="toggleNewTeamForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Team</button>
+            </div>
+            <select id="activeTeamSelect" onchange="switchActiveTeam(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+            </select>
+
+            <!-- Inline Form: Create New Team -->
+            <form id="newTeamForm" onsubmit="event.preventDefault(); createNewTeam();" class="hidden pt-2 space-y-2 border-t border-slate-800">
+              <input type="text" id="newTeamName" placeholder="New Team Name (e.g. JV Squad)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+              <div class="flex gap-2">
+                <button type="button" onclick="createNewTeam()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1.5 rounded-lg transition-all">Create Team</button>
+                <button type="button" onclick="toggleNewTeamForm()" class="px-3 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Add Single Player Form -->
+          <form onsubmit="event.preventDefault(); addPlayerToActiveTeam();" class="grid grid-cols-12 gap-2">
+            <input type="text" id="newPlayerNum" placeholder="#" class="col-span-3 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <input type="text" id="newPlayerName" placeholder="Player Name *" class="col-span-6 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <button type="button" onclick="addPlayerToActiveTeam()" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-all">+ Add Player</button>
+          </form>
+
+          <!-- Bulk Paste Roster Box -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+            <label class="block text-[11px] font-semibold text-slate-300 uppercase">Bulk Upload Roster to Active Team</label>
+            <textarea id="bulkRosterInput" rows="2" placeholder="Paste names (e.g. 1 M. Johnson, 3 D. Williams or one per line)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"></textarea>
+            <button type="button" onclick="handleBulkRosterUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
+              Parse & Add Roster Names
+            </button>
+          </div>
+
+          <!-- Sorting Controls & Roster Preview List -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
+              <span class="font-semibold uppercase text-[10px]">Sort Roster By:</span>
+              <div class="flex gap-1">
+                <button type="button" onclick="sortActiveRoster('num')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-mono border border-slate-700 transition-all"># Number</button>
+                <button type="button" onclick="sortActiveRoster('name')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700 transition-all">A-Z Name</button>
+              </div>
+            </div>
+
+            <div id="rosterHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- MULTI-PLAYBOOK & SETS SETUP CARD -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Playbooks & Sets Manager</h3>
+                <span class="text-[10px] text-slate-400">Select active playbook or add new playbooks</span>
+              </div>
+            </div>
+            <span id="playbookCountBadge" class="text-xs font-mono font-bold text-amber-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">0 Plays</span>
+          </div>
+
+          <!-- Active Playbook Selector & Create Playbook -->
+          <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Active Playbook</label>
+              <button type="button" onclick="toggleNewPlaybookForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Playbook</button>
+            </div>
+            <select id="activePlaybookSelect" onchange="switchActivePlaybook(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+            </select>
+
+            <!-- Inline Form: Create New Playbook -->
+            <form id="newPlaybookForm" onsubmit="event.preventDefault(); createNewPlaybook();" class="hidden pt-2 space-y-2 border-t border-slate-800">
+              <input type="text" id="newPlaybookName" placeholder="New Playbook Name (e.g. Zone Offense)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+              <div class="flex gap-2">
+                <button type="button" onclick="createNewPlaybook()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1.5 rounded-lg transition-all">Create Playbook</button>
+                <button type="button" onclick="toggleNewPlaybookForm()" class="px-3 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Add Single Play Form -->
+          <form onsubmit="event.preventDefault(); addPlayToActivePlaybook();" class="grid grid-cols-12 gap-2">
+            <input type="text" id="newPlayName" placeholder="Play Name *" class="col-span-6 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <input type="text" id="newPlayCode" placeholder="Set Type (Optional)" class="col-span-3 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <button type="button" onclick="addPlayToActivePlaybook()" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-all">+ Add Play</button>
+          </form>
+
+          <!-- Bulk Paste Playbook Box -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+            <label class="block text-[11px] font-semibold text-slate-300 uppercase">Bulk Upload to Active Playbook</label>
+            <textarea id="bulkPlaybookInput" rows="2" placeholder="Paste play names (e.g. High Ball Screen, Horns Action, Iso Mid Post)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"></textarea>
+            <button type="button" onclick="handleBulkPlaybookUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
+              Parse & Add Play Names
+            </button>
+          </div>
+
+          <!-- Sorting Controls & Playbook Preview List -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
+              <span class="font-semibold uppercase text-[10px]">Sort Plays By:</span>
+              <div class="flex gap-1">
+                <button type="button" onclick="sortActivePlaybook('name')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700 transition-all">A-Z Name</button>
+                <button type="button" onclick="sortActivePlaybook('code')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700 transition-all">Set / Type</button>
+              </div>
+            </div>
+
+            <div id="playbook
