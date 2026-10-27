@@ -61,7 +61,7 @@
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
             Track the Play. Measure the Look.
-            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.5 Fixed</span>
+            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.6 Dynamic Sorting</span>
           </h1>
           
           <div class="flex items-center gap-2 mt-0.5">
@@ -158,7 +158,6 @@
               <button type="button" onclick="toggleNewTeamForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Team</button>
             </div>
             <select id="activeTeamSelect" onchange="switchActiveTeam(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
-              <option value="default">Varsity Squad</option>
             </select>
 
             <!-- Inline Form: Create New Team -->
@@ -187,9 +186,19 @@
             </button>
           </div>
 
-          <!-- Active Roster List Preview -->
-          <div id="rosterHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950 p-2 text-xs text-slate-400">
-            No players added yet.
+          <!-- Sorting Controls & Roster Preview List -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
+              <span class="font-semibold uppercase text-[10px]">Sort Roster By:</span>
+              <div class="flex gap-1">
+                <button type="button" onclick="sortActiveRoster('num')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-mono border border-slate-700 transition-all"># Number</button>
+                <button type="button" onclick="sortActiveRoster('name')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700 transition-all">A-Z Name</button>
+              </div>
+            </div>
+
+            <div id="rosterHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
+              <!-- Populated dynamically -->
+            </div>
           </div>
         </div>
 
@@ -215,7 +224,6 @@
               <button type="button" onclick="toggleNewPlaybookForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Playbook</button>
             </div>
             <select id="activePlaybookSelect" onchange="switchActivePlaybook(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
-              <option value="default">Main Offense</option>
             </select>
 
             <!-- Inline Form: Create New Playbook -->
@@ -244,9 +252,19 @@
             </button>
           </div>
 
-          <!-- Active Playbook List Preview -->
-          <div id="playbookHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950 p-2 text-xs text-slate-400">
-            No plays added yet.
+          <!-- Sorting Controls & Playbook Preview List -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between px-1 text-[11px] text-slate-400">
+              <span class="font-semibold uppercase text-[10px]">Sort Plays By:</span>
+              <div class="flex gap-1">
+                <button type="button" onclick="sortActivePlaybook('name')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700 transition-all">A-Z Name</button>
+                <button type="button" onclick="sortActivePlaybook('code')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700 transition-all">Set / Type</button>
+              </div>
+            </div>
+
+            <div id="playbookHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
+              <!-- Populated dynamically -->
+            </div>
           </div>
         </div>
 
@@ -324,26 +342,24 @@
           <form class="space-y-3 text-xs" onsubmit="event.preventDefault();">
             <div>
               <label class="block text-[11px] text-slate-400 mb-1">Player</label>
-              <select class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
-                <option>#1 - Johnson</option>
-                <option>#3 - Williams</option>
+              <select id="trackerPlayerSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-medium focus:outline-none focus:border-amber-500">
+                <!-- Dynamically populated -->
               </select>
             </div>
             <div>
               <label class="block text-[11px] text-slate-400 mb-1">Play Call</label>
-              <select class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
-                <option>High Ball Screen</option>
-                <option>Horns Action</option>
+              <select id="trackerPlaySelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-medium focus:outline-none focus:border-amber-500">
+                <!-- Dynamically populated -->
               </select>
             </div>
             <div>
               <label class="block text-[11px] text-slate-400 mb-1">Outcome</label>
               <div class="grid grid-cols-2 gap-2">
-                <button type="button" class="bg-emerald-600/20 border border-emerald-500 text-emerald-300 p-2 rounded-lg font-bold">Made Shot</button>
-                <button type="button" class="bg-rose-600/20 border border-rose-500 text-rose-300 p-2 rounded-lg font-bold">Missed Shot</button>
+                <button type="button" class="bg-emerald-600/20 border border-emerald-500 text-emerald-300 p-2 rounded-lg font-bold hover:bg-emerald-600/30 transition-colors">Made Shot</button>
+                <button type="button" class="bg-rose-600/20 border border-rose-500 text-rose-300 p-2 rounded-lg font-bold hover:bg-rose-600/30 transition-colors">Missed Shot</button>
               </div>
             </div>
-            <button type="button" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold p-2.5 rounded-xl shadow-lg mt-4">Record Possession</button>
+            <button type="button" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold p-2.5 rounded-xl shadow-lg mt-4 transition-colors">Record Possession</button>
           </form>
         </div>
       </div>
@@ -384,102 +400,55 @@
     </div>
   </div>
 
-  <!-- SCRIPT BLOCK TO HANDLE INTERACTIONS & TAB SWITCHING -->
+  <!-- APPLICATION SCRIPT -->
   <script>
-    // Tab Navigation Switcher
-    function switchTab(tabName) {
-      const tabs = ['home', 'tracker', 'analytics', 'log'];
-      
-      tabs.forEach(t => {
-        const tabEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
-        const btnEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1) + 'Btn');
-        
-        if (tabEl) {
-          if (t === tabName) {
-            tabEl.classList.remove('hidden');
-          } else {
-            tabEl.classList.add('hidden');
-          }
-        }
-        
-        if (btnEl) {
-          if (t === tabName) {
-            btnEl.className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
-          } else {
-            btnEl.className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
-          }
-        }
-      });
-    }
+    // --- STATE MANAGEMENT ---
+    let teams = [
+      {
+        id: 'team_varsity',
+        name: 'Varsity Squad',
+        roster: [
+          { id: 'p1', num: '1', name: 'M. Johnson' },
+          { id: 'p2', num: '3', name: 'D. Williams' }
+        ]
+      }
+    ];
+    let activeTeamId = 'team_varsity';
 
-    // Toggle Forms
-    function toggleNewTeamForm() {
-      const el = document.getElementById('newTeamForm');
-      if (el) el.classList.toggle('hidden');
-    }
+    let playbooks = [
+      {
+        id: 'pb_main',
+        name: 'Main Offense',
+        plays: [
+          { id: 'pl1', name: 'High Ball Screen', code: 'P&R' },
+          { id: 'pl2', name: 'Horns Action', code: 'Set' }
+        ]
+      }
+    ];
+    let activePlaybookId = 'pb_main';
 
-    function toggleNewPlaybookForm() {
-      const el = document.getElementById('newPlaybookForm');
-      if (el) el.classList.toggle('hidden');
-    }
+    // Track sorting direction states
+    let rosterSortDirection = { field: 'num', asc: true };
+    let playbookSortDirection = { field: 'name', asc: true };
 
-    // Modal Control
-    function openGamesModal() {
-      document.getElementById('gamesModal')?.classList.remove('hidden');
-    }
-
-    function closeGamesModal() {
-      document.getElementById('gamesModal')?.classList.add('hidden');
-    }
-
-    function openAuthModal() {
-      document.getElementById('authModal')?.classList.remove('hidden');
-    }
-
-    function closeAuthModal() {
-      document.getElementById('authModal')?.classList.add('hidden');
-    }
-
-    // Court Location Picker
-    function handleCourtClick(event) {
-      const svg = document.getElementById('courtSvg');
-      const rect = svg.getBoundingClientRect();
-      const scaleX = 500 / rect.width;
-      const scaleY = 470 / rect.height;
-
-      const x = Math.round((event.clientX - rect.left) * scaleX);
-      const y = Math.round((event.clientY - rect.top) * scaleY);
-
-      const marker = document.getElementById('activeTargetMarker');
-      if (marker) {
-        marker.setAttribute('transform', `translate(${x}, ${y})`);
-        marker.style.display = 'block';
+    // --- RENDER FUNCTIONS FOR LIVE DROPDOWNS & LISTS ---
+    
+    // Render Teams & Player Dropdowns
+    function renderTeamsUI() {
+      const teamSelect = document.getElementById('activeTeamSelect');
+      if (teamSelect) {
+        teamSelect.innerHTML = teams.map(t => 
+          `<option value="${t.id}" ${t.id === activeTeamId ? 'selected' : ''}>${t.name}</option>`
+        ).join('');
       }
 
-      const coords = document.getElementById('clickCoordinates');
-      if (coords) coords.innerText = `X: ${x}, Y: ${y}`;
+      const activeTeam = teams.find(t => t.id === activeTeamId) || teams[0];
+      
+      const rosterBadge = document.getElementById('rosterCountBadge');
+      if (rosterBadge && activeTeam) {
+        rosterBadge.innerText = `${activeTeam.roster.length} Players`;
+      }
 
-      const locText = document.getElementById('readoutLocation');
-      const sideText = document.getElementById('readoutSide');
-      const distText = document.getElementById('readoutDistance');
-
-      if (locText) locText.innerText = y > 200 ? 'Mid Court' : (x > 170 && x < 330 ? 'Paint / Key' : 'Perimeter');
-      if (sideText) sideText.innerText = x < 250 ? 'Left Side' : 'Right Side';
-      if (distText) distText.innerText = `${Math.round(Math.hypot(x - 250, y - 52.5) / 15)} ft`;
-    }
-
-    // Placeholder handlers for inline event attributes to prevent console errors
-    function switchActiveGame(val) {}
-    function handleSignOut() {}
-    function switchActiveTeam(val) {}
-    function createNewTeam() { alert("Team created!"); toggleNewTeamForm(); }
-    function addPlayerToActiveTeam() { alert("Player added!"); }
-    function handleBulkRosterUpload() { alert("Roster uploaded!"); }
-    function switchActivePlaybook(val) {}
-    function createNewPlaybook() { alert("Playbook created!"); toggleNewPlaybookForm(); }
-    function addPlayToActivePlaybook() { alert("Play added!"); }
-    function handleBulkPlaybookUpload() { alert("Playbook uploaded!"); }
-    function renderCourtOverlay() {}
-  </script>
-</body>
-</html>
+      const rosterContainer = document.getElementById('rosterHomeListContainer');
+      if (rosterContainer && activeTeam) {
+        if (
