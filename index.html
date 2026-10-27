@@ -56,12 +56,12 @@
       
       <!-- Brand & Active Game Selector -->
       <div class="flex items-center space-x-3">
-        <img src="logo.png" alt="Play Value Logo" class="w-10 h-10 rounded-xl object-contain border border-amber-500/30 shadow-lg shadow-amber-500/10">
+        <img src="logo.png" alt="Play Value Logo" class="w-10 h-10 rounded-xl object-contain border border-amber-500/30 shadow-lg shadow-amber-500/10 cursor-pointer" onclick="switchTab('home')">
         
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
             Track the Play. Measure the Look.
-            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.1 Cloud</span>
+            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.3 Multi-Team</span>
           </h1>
           
           <div class="flex items-center gap-2 mt-0.5">
@@ -72,12 +72,13 @@
         </div>
       </div>
 
-      <!-- Main Action Buttons & User Profile -->
+      <!-- Main Action Buttons & Navigation -->
       <div class="flex items-center flex-wrap gap-2">
         
         <!-- Navigation Tabs -->
         <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-medium">
-          <button id="tabTrackerBtn" onclick="switchTab('tracker')" class="px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all">Tracker</button>
+          <button id="tabHomeBtn" onclick="switchTab('home')" class="px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all">Home Setup</button>
+          <button id="tabTrackerBtn" onclick="switchTab('tracker')" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all">Tracker</button>
           <button id="tabAnalyticsBtn" onclick="switchTab('analytics')" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all">Analytics</button>
           <button id="tabLogBtn" onclick="switchTab('log')" class="px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all">Game Log</button>
         </div>
@@ -88,8 +89,6 @@
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 0h6a2 2 0 012 2v8a2 2 0 01-2 2H10a2 2 0 01-2-2V7z"/></svg>
             Manage Games
           </button>
-          <button onclick="openRosterModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all">Roster</button>
-          <button onclick="openPlaybookModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all">Playbook</button>
 
           <!-- User Auth Status Badge -->
           <div id="authHeaderContainer">
@@ -110,8 +109,150 @@
 
   <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-5">
+
+    <!-- VIEW TAB 0: HOME / SETUP DASHBOARD -->
+    <div id="tabHome" class="space-y-6">
+      
+      <!-- Welcome Hero Card -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1.5 max-w-2xl">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-widest bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full">Play Value Command Center</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-black text-white font-display">Manage Teams, Playbooks & Live Tracking</h2>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Create multiple teams and playbooks below. Switch active squads or playbooks anytime—your game files will use the selected active settings!
+          </p>
+        </div>
+        <div class="flex items-center gap-2 w-full md:w-auto">
+          <button onclick="switchTab('tracker')" class="flex-1 md:flex-initial bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-xs transition-all flex items-center justify-center gap-2">
+            <span>Start Tracking Live Game</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Setup Grid (Teams & Playbooks) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        
+        <!-- MULTI-TEAM & ROSTER SETUP CARD -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Teams & Roster Manager</h3>
+                <span class="text-[10px] text-slate-400">Select active team or add new teams</span>
+              </div>
+            </div>
+            <span id="rosterCountBadge" class="text-xs font-mono font-bold text-amber-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">0 Players</span>
+          </div>
+
+          <!-- Active Team Selector & Create Team -->
+          <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Active Team</label>
+              <button onclick="toggleNewTeamForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Team</button>
+            </div>
+            <select id="activeTeamSelect" onchange="switchActiveTeam(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+            </select>
+
+            <!-- Inline Form: Create New Team -->
+            <form id="newTeamForm" onsubmit="handleCreateTeam(event)" class="hidden pt-2 space-y-2 border-t border-slate-800">
+              <input type="text" id="newTeamName" placeholder="New Team Name (e.g. JV Squad)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+              <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1 rounded-lg">Create Team</button>
+                <button type="button" onclick="toggleNewTeamForm()" class="px-3 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Add Single Player Form -->
+          <form onsubmit="handleAddPlayer(event)" class="grid grid-cols-12 gap-2">
+            <input type="text" id="newPlayerNum" placeholder="#" required class="col-span-3 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <input type="text" id="newPlayerName" placeholder="Player Name" required class="col-span-6 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-all">+ Add Player</button>
+          </form>
+
+          <!-- Bulk Paste Roster Box -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+            <label class="block text-[11px] font-semibold text-slate-300 uppercase">Bulk Upload Roster to Active Team</label>
+            <textarea id="bulkRosterInput" rows="2" placeholder="Paste names (e.g. 1 M. Johnson, 3 D. Williams or one per line)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"></textarea>
+            <button onclick="handleBulkRosterUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
+              Parse & Add Roster Names
+            </button>
+          </div>
+
+          <!-- Active Roster List Preview -->
+          <div id="rosterHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- MULTI-PLAYBOOK & SETS SETUP CARD -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Playbooks & Sets Manager</h3>
+                <span class="text-[10px] text-slate-400">Select active playbook or add new playbooks</span>
+              </div>
+            </div>
+            <span id="playbookCountBadge" class="text-xs font-mono font-bold text-amber-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">0 Plays</span>
+          </div>
+
+          <!-- Active Playbook Selector & Create Playbook -->
+          <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Active Playbook</label>
+              <button onclick="toggleNewPlaybookForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Playbook</button>
+            </div>
+            <select id="activePlaybookSelect" onchange="switchActivePlaybook(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+            </select>
+
+            <!-- Inline Form: Create New Playbook -->
+            <form id="newPlaybookForm" onsubmit="handleCreatePlaybook(event)" class="hidden pt-2 space-y-2 border-t border-slate-800">
+              <input type="text" id="newPlaybookName" placeholder="New Playbook Name (e.g. Zone Offense)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+              <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1 rounded-lg">Create Playbook</button>
+                <button type="button" onclick="toggleNewPlaybookForm()" class="px-3 bg-slate-800 text-slate-300 text-xs rounded-lg">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Add Single Play Form -->
+          <form onsubmit="handleAddPlay(event)" class="grid grid-cols-12 gap-2">
+            <input type="text" id="newPlayName" placeholder="Play Name *" required class="col-span-6 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <input type="text" id="newPlayCode" placeholder="Set Type (Optional)" class="col-span-3 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-all">+ Add Play</button>
+          </form>
+
+          <!-- Bulk Paste Playbook Box -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+            <label class="block text-[11px] font-semibold text-slate-300 uppercase">Bulk Upload to Active Playbook</label>
+            <textarea id="bulkPlaybookInput" rows="2" placeholder="Paste play names (e.g. High Ball Screen, Horns Action, Iso Mid Post)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"></textarea>
+            <button onclick="handleBulkPlaybookUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
+              Parse & Add Play Names
+            </button>
+          </div>
+
+          <!-- Active Playbook List Preview -->
+          <div id="playbookHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
     <!-- VIEW TAB 1: TRACKER -->
-    <div id="tabTracker" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div id="tabTracker" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col shadow-xl">
         <div class="flex items-center justify-between mb-2.5">
           <div class="flex items-center gap-2">
@@ -245,7 +386,7 @@
     </div>
   </main>
 
-  <!-- MODAL: AUTHENTICATION (LOGIN / SIGN UP) -->
+  <!-- MODAL: AUTHENTICATION -->
   <div id="authModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl relative space-y-4">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
@@ -255,7 +396,7 @@
         </div>
         <div>
           <h3 id="authTitle" class="text-sm font-bold text-white">Coach Account Access</h3>
-          <p class="text-[11px] text-slate-400">Sync all games, roster & playbook data across devices.</p>
+          <p class="text-[11px] text-slate-400">Sync all teams, playbooks & games across devices.</p>
         </div>
       </div>
 
@@ -282,18 +423,28 @@
     </div>
   </div>
 
-  <!-- MODALS: GAMES, ROSTER, PLAYBOOK -->
-  <div id="gamesModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"><div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 relative"><button onclick="closeGamesModal()" class="absolute top-4 right-4 text-slate-400">✕</button><h3 class="text-base font-bold text-white border-b border-slate-800 pb-2">Game File Manager</h3><form onsubmit="handleCreateNewGame(event)" class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800"><input type="text" id="newGameTitle" placeholder="e.g. Game 3 vs Chipola" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"><button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1.5 rounded-lg">+ Start New Game File</button></form><div id="gamesListContainer" class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div><div class="flex items-center gap-2 pt-2 border-t border-slate-800"><button onclick="exportAllGamesBackup()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-semibold">Export All (.JSON)</button><label class="flex-1 text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Import (.JSON)<input type="file" accept=".json" onchange="importGamesJson(event)" class="hidden"></label></div></div></div>
-  <div id="rosterModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"><div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-3 relative"><button onclick="closeRosterModal()" class="absolute top-4 right-4 text-slate-400">✕</button><h3 class="text-sm font-bold text-white">Roster Manager</h3><form onsubmit="handleAddPlayer(event)" class="grid grid-cols-12 gap-2"><input type="text" id="newPlayerNum" placeholder="#" required class="col-span-3 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"><input type="text" id="newPlayerName" placeholder="Player Name" required class="col-span-6 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"><button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg">+ Add</button></form><div id="rosterListContainer" class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div></div></div>
-  <div id="playbookModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden"><div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-3 relative"><button onclick="closePlaybookModal()" class="absolute top-4 right-4 text-slate-400">✕</button><h3 class="text-sm font-bold text-white">Playbook Manager</h3><form onsubmit="handleAddPlay(event)" class="grid grid-cols-12 gap-2"><input type="text" id="newPlayCode" placeholder="Code (e.g. Horns-1)" required class="col-span-4 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"><input type="text" id="newPlayName" placeholder="Set Name" required class="col-span-5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"><button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg">+ Add</button></form><div id="playbookListContainer" class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div></div></div>
+  <!-- MODAL: GAME MANAGER -->
+  <div id="gamesModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 relative">
+      <button onclick="closeGamesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
+      <h3 class="text-base font-bold text-white border-b border-slate-800 pb-2">Game File Manager</h3>
+      <form onsubmit="handleCreateNewGame(event)" class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+        <span class="text-xs font-bold text-amber-400 uppercase block">Start New Game File</span>
+        <input type="text" id="newGameTitle" placeholder="e.g. Game 3 vs Chipola" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1.5 rounded-lg transition-all">+ Start New Game File</button>
+      </form>
+      <div id="gamesListContainer" class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div>
+      <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
+        <button onclick="exportAllGamesBackup()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-semibold">Export All (.JSON)</button>
+        <label class="flex-1 text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Import (.JSON)<input type="file" accept=".json" onchange="importGamesJson(event)" class="hidden"></label>
+      </div>
+    </div>
+  </div>
 
   <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- JAVASCRIPT LOGIC ENGINE -->
   <script>
-    // ----------------------------------------------------
-    // YOUR LIVE FIREBASE API KEYS CONNECTED
-    // ----------------------------------------------------
     const firebaseConfig = {
       apiKey: "AIzaSyCEz0IWxW_rtm94fyVu4rdRMY7PeF5InBk",
       authDomain: "play-value-90ed5.firebaseapp.com",
@@ -312,13 +463,46 @@
       firebase.initializeApp(firebaseConfig);
       auth = firebase.auth();
       db = firebase.database();
-    } catch(e) { console.log('Firebase init error:', e); }
+    } catch(e) { console.log('Firebase init:', e); }
 
-    const STORAGE_KEYS = { GAMES: 'juco_games_registry', ACTIVE_GAME_ID: 'juco_active_game_id', ROSTER: 'juco_roster', PLAYBOOK: 'juco_playbook' };
-    const DEFAULT_ROSTER = [{ id: '1', num: '1', name: 'M. Johnson', pos: 'PG' }, { id: '2', num: '3', name: 'D. Williams', pos: 'SG' }];
-    const DEFAULT_PLAYBOOK = [{ id: 'p1', code: 'P&R High', name: 'High Ball Screen' }, { id: 'p2', code: 'Horns-2', name: 'Horns Action' }];
+    const STORAGE_KEYS = {
+      GAMES: 'pv_games_registry',
+      ACTIVE_GAME_ID: 'pv_active_game_id',
+      TEAMS: 'pv_teams_registry',
+      ACTIVE_TEAM_ID: 'pv_active_team_id',
+      PLAYBOOKS: 'pv_playbooks_registry',
+      ACTIVE_PLAYBOOK_ID: 'pv_active_playbook_id'
+    };
 
-    let games = [], activeGameId = null, roster = [], playbook = [];
+    // Default Seed Data
+    const DEFAULT_TEAMS = [
+      {
+        id: 'team_default',
+        name: 'Varsity Team',
+        roster: [
+          { id: '1', num: '1', name: 'M. Johnson', pos: 'PG' },
+          { id: '2', num: '3', name: 'D. Williams', pos: 'SG' },
+          { id: '3', num: '11', name: 'T. Davis', pos: 'SF' }
+        ]
+      }
+    ];
+
+    const DEFAULT_PLAYBOOKS = [
+      {
+        id: 'pb_default',
+        name: 'Main Offense',
+        plays: [
+          { id: 'p1', name: 'High Ball Screen', code: 'P&R High' },
+          { id: 'p2', name: 'Horns Action', code: 'Horns-2' },
+          { id: 'p3', name: 'Isolation Mid Post', code: '' }
+        ]
+      }
+    ];
+
+    let games = [], activeGameId = null;
+    let teams = [], activeTeamId = null;
+    let playbooks = [], activePlaybookId = null;
+
     let currentSelectedPoint = { x: 250, y: 52.5, location: 'Paint', side: 'M', dist: 2 };
     let selectedShotType = 'Layup', selectedContest = 3;
 
@@ -341,8 +525,23 @@
     };
 
     function initApp() {
-      const rawRoster = localStorage.getItem(STORAGE_KEYS.ROSTER); roster = rawRoster ? JSON.parse(rawRoster) : DEFAULT_ROSTER;
-      const rawPlaybook = localStorage.getItem(STORAGE_KEYS.PLAYBOOK); playbook = rawPlaybook ? JSON.parse(rawPlaybook) : DEFAULT_PLAYBOOK;
+      // 1. Load Teams & Active Team
+      const rawTeams = localStorage.getItem(STORAGE_KEYS.TEAMS);
+      if (rawTeams) { try { teams = JSON.parse(rawTeams); } catch (e) { teams = DEFAULT_TEAMS; } }
+      else { teams = DEFAULT_TEAMS; }
+
+      activeTeamId = localStorage.getItem(STORAGE_KEYS.ACTIVE_TEAM_ID) || teams[0].id;
+      if (!teams.find(t => t.id === activeTeamId)) activeTeamId = teams[0].id;
+
+      // 2. Load Playbooks & Active Playbook
+      const rawPlaybooks = localStorage.getItem(STORAGE_KEYS.PLAYBOOKS);
+      if (rawPlaybooks) { try { playbooks = JSON.parse(rawPlaybooks); } catch (e) { playbooks = DEFAULT_PLAYBOOKS; } }
+      else { playbooks = DEFAULT_PLAYBOOKS; }
+
+      activePlaybookId = localStorage.getItem(STORAGE_KEYS.ACTIVE_PLAYBOOK_ID) || playbooks[0].id;
+      if (!playbooks.find(p => p.id === activePlaybookId)) activePlaybookId = playbooks[0].id;
+
+      // 3. Load Multi-Games
       const rawGames = localStorage.getItem(STORAGE_KEYS.GAMES);
       if (rawGames) { try { games = JSON.parse(rawGames); } catch (e) { games = []; } }
 
@@ -354,21 +553,21 @@
         if (!games.find(g => g.id === activeGameId)) activeGameId = games[0].id;
       }
 
-      saveGamesToStorage(); populateGameDropdown(); populateDropdowns(); selectShotType('Layup'); selectContest(3); reRenderAllUI();
+      saveGamesToStorage();
+      reRenderAllUI();
     }
 
     function saveGamesToStorage() {
       localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(games));
       localStorage.setItem(STORAGE_KEYS.ACTIVE_GAME_ID, activeGameId);
+      localStorage.setItem(STORAGE_KEYS.TEAMS, JSON.stringify(teams));
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_TEAM_ID, activeTeamId);
+      localStorage.setItem(STORAGE_KEYS.PLAYBOOKS, JSON.stringify(playbooks));
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_PLAYBOOK_ID, activePlaybookId);
       
-      // Sync to Realtime Database User Account if logged in
       if (db && currentUser) {
         db.ref(`users/${currentUser.uid}`).set({
-          games: games,
-          activeGameId: activeGameId,
-          roster: roster,
-          playbook: playbook,
-          updatedAt: Date.now()
+          games, activeGameId, teams, activeTeamId, playbooks, activePlaybookId, updatedAt: Date.now()
         });
       }
     }
@@ -380,32 +579,37 @@
         if (cloudData && cloudData.games) {
           games = cloudData.games;
           activeGameId = cloudData.activeGameId || games[0].id;
-          if (cloudData.roster) roster = cloudData.roster;
-          if (cloudData.playbook) playbook = cloudData.playbook;
+          if (cloudData.teams) teams = cloudData.teams;
+          if (cloudData.activeTeamId) activeTeamId = cloudData.activeTeamId;
+          if (cloudData.playbooks) playbooks = cloudData.playbooks;
+          if (cloudData.activePlaybookId) activePlaybookId = cloudData.activePlaybookId;
           saveGamesToStorage();
           reRenderAllUI();
           showToast('Account data synced from cloud!', 'success');
         } else {
           saveGamesToStorage();
-          showToast('Migrated local entries to cloud!', 'success');
+          showToast('Migrated local data to cloud!', 'success');
         }
       });
     }
 
-    // AUTH MODAL & FUNCTIONS
+    // HELPER GETTERS
+    function getActiveGame() { return games.find(g => g.id === activeGameId) || games[0]; }
+    function getActiveTeam() { return teams.find(t => t.id === activeTeamId) || teams[0]; }
+    function getActivePlaybook() { return playbooks.find(p => p.id === activePlaybookId) || playbooks[0]; }
+
+    // AUTH MODAL
     function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
     function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
-
     function toggleAuthMode() {
       isRegisterMode = !isRegisterMode;
       document.getElementById('authTitle').textContent = isRegisterMode ? 'Register Coach Account' : 'Coach Account Access';
       document.getElementById('authSubmitBtn').textContent = isRegisterMode ? 'Create Account' : 'Sign In';
       document.getElementById('toggleAuthBtn').textContent = isRegisterMode ? 'Already have an account? Sign In' : 'Need an account? Register here';
     }
-
     function handleAuthSubmit(e) {
       e.preventDefault();
-      if (!auth) return alert('Firebase Authentication failed to load.');
+      if (!auth) return alert('Firebase Authentication error.');
       const email = document.getElementById('authEmail').value.trim();
       const pass = document.getElementById('authPassword').value.trim();
 
@@ -419,21 +623,249 @@
           .catch(err => alert(err.message));
       }
     }
+    function handleSignOut() { if (auth) auth.signOut().then(() => showToast('Signed out', 'info')); }
 
-    function handleSignOut() {
-      if (auth) {
-        auth.signOut().then(() => {
-          showToast('Signed out', 'info');
-        });
-      }
+    // UI RENDER ALL
+    function reRenderAllUI() {
+      populateGameDropdown();
+      populateTeamDropdown();
+      populatePlaybookDropdown();
+      populateFormDropdowns();
+      renderRosterList();
+      renderPlaybookList();
+      renderCourtOverlay();
+      renderAnalyticsDashboard();
+      renderPossessionLogTable();
     }
 
-    // CORE GAME LOGIC
-    function getActiveGame() { return games.find(g => g.id === activeGameId) || games[0]; }
-    function populateGameDropdown() { document.getElementById('activeGameSelect').innerHTML = games.map(g => `<option value="${g.id}" ${g.id === activeGameId ? 'selected' : ''}>${g.title} (${g.possessions.length} entries)</option>`).join(''); }
-    function switchActiveGame(id) { activeGameId = id; saveGamesToStorage(); reRenderAllUI(); showToast(`Switched active game`, 'info'); }
-    function reRenderAllUI() { populateGameDropdown(); renderCourtOverlay(); renderAnalyticsDashboard(); renderPossessionLogTable(); }
+    function populateGameDropdown() {
+      document.getElementById('activeGameSelect').innerHTML = games.map(g => `<option value="${g.id}" ${g.id === activeGameId ? 'selected' : ''}>${g.title} (${g.possessions.length} entries)</option>`).join('');
+    }
 
+    function populateTeamDropdown() {
+      document.getElementById('activeTeamSelect').innerHTML = teams.map(t => `<option value="${t.id}" ${t.id === activeTeamId ? 'selected' : ''}>${t.name} (${t.roster.length} players)</option>`).join('');
+    }
+
+    function populatePlaybookDropdown() {
+      document.getElementById('activePlaybookSelect').innerHTML = playbooks.map(p => `<option value="${p.id}" ${p.id === activePlaybookId ? 'selected' : ''}>${p.name} (${p.plays.length} plays)</option>`).join('');
+    }
+
+    function populateFormDropdowns() {
+      const activeTeam = getActiveTeam();
+      const activePlaybook = getActivePlaybook();
+      document.getElementById('formPlayer').innerHTML = activeTeam.roster.map(p => `<option value="${p.name}">#${p.num} - ${p.name}</option>`).join('');
+      document.getElementById('formPlay').innerHTML = activePlaybook.plays.map(p => `<option value="${p.name}">${p.name} ${p.code ? '(' + p.code + ')' : ''}</option>`).join('');
+    }
+
+    // MULTI-TEAM FUNCTIONS
+    function switchActiveTeam(id) {
+      activeTeamId = id;
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Switched active team`, 'info');
+    }
+
+    function toggleNewTeamForm() {
+      document.getElementById('newTeamForm').classList.toggle('hidden');
+    }
+
+    function handleCreateTeam(e) {
+      e.preventDefault();
+      const name = document.getElementById('newTeamName').value.trim();
+      if (!name) return;
+
+      const newTeam = { id: 'team_' + Date.now(), name, roster: [] };
+      teams.push(newTeam);
+      activeTeamId = newTeam.id;
+
+      document.getElementById('newTeamName').value = '';
+      toggleNewTeamForm();
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Created Team: ${name}`, 'success');
+    }
+
+    function renderRosterList() {
+      const activeTeam = getActiveTeam();
+      document.getElementById('rosterCountBadge').textContent = `${activeTeam.roster.length} Players`;
+      const html = activeTeam.roster.map(p => `
+        <div class="flex items-center justify-between p-2 text-xs">
+          <span class="font-bold text-white">#${p.num} ${p.name}</span>
+          <button onclick="removePlayer('${p.id}')" class="text-rose-400 hover:underline text-[11px] font-bold">Remove</button>
+        </div>
+      `).join('');
+      document.getElementById('rosterHomeListContainer').innerHTML = html || `<div class="p-3 text-center text-slate-500 italic text-xs">No players in this team roster yet.</div>`;
+    }
+
+    function handleAddPlayer(e) {
+      e.preventDefault();
+      const num = document.getElementById('newPlayerNum').value.trim();
+      const name = document.getElementById('newPlayerName').value.trim();
+      if (!num || !name) return;
+
+      const activeTeam = getActiveTeam();
+      activeTeam.roster.push({ id: Date.now().toString(), num, name, pos: 'G' });
+      document.getElementById('newPlayerNum').value = '';
+      document.getElementById('newPlayerName').value = '';
+
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Added ${name} to ${activeTeam.name}`, 'success');
+    }
+
+    function handleBulkRosterUpload() {
+      const text = document.getElementById('bulkRosterInput').value.trim();
+      if (!text) return;
+
+      const activeTeam = getActiveTeam();
+      const lines = text.split(/[\n,]+/);
+      let added = 0;
+
+      lines.forEach((line, idx) => {
+        const clean = line.trim();
+        if (clean) {
+          const match = clean.match(/^#?(\d+)\s+(.+)$/);
+          if (match) {
+            activeTeam.roster.push({ id: (Date.now() + idx).toString(), num: match[1], name: match[2], pos: 'G' });
+          } else {
+            activeTeam.roster.push({ id: (Date.now() + idx).toString(), num: (activeTeam.roster.length + 1).toString(), name: clean, pos: 'G' });
+          }
+          added++;
+        }
+      });
+
+      document.getElementById('bulkRosterInput').value = '';
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Added ${added} players to ${activeTeam.name}`, 'success');
+    }
+
+    function removePlayer(id) {
+      const activeTeam = getActiveTeam();
+      activeTeam.roster = activeTeam.roster.filter(p => p.id !== id);
+      saveGamesToStorage();
+      reRenderAllUI();
+    }
+
+    // MULTI-PLAYBOOK FUNCTIONS
+    function switchActivePlaybook(id) {
+      activePlaybookId = id;
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Switched active playbook`, 'info');
+    }
+
+    function toggleNewPlaybookForm() {
+      document.getElementById('newPlaybookForm').classList.toggle('hidden');
+    }
+
+    function handleCreatePlaybook(e) {
+      e.preventDefault();
+      const name = document.getElementById('newPlaybookName').value.trim();
+      if (!name) return;
+
+      const newPlaybook = { id: 'pb_' + Date.now(), name, plays: [] };
+      playbooks.push(newPlaybook);
+      activePlaybookId = newPlaybook.id;
+
+      document.getElementById('newPlaybookName').value = '';
+      toggleNewPlaybookForm();
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Created Playbook: ${name}`, 'success');
+    }
+
+    function renderPlaybookList() {
+      const activePlaybook = getActivePlaybook();
+      document.getElementById('playbookCountBadge').textContent = `${activePlaybook.plays.length} Plays`;
+      const html = activePlaybook.plays.map(p => `
+        <div class="flex items-center justify-between p-2 text-xs">
+          <div>
+            <span class="font-bold text-amber-400">${p.name}</span>
+            ${p.code ? `<span class="text-[10px] text-slate-400 font-mono ml-2">(${p.code})</span>` : ''}
+          </div>
+          <button onclick="removePlay('${p.id}')" class="text-rose-400 hover:underline text-[11px] font-bold">Remove</button>
+        </div>
+      `).join('');
+      document.getElementById('playbookHomeListContainer').innerHTML = html || `<div class="p-3 text-center text-slate-500 italic text-xs">No plays in this playbook yet.</div>`;
+    }
+
+    function handleAddPlay(e) {
+      e.preventDefault();
+      const name = document.getElementById('newPlayName').value.trim();
+      const code = document.getElementById('newPlayCode').value.trim();
+      if (!name) return;
+
+      const activePlaybook = getActivePlaybook();
+      activePlaybook.plays.push({ id: Date.now().toString(), name, code });
+      document.getElementById('newPlayName').value = '';
+      document.getElementById('newPlayCode').value = '';
+
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Added play to ${activePlaybook.name}`, 'success');
+    }
+
+    function handleBulkPlaybookUpload() {
+      const text = document.getElementById('bulkPlaybookInput').value.trim();
+      if (!text) return;
+
+      const activePlaybook = getActivePlaybook();
+      const lines = text.split(/[\n,]+/);
+      let added = 0;
+
+      lines.forEach((line, idx) => {
+        const clean = line.trim();
+        if (clean) {
+          activePlaybook.plays.push({ id: (Date.now() + idx).toString(), name: clean, code: '' });
+          added++;
+        }
+      });
+
+      document.getElementById('bulkPlaybookInput').value = '';
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Added ${added} plays to ${activePlaybook.name}`, 'success');
+    }
+
+    function removePlay(id) {
+      const activePlaybook = getActivePlaybook();
+      activePlaybook.plays = activePlaybook.plays.filter(p => p.id !== id);
+      saveGamesToStorage();
+      reRenderAllUI();
+    }
+
+    // GAME MANAGEMENT
+    function switchActiveGame(id) {
+      activeGameId = id;
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast(`Switched active game`, 'info');
+    }
+
+    function handleCreateNewGame(e) {
+      e.preventDefault();
+      const title = document.getElementById('newGameTitle').value.trim();
+      if (!title) return;
+
+      const newGame = {
+        id: 'game_' + Date.now(),
+        title,
+        date: new Date().toLocaleDateString(),
+        possessions: []
+      };
+
+      games.unshift(newGame);
+      activeGameId = newGame.id;
+      saveGamesToStorage();
+
+      document.getElementById('newGameTitle').value = '';
+      closeGamesModal();
+      reRenderAllUI();
+      showToast(`New game created: ${title}`, 'success');
+    }
+
+    // POSSESSION & TRACKER FUNCTIONS
     function handlePossessionSubmit(e) {
       e.preventDefault();
       const activeGame = getActiveGame();
@@ -511,21 +943,72 @@
     }
 
     function switchTab(t) {
-      document.getElementById('tabTracker').classList.add('hidden'); document.getElementById('tabAnalytics').classList.add('hidden'); document.getElementById('tabLog').classList.add('hidden');
-      document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('hidden');
+      document.getElementById('tabHome').classList.add('hidden');
+      document.getElementById('tabTracker').classList.add('hidden');
+      document.getElementById('tabAnalytics').classList.add('hidden');
+      document.getElementById('tabLog').classList.add('hidden');
+      
+      document.getElementById('tabHomeBtn').className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+      document.getElementById('tabTrackerBtn').className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+      document.getElementById('tabAnalyticsBtn').className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+      document.getElementById('tabLogBtn').className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+
+      const activeBtn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1) + 'Btn');
+      if (activeBtn) activeBtn.className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+
+      if (t === 'home') document.getElementById('tabHome').classList.remove('hidden');
+      if (t === 'tracker') document.getElementById('tabTracker').classList.remove('hidden');
+      if (t === 'analytics') { document.getElementById('tabAnalytics').classList.remove('hidden'); renderAnalyticsDashboard(); }
+      if (t === 'log') { document.getElementById('tabLog').classList.remove('hidden'); renderPossessionLogTable(); }
     }
 
-    function populateDropdowns() {
-      document.getElementById('formPlayer').innerHTML = roster.map(p => `<option value="${p.name}">#${p.num} ${p.name}</option>`).join('');
-      document.getElementById('formPlay').innerHTML = playbook.map(p => `<option value="${p.code}">${p.code}</option>`).join('');
-    }
-
-    function openGamesModal() { document.getElementById('gamesModal').classList.remove('hidden'); }
+    function openGamesModal() { renderGamesList(); document.getElementById('gamesModal').classList.remove('hidden'); }
     function closeGamesModal() { document.getElementById('gamesModal').classList.add('hidden'); }
-    function openRosterModal() { document.getElementById('rosterModal').classList.remove('hidden'); }
-    function closeRosterModal() { document.getElementById('rosterModal').classList.add('hidden'); }
-    function openPlaybookModal() { document.getElementById('playbookModal').classList.remove('hidden'); }
-    function closePlaybookModal() { document.getElementById('playbookModal').classList.add('hidden'); }
+
+    function renderGamesList() {
+      const container = document.getElementById('gamesListContainer');
+      container.innerHTML = games.map(g => `
+        <div class="flex items-center justify-between p-2.5 text-xs ${g.id === activeGameId ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}">
+          <div>
+            <span class="font-bold text-white block">${g.title}</span>
+            <span class="text-[10px] text-slate-400">${g.date} • ${g.possessions.length} Possessions</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            ${g.id !== activeGameId ? `<button onclick="switchActiveGame('${g.id}'); closeGamesModal();" class="text-amber-400 font-semibold text-[11px] hover:underline">Load</button>` : `<span class="text-emerald-400 font-bold text-[10px]">Active</span>`}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function exportAllGamesBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(games, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `play_value_all_games_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importGamesJson(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedGames = JSON.parse(e.target.result);
+          if (Array.isArray(importedGames)) {
+            games = importedGames;
+            activeGameId = games[0].id;
+            saveGamesToStorage();
+            closeGamesModal();
+            reRenderAllUI();
+            showToast('Imported games successfully!', 'success');
+          }
+        } catch (err) { showToast('Invalid JSON file format', 'error'); }
+      };
+      reader.readAsText(file);
+    }
 
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toastContainer');
