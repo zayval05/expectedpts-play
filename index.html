@@ -67,6 +67,7 @@
           <div class="flex items-center gap-2 mt-0.5">
             <span class="text-[11px] text-slate-400 font-semibold uppercase">Active Game:</span>
             <select id="activeGameSelect" onchange="switchActiveGame(this.value)" class="bg-slate-950 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-md px-2 py-0.5 focus:outline-none focus:border-amber-400">
+              <option value="game1">Sample Game vs Varsity</option>
             </select>
           </div>
         </div>
@@ -157,6 +158,7 @@
               <button type="button" onclick="toggleNewTeamForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Team</button>
             </div>
             <select id="activeTeamSelect" onchange="switchActiveTeam(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+              <option value="default">Varsity Squad</option>
             </select>
 
             <!-- Inline Form: Create New Team -->
@@ -186,8 +188,8 @@
           </div>
 
           <!-- Active Roster List Preview -->
-          <div id="rosterHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
-            <!-- Populated dynamically -->
+          <div id="rosterHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950 p-2 text-xs text-slate-400">
+            No players added yet.
           </div>
         </div>
 
@@ -213,6 +215,7 @@
               <button type="button" onclick="toggleNewPlaybookForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Playbook</button>
             </div>
             <select id="activePlaybookSelect" onchange="switchActivePlaybook(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+              <option value="default">Main Offense</option>
             </select>
 
             <!-- Inline Form: Create New Playbook -->
@@ -242,8 +245,8 @@
           </div>
 
           <!-- Active Playbook List Preview -->
-          <div id="playbookHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950">
-            <!-- Populated dynamically -->
+          <div id="playbookHomeListContainer" class="max-h-40 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950 p-2 text-xs text-slate-400">
+            No plays added yet.
           </div>
         </div>
 
@@ -315,3 +318,168 @@
             <h2 class="text-sm font-bold text-white flex items-center gap-1.5">
               <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               Log Possession
+            </h2>
+          </div>
+          
+          <form class="space-y-3 text-xs" onsubmit="event.preventDefault();">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Player</label>
+              <select class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+                <option>#1 - Johnson</option>
+                <option>#3 - Williams</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Play Call</label>
+              <select class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white">
+                <option>High Ball Screen</option>
+                <option>Horns Action</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Outcome</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" class="bg-emerald-600/20 border border-emerald-500 text-emerald-300 p-2 rounded-lg font-bold">Made Shot</button>
+                <button type="button" class="bg-rose-600/20 border border-rose-500 text-rose-300 p-2 rounded-lg font-bold">Missed Shot</button>
+              </div>
+            </div>
+            <button type="button" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold p-2.5 rounded-xl shadow-lg mt-4">Record Possession</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW TAB 2: ANALYTICS -->
+    <div id="tabAnalytics" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center text-slate-400">
+      <h2 class="text-lg font-bold text-white mb-2">Analytics Dashboard</h2>
+      <p class="text-xs">Stat summaries and shot chart overlays will render here.</p>
+    </div>
+
+    <!-- VIEW TAB 3: GAME LOG -->
+    <div id="tabLog" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center text-slate-400">
+      <h2 class="text-lg font-bold text-white mb-2">Game Log</h2>
+      <p class="text-xs">Historical possession records and play-by-play logs will appear here.</p>
+    </div>
+
+  </main>
+
+  <!-- MODALS -->
+  <div id="gamesModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-white">Manage Games</h3>
+        <button onclick="closeGamesModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-xs text-slate-400">Select or create a game file.</p>
+    </div>
+  </div>
+
+  <div id="authModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-white">Sign In / Account</h3>
+        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-xs text-slate-400">Firebase Authentication integration panel.</p>
+    </div>
+  </div>
+
+  <!-- SCRIPT BLOCK TO HANDLE INTERACTIONS & TAB SWITCHING -->
+  <script>
+    // Tab Navigation Switcher
+    function switchTab(tabName) {
+      const tabs = ['home', 'tracker', 'analytics', 'log'];
+      
+      tabs.forEach(t => {
+        const tabEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const btnEl = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1) + 'Btn');
+        
+        if (tabEl) {
+          if (t === tabName) {
+            tabEl.classList.remove('hidden');
+          } else {
+            tabEl.classList.add('hidden');
+          }
+        }
+        
+        if (btnEl) {
+          if (t === tabName) {
+            btnEl.className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+          } else {
+            btnEl.className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+          }
+        }
+      });
+    }
+
+    // Toggle Forms
+    function toggleNewTeamForm() {
+      const el = document.getElementById('newTeamForm');
+      if (el) el.classList.toggle('hidden');
+    }
+
+    function toggleNewPlaybookForm() {
+      const el = document.getElementById('newPlaybookForm');
+      if (el) el.classList.toggle('hidden');
+    }
+
+    // Modal Control
+    function openGamesModal() {
+      document.getElementById('gamesModal')?.classList.remove('hidden');
+    }
+
+    function closeGamesModal() {
+      document.getElementById('gamesModal')?.classList.add('hidden');
+    }
+
+    function openAuthModal() {
+      document.getElementById('authModal')?.classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal')?.classList.add('hidden');
+    }
+
+    // Court Location Picker
+    function handleCourtClick(event) {
+      const svg = document.getElementById('courtSvg');
+      const rect = svg.getBoundingClientRect();
+      const scaleX = 500 / rect.width;
+      const scaleY = 470 / rect.height;
+
+      const x = Math.round((event.clientX - rect.left) * scaleX);
+      const y = Math.round((event.clientY - rect.top) * scaleY);
+
+      const marker = document.getElementById('activeTargetMarker');
+      if (marker) {
+        marker.setAttribute('transform', `translate(${x}, ${y})`);
+        marker.style.display = 'block';
+      }
+
+      const coords = document.getElementById('clickCoordinates');
+      if (coords) coords.innerText = `X: ${x}, Y: ${y}`;
+
+      const locText = document.getElementById('readoutLocation');
+      const sideText = document.getElementById('readoutSide');
+      const distText = document.getElementById('readoutDistance');
+
+      if (locText) locText.innerText = y > 200 ? 'Mid Court' : (x > 170 && x < 330 ? 'Paint / Key' : 'Perimeter');
+      if (sideText) sideText.innerText = x < 250 ? 'Left Side' : 'Right Side';
+      if (distText) distText.innerText = `${Math.round(Math.hypot(x - 250, y - 52.5) / 15)} ft`;
+    }
+
+    // Placeholder handlers for inline event attributes to prevent console errors
+    function switchActiveGame(val) {}
+    function handleSignOut() {}
+    function switchActiveTeam(val) {}
+    function createNewTeam() { alert("Team created!"); toggleNewTeamForm(); }
+    function addPlayerToActiveTeam() { alert("Player added!"); }
+    function handleBulkRosterUpload() { alert("Roster uploaded!"); }
+    function switchActivePlaybook(val) {}
+    function createNewPlaybook() { alert("Playbook created!"); toggleNewPlaybookForm(); }
+    function addPlayToActivePlaybook() { alert("Play added!"); }
+    function handleBulkPlaybookUpload() { alert("Playbook uploaded!"); }
+    function renderCourtOverlay() {}
+  </script>
+</body>
+</html>
