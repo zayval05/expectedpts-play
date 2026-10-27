@@ -61,7 +61,7 @@
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
             Track the Play. Measure the Look.
-            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.3 Multi-Team</span>
+            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.4 Safe</span>
           </h1>
           
           <div class="flex items-center gap-2 mt-0.5">
@@ -154,7 +154,7 @@
           <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
             <div class="flex items-center justify-between">
               <label class="text-[11px] font-semibold text-slate-400 uppercase">Active Team</label>
-              <button onclick="toggleNewTeamForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Team</button>
+              <button type="button" onclick="toggleNewTeamForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Team</button>
             </div>
             <select id="activeTeamSelect" onchange="switchActiveTeam(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
             </select>
@@ -180,7 +180,7 @@
           <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
             <label class="block text-[11px] font-semibold text-slate-300 uppercase">Bulk Upload Roster to Active Team</label>
             <textarea id="bulkRosterInput" rows="2" placeholder="Paste names (e.g. 1 M. Johnson, 3 D. Williams or one per line)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"></textarea>
-            <button onclick="handleBulkRosterUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
+            <button type="button" onclick="handleBulkRosterUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
               Parse & Add Roster Names
             </button>
           </div>
@@ -210,7 +210,7 @@
           <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
             <div class="flex items-center justify-between">
               <label class="text-[11px] font-semibold text-slate-400 uppercase">Active Playbook</label>
-              <button onclick="toggleNewPlaybookForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Playbook</button>
+              <button type="button" onclick="toggleNewPlaybookForm()" class="text-[11px] text-amber-400 font-bold hover:underline">+ New Playbook</button>
             </div>
             <select id="activePlaybookSelect" onchange="switchActivePlaybook(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
             </select>
@@ -236,7 +236,7 @@
           <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
             <label class="block text-[11px] font-semibold text-slate-300 uppercase">Bulk Upload to Active Playbook</label>
             <textarea id="bulkPlaybookInput" rows="2" placeholder="Paste play names (e.g. High Ball Screen, Horns Action, Iso Mid Post)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"></textarea>
-            <button onclick="handleBulkPlaybookUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
+            <button type="button" onclick="handleBulkPlaybookUpload()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-1.5 rounded-lg border border-slate-700 transition-all">
               Parse & Add Play Names
             </button>
           </div>
@@ -380,7 +380,7 @@
     <div id="tabLog" class="hidden space-y-3">
       <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2">
         <input type="text" id="logSearchInput" oninput="renderPossessionLogTable()" placeholder="Search player, play..." class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
-        <button onclick="exportCurrentGameCsv()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-lg text-xs font-bold">Export Game CSV</button>
+        <button type="button" onclick="exportCurrentGameCsv()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-lg text-xs font-bold">Export Game CSV</button>
       </div>
       <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead class="bg-slate-950 text-slate-400 font-semibold uppercase border-b border-slate-800"><tr><th class="p-2.5 text-center">#</th><th class="p-2.5">Player</th><th class="p-2.5">Play</th><th class="p-2.5">Outcome</th><th class="p-2.5">Location</th><th class="p-2.5">Type</th><th class="p-2.5 text-center">Contest</th><th class="p-2.5 text-center">PTS</th><th class="p-2.5 text-center">xP</th><th class="p-2.5 text-center">POE</th><th class="p-2.5 text-right">Delete</th></tr></thead><tbody id="possessionLogTable" class="divide-y divide-slate-800/80 text-slate-300 font-mono"></tbody></table></div></div>
     </div>
@@ -435,7 +435,7 @@
       </form>
       <div id="gamesListContainer" class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div>
       <div class="flex items-center gap-2 pt-2 border-t border-slate-800">
-        <button onclick="exportAllGamesBackup()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-semibold">Export All (.JSON)</button>
+        <button type="button" onclick="exportAllGamesBackup()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-semibold">Export All (.JSON)</button>
         <label class="flex-1 text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Import (.JSON)<input type="file" accept=".json" onchange="importGamesJson(event)" class="hidden"></label>
       </div>
     </div>
@@ -474,7 +474,6 @@
       ACTIVE_PLAYBOOK_ID: 'pv_active_playbook_id'
     };
 
-    // Default Seed Data
     const DEFAULT_TEAMS = [
       {
         id: 'team_default',
@@ -525,18 +524,18 @@
     };
 
     function initApp() {
-      // 1. Load Teams & Active Team
+      // 1. Load Teams & Active Team safely
       const rawTeams = localStorage.getItem(STORAGE_KEYS.TEAMS);
       if (rawTeams) { try { teams = JSON.parse(rawTeams); } catch (e) { teams = DEFAULT_TEAMS; } }
-      else { teams = DEFAULT_TEAMS; }
+      if (!Array.isArray(teams) || teams.length === 0) { teams = DEFAULT_TEAMS; }
 
       activeTeamId = localStorage.getItem(STORAGE_KEYS.ACTIVE_TEAM_ID) || teams[0].id;
       if (!teams.find(t => t.id === activeTeamId)) activeTeamId = teams[0].id;
 
-      // 2. Load Playbooks & Active Playbook
+      // 2. Load Playbooks & Active Playbook safely
       const rawPlaybooks = localStorage.getItem(STORAGE_KEYS.PLAYBOOKS);
       if (rawPlaybooks) { try { playbooks = JSON.parse(rawPlaybooks); } catch (e) { playbooks = DEFAULT_PLAYBOOKS; } }
-      else { playbooks = DEFAULT_PLAYBOOKS; }
+      if (!Array.isArray(playbooks) || playbooks.length === 0) { playbooks = DEFAULT_PLAYBOOKS; }
 
       activePlaybookId = localStorage.getItem(STORAGE_KEYS.ACTIVE_PLAYBOOK_ID) || playbooks[0].id;
       if (!playbooks.find(p => p.id === activePlaybookId)) activePlaybookId = playbooks[0].id;
@@ -568,7 +567,7 @@
       if (db && currentUser) {
         db.ref(`users/${currentUser.uid}`).set({
           games, activeGameId, teams, activeTeamId, playbooks, activePlaybookId, updatedAt: Date.now()
-        });
+        }).catch(err => console.log('Firebase sync notice:', err));
       }
     }
 
@@ -579,9 +578,9 @@
         if (cloudData && cloudData.games) {
           games = cloudData.games;
           activeGameId = cloudData.activeGameId || games[0].id;
-          if (cloudData.teams) teams = cloudData.teams;
+          if (Array.isArray(cloudData.teams)) teams = cloudData.teams;
           if (cloudData.activeTeamId) activeTeamId = cloudData.activeTeamId;
-          if (cloudData.playbooks) playbooks = cloudData.playbooks;
+          if (Array.isArray(cloudData.playbooks)) playbooks = cloudData.playbooks;
           if (cloudData.activePlaybookId) activePlaybookId = cloudData.activePlaybookId;
           saveGamesToStorage();
           reRenderAllUI();
@@ -593,10 +592,24 @@
       });
     }
 
-    // HELPER GETTERS
+    // HELPER GETTERS WITH AUTOMATIC RECOVERY
+    function getActiveTeam() {
+      if (!Array.isArray(teams) || teams.length === 0) { teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); }
+      let team = teams.find(t => t.id === activeTeamId);
+      if (!team) { team = teams[0]; activeTeamId = team.id; }
+      if (!Array.isArray(team.roster)) { team.roster = []; }
+      return team;
+    }
+
+    function getActivePlaybook() {
+      if (!Array.isArray(playbooks) || playbooks.length === 0) { playbooks = JSON.parse(JSON.stringify(DEFAULT_PLAYBOOKS)); }
+      let pb = playbooks.find(p => p.id === activePlaybookId);
+      if (!pb) { pb = playbooks[0]; activePlaybookId = pb.id; }
+      if (!Array.isArray(pb.plays)) { pb.plays = []; }
+      return pb;
+    }
+
     function getActiveGame() { return games.find(g => g.id === activeGameId) || games[0]; }
-    function getActiveTeam() { return teams.find(t => t.id === activeTeamId) || teams[0]; }
-    function getActivePlaybook() { return playbooks.find(p => p.id === activePlaybookId) || playbooks[0]; }
 
     // AUTH MODAL
     function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
@@ -643,18 +656,18 @@
     }
 
     function populateTeamDropdown() {
-      document.getElementById('activeTeamSelect').innerHTML = teams.map(t => `<option value="${t.id}" ${t.id === activeTeamId ? 'selected' : ''}>${t.name} (${t.roster.length} players)</option>`).join('');
+      document.getElementById('activeTeamSelect').innerHTML = teams.map(t => `<option value="${t.id}" ${t.id === activeTeamId ? 'selected' : ''}>${t.name} (${(t.roster || []).length} players)</option>`).join('');
     }
 
     function populatePlaybookDropdown() {
-      document.getElementById('activePlaybookSelect').innerHTML = playbooks.map(p => `<option value="${p.id}" ${p.id === activePlaybookId ? 'selected' : ''}>${p.name} (${p.plays.length} plays)</option>`).join('');
+      document.getElementById('activePlaybookSelect').innerHTML = playbooks.map(p => `<option value="${p.id}" ${p.id === activePlaybookId ? 'selected' : ''}>${p.name} (${(p.plays || []).length} plays)</option>`).join('');
     }
 
     function populateFormDropdowns() {
       const activeTeam = getActiveTeam();
       const activePlaybook = getActivePlaybook();
-      document.getElementById('formPlayer').innerHTML = activeTeam.roster.map(p => `<option value="${p.name}">#${p.num} - ${p.name}</option>`).join('');
-      document.getElementById('formPlay').innerHTML = activePlaybook.plays.map(p => `<option value="${p.name}">${p.name} ${p.code ? '(' + p.code + ')' : ''}</option>`).join('');
+      document.getElementById('formPlayer').innerHTML = (activeTeam.roster || []).map(p => `<option value="${p.name}">#${p.num} - ${p.name}</option>`).join('');
+      document.getElementById('formPlay').innerHTML = (activePlaybook.plays || []).map(p => `<option value="${p.name}">${p.name} ${p.code ? '(' + p.code + ')' : ''}</option>`).join('');
     }
 
     // MULTI-TEAM FUNCTIONS
@@ -687,11 +700,11 @@
 
     function renderRosterList() {
       const activeTeam = getActiveTeam();
-      document.getElementById('rosterCountBadge').textContent = `${activeTeam.roster.length} Players`;
-      const html = activeTeam.roster.map(p => `
+      document.getElementById('rosterCountBadge').textContent = `${(activeTeam.roster || []).length} Players`;
+      const html = (activeTeam.roster || []).map(p => `
         <div class="flex items-center justify-between p-2 text-xs">
           <span class="font-bold text-white">#${p.num} ${p.name}</span>
-          <button onclick="removePlayer('${p.id}')" class="text-rose-400 hover:underline text-[11px] font-bold">Remove</button>
+          <button type="button" onclick="removePlayer('${p.id}')" class="text-rose-400 hover:underline text-[11px] font-bold">Remove</button>
         </div>
       `).join('');
       document.getElementById('rosterHomeListContainer').innerHTML = html || `<div class="p-3 text-center text-slate-500 italic text-xs">No players in this team roster yet.</div>`;
@@ -699,14 +712,18 @@
 
     function handleAddPlayer(e) {
       e.preventDefault();
-      const num = document.getElementById('newPlayerNum').value.trim();
-      const name = document.getElementById('newPlayerName').value.trim();
+      const numInput = document.getElementById('newPlayerNum');
+      const nameInput = document.getElementById('newPlayerName');
+      const num = numInput.value.trim();
+      const name = nameInput.value.trim();
       if (!num || !name) return;
 
       const activeTeam = getActiveTeam();
+      if (!Array.isArray(activeTeam.roster)) activeTeam.roster = [];
+
       activeTeam.roster.push({ id: Date.now().toString(), num, name, pos: 'G' });
-      document.getElementById('newPlayerNum').value = '';
-      document.getElementById('newPlayerName').value = '';
+      numInput.value = '';
+      nameInput.value = '';
 
       saveGamesToStorage();
       reRenderAllUI();
@@ -718,6 +735,7 @@
       if (!text) return;
 
       const activeTeam = getActiveTeam();
+      if (!Array.isArray(activeTeam.roster)) activeTeam.roster = [];
       const lines = text.split(/[\n,]+/);
       let added = 0;
 
@@ -742,7 +760,7 @@
 
     function removePlayer(id) {
       const activeTeam = getActiveTeam();
-      activeTeam.roster = activeTeam.roster.filter(p => p.id !== id);
+      activeTeam.roster = (activeTeam.roster || []).filter(p => p.id !== id);
       saveGamesToStorage();
       reRenderAllUI();
     }
@@ -777,14 +795,14 @@
 
     function renderPlaybookList() {
       const activePlaybook = getActivePlaybook();
-      document.getElementById('playbookCountBadge').textContent = `${activePlaybook.plays.length} Plays`;
-      const html = activePlaybook.plays.map(p => `
+      document.getElementById('playbookCountBadge').textContent = `${(activePlaybook.plays || []).length} Plays`;
+      const html = (activePlaybook.plays || []).map(p => `
         <div class="flex items-center justify-between p-2 text-xs">
           <div>
             <span class="font-bold text-amber-400">${p.name}</span>
             ${p.code ? `<span class="text-[10px] text-slate-400 font-mono ml-2">(${p.code})</span>` : ''}
           </div>
-          <button onclick="removePlay('${p.id}')" class="text-rose-400 hover:underline text-[11px] font-bold">Remove</button>
+          <button type="button" onclick="removePlay('${p.id}')" class="text-rose-400 hover:underline text-[11px] font-bold">Remove</button>
         </div>
       `).join('');
       document.getElementById('playbookHomeListContainer').innerHTML = html || `<div class="p-3 text-center text-slate-500 italic text-xs">No plays in this playbook yet.</div>`;
@@ -792,14 +810,18 @@
 
     function handleAddPlay(e) {
       e.preventDefault();
-      const name = document.getElementById('newPlayName').value.trim();
-      const code = document.getElementById('newPlayCode').value.trim();
+      const nameInput = document.getElementById('newPlayName');
+      const codeInput = document.getElementById('newPlayCode');
+      const name = nameInput.value.trim();
+      const code = codeInput.value.trim();
       if (!name) return;
 
       const activePlaybook = getActivePlaybook();
+      if (!Array.isArray(activePlaybook.plays)) activePlaybook.plays = [];
+
       activePlaybook.plays.push({ id: Date.now().toString(), name, code });
-      document.getElementById('newPlayName').value = '';
-      document.getElementById('newPlayCode').value = '';
+      nameInput.value = '';
+      codeInput.value = '';
 
       saveGamesToStorage();
       reRenderAllUI();
@@ -811,6 +833,7 @@
       if (!text) return;
 
       const activePlaybook = getActivePlaybook();
+      if (!Array.isArray(activePlaybook.plays)) activePlaybook.plays = [];
       const lines = text.split(/[\n,]+/);
       let added = 0;
 
@@ -830,7 +853,7 @@
 
     function removePlay(id) {
       const activePlaybook = getActivePlaybook();
-      activePlaybook.plays = activePlaybook.plays.filter(p => p.id !== id);
+      activePlaybook.plays = (activePlaybook.plays || []).filter(p => p.id !== id);
       saveGamesToStorage();
       reRenderAllUI();
     }
@@ -974,7 +997,7 @@
             <span class="text-[10px] text-slate-400">${g.date} • ${g.possessions.length} Possessions</span>
           </div>
           <div class="flex items-center gap-1.5">
-            ${g.id !== activeGameId ? `<button onclick="switchActiveGame('${g.id}'); closeGamesModal();" class="text-amber-400 font-semibold text-[11px] hover:underline">Load</button>` : `<span class="text-emerald-400 font-bold text-[10px]">Active</span>`}
+            ${g.id !== activeGameId ? `<button type="button" onclick="switchActiveGame('${g.id}'); closeGamesModal();" class="text-amber-400 font-semibold text-[11px] hover:underline">Load</button>` : `<span class="text-emerald-400 font-bold text-[10px]">Active</span>`}
           </div>
         </div>
       `).join('');
