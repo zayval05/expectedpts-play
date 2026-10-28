@@ -845,15 +845,15 @@
       if (!window.fb) return;
       try {
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
-        const defaultConfig = {
-          apiKey: "AIzaSyA_Demo_ApiKey_JUCO_Tracker",
-          authDomain: "juco-tracker.firebaseapp.com",
-          projectId: "juco-tracker",
-          storageBucket: "juco-tracker.appspot.com",
-          messagingSenderId: "100000000000",
-          appId: "1:100000000000:web:abcdef123456"
+        const firebaseConfig = {
+          apiKey: "AIzaSyCEz0IWxW_rtm94fyVu4rdRMY7PeF5InBk",
+          authDomain: "play-value-90ed5.firebaseapp.com",
+          projectId: "play-value-90ed5",
+          storageBucket: "play-value-90ed5.firebasestorage.app",
+          messagingSenderId: "542567989712",
+          appId: "1:542567989712:web:bad63ccebaea3a3e05b9d5",
+          measurementId: "G-Q67LDR5HG3"
         };
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultConfig;
 
         const app = window.fb.initializeApp(firebaseConfig);
         auth = window.fb.getAuth(app);
