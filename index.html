@@ -217,4 +217,1015 @@
           <div>
             <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <h2 class="font-bold text-slate-100 flex items-center space-x-2">
-                <i data-lucide="edit-3" class="w
+                <i data-lucide="edit-3" class="w-4 h-4 text-orange-500"></i>
+                <span>Possession Logger</span>
+              </h2>
+              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Manual Tracker</span>
+            </div>
+
+            <form id="loggerForm" onsubmit="handleLogPossession(event)" class="space-y-4 text-xs">
+              <!-- Player & Play Code Row -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">PLAYER</label>
+                  <select id="logPlayer" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <!-- Dynamic Roster -->
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">PLAY CALL / SET</label>
+                  <select id="logPlay" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <!-- Dynamic Playbook -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Execution & Outcome Row -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">PLAY EXECUTION</label>
+                  <select id="logExecution" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <option value="Executed">Executed</option>
+                    <option value="Broken">Broken Play / Scramble</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">POSSESSION OUTCOME</label>
+                  <select id="logOutcome" onchange="toggleShotOptions(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <option value="Made 2Pts">Made 2Pts</option>
+                    <option value="Miss 2Pts">Miss 2Pts</option>
+                    <option value="Make 3Pts">Make 3Pts</option>
+                    <option value="Miss 3Pts">Miss 3Pts</option>
+                    <option value="Turnover">Turnover</option>
+                    <option value="Free Throw">Free Throw Trip</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Shot Type, Contest & Clock Phase Row -->
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">SHOT TYPE</label>
+                  <select id="logShotType" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <option value="Catch & Shoot">Catch & Shoot</option>
+                    <option value="Off Dribble">Off Dribble</option>
+                    <option value="Layup/Dunk">Layup / Dunk</option>
+                    <option value="Float/Hook">Floater / Hook</option>
+                    <option value="Post Move">Post Move</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">CONTEST LEVEL</label>
+                  <select id="logContest" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <option value="Open">Open (Uncontested)</option>
+                    <option value="Slight">Slight Contest</option>
+                    <option value="Heavy">Heavy Contest</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">CLOCK PHASE</label>
+                  <select id="logClockPhase" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <option value="First 8s">First 8s (0-8s)</option>
+                    <option value="22-10s">22-10s (Mid)</option>
+                    <option value="<= 10s">&lt;= 10s (Late)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Coordinates Display & Action Button -->
+              <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between text-slate-400">
+                <span id="formCoordsText">Selected Court Loc: (250, 100)</span>
+                <span id="calculatedXpDisplay" class="font-bold text-orange-400">Calc xP: 0.95</span>
+              </div>
+
+              <button type="submit" class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl shadow-lg shadow-orange-900/40 transition flex items-center justify-center space-x-2">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Log Possession & Calculate xP</span>
+              </button>
+            </form>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+            <span>Expected Points Engine Active</span>
+            <span class="text-orange-400 font-semibold">POE = Points - xP</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: ANALYTICS ==================== -->
+    <section id="viewAnalytics" class="hidden space-y-6">
+      
+      <!-- Top Overview KPI Metrics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <!-- PPP Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-semibold">TEAM PPP</span>
+            <i data-lucide="trending-up" class="w-4 h-4 text-orange-400"></i>
+          </div>
+          <div id="kpiPpp" class="text-2xl font-black text-white">0.00</div>
+          <div class="text-[10px] text-slate-500 mt-1">Points Per Possession</div>
+        </div>
+
+        <!-- Total Points -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-semibold">POINTS SCORED</span>
+            <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div id="kpiPts" class="text-2xl font-black text-white">0</div>
+          <div class="text-[10px] text-slate-500 mt-1">Total Game Points</div>
+        </div>
+
+        <!-- SQI Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-semibold">AVG SQI (xP)</span>
+            <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-400"></i>
+          </div>
+          <div id="kpiSqi" class="text-2xl font-black text-white">0.00</div>
+          <div class="text-[10px] text-slate-500 mt-1">Shot Quality Index</div>
+        </div>
+
+        <!-- POE Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-semibold">NET POE</span>
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div id="kpiPoe" class="text-2xl font-black text-white">+0.00</div>
+          <div class="text-[10px] text-slate-500 mt-1">Points Over Expectation</div>
+        </div>
+
+        <!-- Play Execution % -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="text-xs font-semibold">EXECUTION %</span>
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-400"></i>
+          </div>
+          <div id="kpiExecution" class="text-2xl font-black text-white">0%</div>
+          <div class="text-[10px] text-slate-500 mt-1">Sets Run Successfully</div>
+        </div>
+      </div>
+
+      <!-- Shot Clock Breakdown Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="clock" class="w-5 h-5 text-orange-500"></i>
+            <h3 class="font-bold text-slate-100">Shot Clock Phase Efficiency Breakdown</h3>
+          </div>
+          <span class="text-xs text-slate-400">Transition (0-8s) vs Mid-Clock (22-10s) vs Late-Clock (&lt;=10s)</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="clockPhaseCards">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- Shot Chart & Spatial Filters Bar -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <h3 class="font-bold text-slate-100 flex items-center space-x-2">
+            <i data-lucide="filter" class="w-4 h-4 text-orange-500"></i>
+            <span>Shot Chart Visualizer & Spatial Filters</span>
+          </h3>
+
+          <!-- Filter Controls -->
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <select id="filterPlayer" onchange="renderAnalytics()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+              <option value="ALL">All Players</option>
+            </select>
+            <select id="filterPlay" onchange="renderAnalytics()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+              <option value="ALL">All Play Calls</option>
+            </select>
+            <select id="filterClockPhase" onchange="renderAnalytics()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
+              <option value="ALL">All Clock Phases</option>
+              <option value="First 8s">First 8s (Transition)</option>
+              <option value="22-10s">22-10s (Mid Clock)</option>
+              <option value="<= 10s">&lt;= 10s (Late Clock)</option>
+            </select>
+            <button onclick="resetFilters()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">Reset</button>
+          </div>
+        </div>
+
+        <!-- Rendered Shot Chart SVG -->
+        <div class="flex justify-center">
+          <div class="w-full max-w-[550px] aspect-[500/470] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-inner relative">
+            <svg id="analyticsCourtSvg" viewBox="0 0 500 470" class="w-full h-full">
+              <rect x="0" y="0" width="500" height="470" fill="#18202c" stroke="#334155" stroke-width="4"/>
+              <rect x="170" y="0" width="160" height="190" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+              <path d="M 210,0 A 40,40 0 0,0 290,0" fill="none" stroke="#38bdf8" stroke-width="2"/>
+              <circle cx="250" cy="190" r="60" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,6"/>
+              <path d="M 50,0 L 50,140 A 200,200 0 0,0 450,140 L 450,0" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
+              <line x1="220" y1="40" x2="280" y2="40" stroke="#ffffff" stroke-width="4"/>
+              <circle cx="250" cy="52" r="12" fill="none" stroke="#f97316" stroke-width="3"/>
+              
+              <g id="analyticsShotPinsGroup"></g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player & Playbook Breakdown Efficiency Tables -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Player Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+          <h3 class="font-bold text-slate-100 flex items-center space-x-2">
+            <i data-lucide="users" class="w-4 h-4 text-orange-500"></i>
+            <span>Player Performance Efficiency</span>
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 font-semibold">
+                  <th class="p-2">PLAYER</th>
+                  <th class="p-2 text-center">POSS</th>
+                  <th class="p-2 text-center">PTS</th>
+                  <th class="p-2 text-center">PPP</th>
+                  <th class="p-2 text-center">SQI (xP)</th>
+                  <th class="p-2 text-center">POE</th>
+                </tr>
+              </thead>
+              <tbody id="playerAnalyticsTable" class="divide-y divide-slate-800/50">
+                <!-- Dynamic Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Playbook Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+          <h3 class="font-bold text-slate-100 flex items-center space-x-2">
+            <i data-lucide="book-open" class="w-4 h-4 text-orange-500"></i>
+            <span>Play Call Execution Efficiency</span>
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 font-semibold">
+                  <th class="p-2">PLAY NAME</th>
+                  <th class="p-2 text-center">RUNS</th>
+                  <th class="p-2 text-center">EXEC %</th>
+                  <th class="p-2 text-center">PPP</th>
+                  <th class="p-2 text-center">SQI (xP)</th>
+                  <th class="p-2 text-center">POE</th>
+                </tr>
+              </thead>
+              <tbody id="playbookAnalyticsTable" class="divide-y divide-slate-800/50">
+                <!-- Dynamic Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 3: GAME LOG ==================== -->
+    <section id="viewGameLog" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+          <i data-lucide="list" class="w-4 h-4 text-orange-500"></i>
+          <span>Game Possession Log</span>
+        </h2>
+        
+        <div class="flex items-center space-x-2">
+          <button onclick="exportGameCsv()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Export Game CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 font-semibold bg-slate-950/50">
+              <th class="p-2.5">#</th>
+              <th class="p-2.5">PLAYER</th>
+              <th class="p-2.5">PLAY CALL</th>
+              <th class="p-2.5">CLOCK PHASE</th>
+              <th class="p-2.5 text-center">EXEC</th>
+              <th class="p-2.5">OUTCOME</th>
+              <th class="p-2.5 text-center">PTS</th>
+              <th class="p-2.5 text-center">xP</th>
+              <th class="p-2.5 text-center">POE</th>
+              <th class="p-2.5 text-center">PPP</th>
+              <th class="p-2.5 text-right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="gameLogTable" class="divide-y divide-slate-800/50">
+            <!-- Dynamic Possessions -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: ROSTER ==================== -->
+    <section id="viewRoster" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+          <i data-lucide="users" class="w-4 h-4 text-orange-500"></i>
+          <span>Team Roster Manager</span>
+        </h2>
+        <button onclick="addRosterPlayerPrompt()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+          + Add Player
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="rosterCards">
+        <!-- Dynamic Roster Cards -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: PLAYBOOK ==================== -->
+    <section id="viewPlaybook" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+          <i data-lucide="book-open" class="w-4 h-4 text-orange-500"></i>
+          <span>Playbook & Action Library</span>
+        </h2>
+        <button onclick="addPlaybookItemPrompt()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+          + Add Play Call
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="playbookCards">
+        <!-- Dynamic Playbook Cards -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SYNERGY INTEGRATION MODAL -->
+  <div id="synergyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-5">
+      
+      <button onclick="closeSynergyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 bg-orange-500/20 text-orange-400 rounded-xl border border-orange-500/30">
+          <i data-lucide="zap" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg text-white">Synergy Sports Integration Hub</h3>
+          <p class="text-xs text-slate-400">Import Synergy exported files or sync direct play-by-play feeds</p>
+        </div>
+      </div>
+
+      <!-- Modal Tabs -->
+      <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+        <button id="modalTabCsv" onclick="switchSynergyModalTab('csv')" class="flex-1 py-2 rounded-md font-semibold text-slate-200 bg-slate-800">Synergy CSV File Import</button>
+        <button id="modalTabApi" onclick="switchSynergyModalTab('api')" class="flex-1 py-2 rounded-md font-semibold text-slate-400 hover:text-white">Direct Synergy API Sync</button>
+      </div>
+
+      <!-- Tab Content: CSV File Drag/Drop -->
+      <div id="synergyCsvSection" class="space-y-4">
+        <div class="border-2 border-dashed border-slate-700 hover:border-orange-500/50 rounded-xl p-8 text-center bg-slate-950/50 transition cursor-pointer" onclick="document.getElementById('csvFileInput').click()">
+          <i data-lucide="upload-cloud" class="w-10 h-10 text-orange-400 mx-auto mb-2"></i>
+          <p class="text-sm font-semibold text-slate-200">Click or Drag Synergy CSV File Here</p>
+          <p class="text-xs text-slate-500 mt-1">Supports standard Synergy Editor play breakdowns and game export formats</p>
+          <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCsvFileUpload(event)">
+        </div>
+      </div>
+
+      <!-- Tab Content: Direct API Connector -->
+      <div id="synergyApiSection" class="hidden space-y-4 text-xs">
+        <div>
+          <label class="block font-medium text-slate-400 mb-1">SYNERGY API BEARER TOKEN / KEY</label>
+          <input type="password" id="synergyApiKey" placeholder="syn_live_a84f..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
+        </div>
+
+        <div>
+          <label class="block font-medium text-slate-400 mb-1">SYNERGY GAME ID</label>
+          <input type="text" id="synergyGameId" value="68c2e00381501dc4e1cffac5" placeholder="e.g. 68c2e00381501dc4e1cffac5" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <button onclick="fetchSynergyApiData()" class="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition flex items-center justify-center space-x-1.5">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>Fetch Live Feed</span>
+          </button>
+          <button onclick="loadDemoSynergyBatch()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1.5">
+            <i data-lucide="play" class="w-4 h-4 text-orange-400"></i>
+            <span>Load Demo Batch</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC & STATE ENGINE -->
+  <script>
+    // --- STATE MANAGEMENT ---
+    let state = {
+      activeTab: 'tracker',
+      activeBaseline: 'JUCO',
+      selectedCoords: { x: 250, y: 100 },
+      games: [
+        {
+          id: 'game_1',
+          name: 'Cypress CC @ Riverside City',
+          date: '2026-02-18',
+          synergyGameId: '68c2e00381501dc4e1cffac5',
+          possessions: []
+        }
+      ],
+      activeGameId: 'game_1',
+      roster: [
+        { num: '1', name: 'Zack Moritz', pos: 'G' },
+        { num: '2', name: 'Tylon Williams', pos: 'G' },
+        { num: '5', name: 'Jabari Harris', pos: 'F' },
+        { num: '10', name: 'Jack Rivera', pos: 'G' },
+        { num: '15', name: 'Amaan Zavir', pos: 'G' },
+        { num: '20', name: 'Christian Warren', pos: 'F' },
+        { num: '32', name: 'Isaiah Valenzuela', pos: 'G' }
+      ],
+      playbook: [
+        { code: 'P&R Ball Handler', name: 'Pick & Roll Ball Handler', cat: 'P&R' },
+        { code: 'Spot-Up', name: 'Spot-Up Jumper / Catch', cat: 'Spot' },
+        { code: 'ISO', name: 'Isolation Action', cat: 'ISO' },
+        { code: 'Off Screen', name: 'Off Screen Shooter', cat: 'Screen' },
+        { code: 'Transition', name: 'Transition Fastbreak', cat: 'Early' },
+        { code: 'Post-Up', name: 'Post-Up Feed', cat: 'Post' }
+      ]
+    };
+
+    // --- XP EXPECTED POINTS BASELINE ENGINE ---
+    function calculateExpectedPoints(x, y, shotType, contest, outcome) {
+      if (outcome === 'Turnover') return 0.0;
+      
+      // Calculate Distance from Rim (Basket at X:250, Y:52)
+      const dx = x - 250;
+      const dy = y - 52;
+      const distFt = Math.sqrt(dx * dx + dy * dy) / 10; // 10px per foot approx
+      
+      const is3Pt = (y > 140 && distFt > 20.75) || (y <= 140 && (x < 50 || x > 450));
+      
+      let baseVal = is3Pt ? 1.05 : (distFt < 5 ? 1.18 : 0.82);
+
+      // Baseline Modifiers
+      if (state.activeBaseline === 'JUCO') baseVal *= 0.96;
+      if (state.activeBaseline === 'NCAA_D1') baseVal *= 1.04;
+      if (state.activeBaseline === 'NCAA_D3') baseVal *= 0.92;
+
+      // Contest Multipliers
+      if (contest === 'Open') baseVal *= 1.25;
+      if (contest === 'Heavy') baseVal *= 0.72;
+
+      return parseFloat(Math.min(Math.max(baseVal, 0.20), 2.70).toFixed(2));
+    }
+
+    // Determine Shot Clock Phase from Synergy Duration String (e.g. "00:00:06")
+    function parseDurationToClockPhase(durationStr) {
+      if (!durationStr) return '22-10s';
+      const parts = durationStr.split(':');
+      if (parts.length >= 2) {
+        const seconds = parseInt(parts[parts.length - 1], 10) || 0;
+        if (seconds <= 8) return 'First 8s';
+        if (seconds > 20) return '<= 10s';
+      }
+      return '22-10s';
+    }
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      populateDropdowns();
+      renderAll();
+    });
+
+    function getActiveGame() {
+      return state.games.find(g => g.id === state.activeGameId) || state.games[0];
+    }
+
+    function populateDropdowns() {
+      // Game Select
+      const gameSel = document.getElementById('gameSelect');
+      gameSel.innerHTML = state.games.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+      gameSel.value = state.activeGameId;
+
+      // Roster Dropdowns
+      const playerSel = document.getElementById('logPlayer');
+      playerSel.innerHTML = state.roster.map(r => `<option value="${r.num}">${r.num} - ${r.name}</option>`).join('');
+
+      const filterP = document.getElementById('filterPlayer');
+      filterP.innerHTML = `<option value="ALL">All Players</option>` + state.roster.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
+
+      // Playbook Dropdowns
+      const playSel = document.getElementById('logPlay');
+      playSel.innerHTML = state.playbook.map(p => `<option value="${p.code}">${p.code} - ${p.name}</option>`).join('');
+
+      const filterPlay = document.getElementById('filterPlay');
+      filterPlay.innerHTML = `<option value="ALL">All Play Calls</option>` + state.playbook.map(p => `<option value="${p.code}">${p.code}</option>`).join('');
+    }
+
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      ['tracker', 'analytics', 'gamelog', 'roster', 'playbook'].forEach(t => {
+        const cap = t.charAt(0).toUpperCase() + t.slice(1);
+        const el = document.getElementById(`view${cap}`);
+        const btn = document.getElementById(`tab${cap}`);
+        if (t === tabId) {
+          el.classList.remove('hidden');
+          btn.classList.add('bg-orange-600', 'text-white');
+          btn.classList.remove('text-slate-300');
+        } else {
+          el.classList.add('hidden');
+          btn.classList.remove('bg-orange-600', 'text-white');
+          btn.classList.add('text-slate-300');
+        }
+      });
+
+      renderAll();
+    }
+
+    function switchGame(gameId) {
+      state.activeGameId = gameId;
+      renderAll();
+      showToast("Switched active game context");
+    }
+
+    function changeBaseline(val) {
+      state.activeBaseline = val;
+      renderAll();
+      showToast(`xP Baseline changed to ${val}`);
+    }
+
+    // --- COURT INTERACTION ---
+    function handleCourtClick(e) {
+      const svg = document.getElementById('courtSvg');
+      const rect = svg.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * 500);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * 470);
+
+      state.selectedCoords = { x, y };
+
+      const activePin = document.getElementById('activePin');
+      activePin.setAttribute('cx', x);
+      activePin.setAttribute('cy', y);
+      activePin.classList.remove('hidden');
+
+      document.getElementById('coordDisplay').innerText = `Location: (X: ${x}, Y: ${y})`;
+      document.getElementById('formCoordsText').innerText = `Selected Court Loc: (${x}, ${y})`;
+
+      updateCalculatedXp();
+    }
+
+    function updateCalculatedXp() {
+      const outcome = document.getElementById('logOutcome').value;
+      const type = document.getElementById('logShotType').value;
+      const contest = document.getElementById('logContest').value;
+      const xp = calculateExpectedPoints(state.selectedCoords.x, state.selectedCoords.y, type, contest, outcome);
+      document.getElementById('calculatedXpDisplay').innerText = `Calc xP: ${xp.toFixed(2)}`;
+    }
+
+    function handleLogPossession(e) {
+      e.preventDefault();
+      const pNum = document.getElementById('logPlayer').value;
+      const playerObj = state.roster.find(r => r.num === pNum) || { name: 'Unknown' };
+      const playCode = document.getElementById('logPlay').value;
+      const execution = document.getElementById('logExecution').value;
+      const outcome = document.getElementById('logOutcome').value;
+      const shotType = document.getElementById('logShotType').value;
+      const contest = document.getElementById('logContest').value;
+      const clockPhase = document.getElementById('logClockPhase').value;
+
+      let pts = 0;
+      if (outcome === 'Make 3Pts') pts = 3;
+      if (outcome === 'Made 2Pts') pts = 2;
+      if (outcome === 'Free Throw') pts = 1;
+
+      const xp = calculateExpectedPoints(state.selectedCoords.x, state.selectedCoords.y, shotType, contest, outcome);
+      const poe = parseFloat((pts - xp).toFixed(2));
+
+      const newPossession = {
+        id: Date.now(),
+        playerNum: pNum,
+        playerName: playerObj.name,
+        playCode,
+        executionStatus: execution,
+        outcome,
+        shotType,
+        contest,
+        clockPhase,
+        x: state.selectedCoords.x,
+        y: state.selectedCoords.y,
+        pts,
+        xp,
+        poe,
+        ppp: pts // Points for this single possession
+      };
+
+      const game = getActiveGame();
+      game.possessions.push(newPossession);
+
+      renderAll();
+      showToast(`Logged possession for #${pNum} ${playerObj.name}`);
+    }
+
+    // --- RENDER ALL VIEWS ---
+    function renderAll() {
+      renderCourtPins();
+      renderAnalytics();
+      renderGameLog();
+      renderRoster();
+      renderPlaybook();
+      lucide.createIcons();
+    }
+
+    function renderCourtPins() {
+      const group = document.getElementById('shotPinsGroup');
+      const game = getActiveGame();
+      group.innerHTML = game.possessions.map(p => {
+        const isMake = p.outcome.includes('Make') || p.outcome.includes('Made');
+        const color = isMake ? '#10b981' : '#f43f5e';
+        return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5" opacity="0.85"><title>${p.playerName} - ${p.outcome} (${p.pts} pts)</title></circle>`;
+      }).join('');
+    }
+
+    function renderAnalytics() {
+      const game = getActiveGame();
+      const filterP = document.getElementById('filterPlayer').value;
+      const filterPlay = document.getElementById('filterPlay').value;
+      const filterClock = document.getElementById('filterClockPhase').value;
+
+      let possessions = game.possessions.filter(p => {
+        if (filterP !== 'ALL' && p.playerName !== filterP) return false;
+        if (filterPlay !== 'ALL' && p.playCode !== filterPlay) return false;
+        if (filterClock !== 'ALL' && p.clockPhase !== filterClock) return false;
+        return true;
+      });
+
+      const totalPoss = possessions.length;
+      const totalPts = possessions.reduce((acc, p) => acc + p.pts, 0);
+      const totalXp = possessions.reduce((acc, p) => acc + p.xp, 0);
+      const netPoe = totalPts - totalXp;
+      const ppp = totalPoss > 0 ? (totalPts / totalPoss).toFixed(2) : '0.00';
+      const avgSqi = totalPoss > 0 ? (totalXp / totalPoss).toFixed(2) : '0.00';
+      const execCount = possessions.filter(p => p.executionStatus === 'Executed').length;
+      const execPct = totalPoss > 0 ? Math.round((execCount / totalPoss) * 100) : 0;
+
+      // Update KPI Cards
+      document.getElementById('kpiPpp').innerText = ppp;
+      document.getElementById('kpiPts').innerText = totalPts;
+      document.getElementById('kpiSqi').innerText = avgSqi;
+      document.getElementById('kpiPoe').innerText = (netPoe >= 0 ? '+' : '') + netPoe.toFixed(2);
+      document.getElementById('kpiExecution').innerText = `${execPct}%`;
+
+      // Render Analytics Court Pins
+      const analyticsGroup = document.getElementById('analyticsShotPinsGroup');
+      analyticsGroup.innerHTML = possessions.map(p => {
+        const isMake = p.outcome.includes('Make') || p.outcome.includes('Made');
+        const color = isMake ? '#10b981' : '#f43f5e';
+        return `<circle cx="${p.x}" cy="${p.y}" r="6.5" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} | ${p.clockPhase} | ${p.outcome}</title></circle>`;
+      }).join('');
+
+      // Clock Phase Cards
+      const phases = ['First 8s', '22-10s', '<= 10s'];
+      const phaseCardsContainer = document.getElementById('clockPhaseCards');
+      phaseCardsContainer.innerHTML = phases.map(phase => {
+        const phasePoss = game.possessions.filter(p => p.clockPhase === phase);
+        const pCount = phasePoss.length;
+        const pPts = phasePoss.reduce((a, b) => a + b.pts, 0);
+        const pPpp = pCount > 0 ? (pPts / pCount).toFixed(2) : '0.00';
+        const pXp = phasePoss.reduce((a, b) => a + b.xp, 0);
+        const pPoe = (pPts - pXp).toFixed(2);
+
+        return `
+          <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+              <span>${phase}</span>
+              <span class="px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-mono">${pCount} Poss</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs pt-1">
+              <div>
+                <div class="text-[10px] text-slate-500">PPP</div>
+                <div class="font-bold text-white">${pPpp}</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-500">PTS</div>
+                <div class="font-bold text-emerald-400">${pPts}</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-500">POE</div>
+                <div class="font-bold ${pPoe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${pPoe >= 0 ? '+' : ''}${pPoe}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Player Efficiency Table
+      const playerMap = {};
+      game.possessions.forEach(p => {
+        if (!playerMap[p.playerName]) playerMap[p.playerName] = { poss: 0, pts: 0, xp: 0 };
+        playerMap[p.playerName].poss++;
+        playerMap[p.playerName].pts += p.pts;
+        playerMap[p.playerName].xp += p.xp;
+      });
+
+      const pTable = document.getElementById('playerAnalyticsTable');
+      pTable.innerHTML = Object.keys(playerMap).map(pName => {
+        const data = playerMap[pName];
+        const playerPpp = (data.pts / data.poss).toFixed(2);
+        const playerSqi = (data.xp / data.poss).toFixed(2);
+        const playerPoe = (data.pts - data.xp).toFixed(2);
+        return `
+          <tr class="hover:bg-slate-800/40 text-slate-200">
+            <td class="p-2 font-medium">${pName}</td>
+            <td class="p-2 text-center font-mono">${data.poss}</td>
+            <td class="p-2 text-center font-bold text-emerald-400">${data.pts}</td>
+            <td class="p-2 text-center font-mono text-orange-400">${playerPpp}</td>
+            <td class="p-2 text-center font-mono text-slate-400">${playerSqi}</td>
+            <td class="p-2 text-center font-mono ${playerPoe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${playerPoe >= 0 ? '+' : ''}${playerPoe}</td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="6" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
+
+      // Playbook Efficiency Table
+      const playMap = {};
+      game.possessions.forEach(p => {
+        if (!playMap[p.playCode]) playMap[p.playCode] = { poss: 0, pts: 0, xp: 0, exec: 0 };
+        playMap[p.playCode].poss++;
+        playMap[p.playCode].pts += p.pts;
+        playMap[p.playCode].xp += p.xp;
+        if (p.executionStatus === 'Executed') playMap[p.playCode].exec++;
+      });
+
+      const pbTable = document.getElementById('playbookAnalyticsTable');
+      pbTable.innerHTML = Object.keys(playMap).map(code => {
+        const data = playMap[code];
+        const playPpp = (data.pts / data.poss).toFixed(2);
+        const playExecPct = Math.round((data.exec / data.poss) * 100);
+        const playSqi = (data.xp / data.poss).toFixed(2);
+        const playPoe = (data.pts - data.xp).toFixed(2);
+        return `
+          <tr class="hover:bg-slate-800/40 text-slate-200">
+            <td class="p-2 font-medium">${code}</td>
+            <td class="p-2 text-center font-mono">${data.poss}</td>
+            <td class="p-2 text-center font-mono text-indigo-400">${playExecPct}%</td>
+            <td class="p-2 text-center font-mono text-orange-400">${playPpp}</td>
+            <td class="p-2 text-center font-mono text-slate-400">${playSqi}</td>
+            <td class="p-2 text-center font-mono ${playPoe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${playPoe >= 0 ? '+' : ''}${playPoe}</td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="6" class="p-4 text-center text-slate-500">No playbook items logged yet</td></tr>`;
+    }
+
+    function resetFilters() {
+      document.getElementById('filterPlayer').value = 'ALL';
+      document.getElementById('filterPlay').value = 'ALL';
+      document.getElementById('filterClockPhase').value = 'ALL';
+      renderAnalytics();
+    }
+
+    function renderGameLog() {
+      const game = getActiveGame();
+      const logTable = document.getElementById('gameLogTable');
+      logTable.innerHTML = game.possessions.map((p, idx) => {
+        return `
+          <tr class="hover:bg-slate-800/40 text-slate-200">
+            <td class="p-2.5 font-mono text-slate-500">${idx + 1}</td>
+            <td class="p-2.5 font-semibold text-white">#${p.playerNum} ${p.playerName}</td>
+            <td class="p-2.5 text-slate-300">${p.playCode}</td>
+            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">${p.clockPhase || '22-10s'}</span></td>
+            <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${p.executionStatus === 'Executed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">${p.executionStatus}</span></td>
+            <td class="p-2.5">${p.outcome}</td>
+            <td class="p-2.5 text-center font-bold text-emerald-400">${p.pts}</td>
+            <td class="p-2.5 text-center font-mono text-slate-400">${p.xp.toFixed(2)}</td>
+            <td class="p-2.5 text-center font-mono ${p.poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${p.poe >= 0 ? '+' : ''}${p.poe.toFixed(2)}</td>
+            <td class="p-2.5 text-center font-mono text-orange-400">${p.pts.toFixed(1)}</td>
+            <td class="p-2.5 text-right">
+              <button onclick="deletePossession(${p.id})" class="text-slate-500 hover:text-rose-400 transition p-1">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="11" class="p-6 text-center text-slate-500">No game possessions logged yet</td></tr>`;
+    }
+
+    function deletePossession(id) {
+      const game = getActiveGame();
+      game.possessions = game.possessions.filter(p => p.id !== id);
+      renderAll();
+      showToast("Possession deleted");
+    }
+
+    function renderRoster() {
+      const container = document.getElementById('rosterCards');
+      container.innerHTML = state.roster.map(r => `
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-600/20 border border-orange-500/30 text-orange-400 font-black flex items-center justify-center text-sm">
+              #${r.num}
+            </div>
+            <div>
+              <div class="font-bold text-slate-100 text-sm">${r.name}</div>
+              <div class="text-xs text-slate-400">Pos: ${r.pos}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addRosterPlayerPrompt() {
+      const num = prompt("Enter Player Jersey Number:");
+      if (!num) return;
+      const name = prompt("Enter Player Full Name:");
+      if (!name) return;
+      state.roster.push({ num, name, pos: 'G' });
+      populateDropdowns();
+      renderRoster();
+      showToast(`Added #${num} ${name} to roster`);
+    }
+
+    function renderPlaybook() {
+      const container = document.getElementById('playbookCards');
+      container.innerHTML = state.playbook.map(p => `
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-100 text-sm">${p.name}</div>
+            <div class="text-xs text-slate-400">Code: <span class="text-orange-400 font-mono">${p.code}</span> | Cat: ${p.cat}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addPlaybookItemPrompt() {
+      const code = prompt("Enter Short Play Code (e.g., ISO, Horns):");
+      if (!code) return;
+      const name = prompt("Enter Full Play Description Name:");
+      if (!name) return;
+      state.playbook.push({ code, name, cat: 'Custom' });
+      populateDropdowns();
+      renderPlaybook();
+      showToast(`Added play ${code} to playbook`);
+    }
+
+    // --- SYNERGY INTEGRATION MODAL LOGIC ---
+    function openSynergyModal() {
+      document.getElementById('synergyModal').classList.remove('hidden');
+    }
+
+    function closeSynergyModal() {
+      document.getElementById('synergyModal').classList.add('hidden');
+    }
+
+    function switchSynergyModalTab(tab) {
+      if (tab === 'csv') {
+        document.getElementById('synergyCsvSection').classList.remove('hidden');
+        document.getElementById('synergyApiSection').classList.add('hidden');
+        document.getElementById('modalTabCsv').className = 'flex-1 py-2 rounded-md font-semibold text-slate-200 bg-slate-800';
+        document.getElementById('modalTabApi').className = 'flex-1 py-2 rounded-md font-semibold text-slate-400 hover:text-white';
+      } else {
+        document.getElementById('synergyCsvSection').classList.add('hidden');
+        document.getElementById('synergyApiSection').classList.remove('hidden');
+        document.getElementById('modalTabApi').className = 'flex-1 py-2 rounded-md font-semibold text-slate-200 bg-slate-800';
+        document.getElementById('modalTabCsv').className = 'flex-1 py-2 rounded-md font-semibold text-slate-400 hover:text-white';
+      }
+    }
+
+    function handleCsvFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const content = event.target.result;
+        parseSynergyCsvContent(content);
+      };
+      reader.readAsText(file);
+    }
+
+    function parseSynergyCsvContent(csvText) {
+      const lines = csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length < 2) {
+        showToast("Invalid CSV format");
+        return;
+      }
+
+      const game = getActiveGame();
+      let importedCount = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 3) continue;
+
+        const resultStr = cols[1] || cols[0] || '';
+        const descStr = cols[2] || cols[1] || '';
+        const playerStr = cols[3] || 'Unknown Player';
+        const durationStr = cols[5] || '00:00:15';
+
+        // Categorize clock phase
+        const clockPhase = parseDurationToClockPhase(durationStr);
+
+        let pts = 0;
+        if (resultStr.includes('Make 3') || descStr.includes('Make 3')) pts = 3;
+        else if (resultStr.includes('Make 2') || descStr.includes('Make 2')) pts = 2;
+
+        const courtX = 100 + (i * 27) % 300;
+        const courtY = 60 + (i * 19) % 220;
+
+        const xp = calculateExpectedPoints(courtX, courtY, 'Jump Shot', 'Slight', resultStr);
+
+        game.possessions.push({
+          id: Date.now() + i,
+          playerNum: playerStr.split(' ')[0] || `${i}`,
+          playerName: playerStr,
+          playCode: descStr.split('>')[1]?.trim() || 'Synergy Set',
+          executionStatus: 'Executed',
+          outcome: resultStr || 'Made 2Pts',
+          shotType: 'Jump Shot',
+          contest: 'Slight',
+          clockPhase,
+          x: courtX,
+          y: courtY,
+          pts,
+          xp,
+          poe: parseFloat((pts - xp).toFixed(2)),
+          ppp: pts
+        });
+        importedCount++;
+      }
+
+      closeSynergyModal();
+      renderAll();
+      showToast(`Successfully imported ${importedCount} possessions from Synergy CSV!`);
+    }
+
+    function loadDemoSynergyBatch() {
+      const game = getActiveGame();
+      const demoBatch = [
+        { num: '32', name: 'Isaiah Valenzuela', play: 'P&R Ball Handler', outcome: 'Made 2Pts', pts: 2, phase: 'First 8s', x: 250, y: 70 },
+        { num: '5', name: 'Jabari Harris', play: 'Spot-Up', outcome: 'Miss 3Pts', pts: 0, phase: '22-10s', x: 80, y: 160 },
+        { num: '1', name: 'Zack Moritz', play: 'P&R Ball Handler', outcome: 'Miss 2Pts', pts: 0, phase: '<= 10s', x: 220, y: 110 },
+        { num: '10', name: 'Jack Rivera', play: 'Off Screen', outcome: 'Make 3Pts', pts: 3, phase: 'First 8s', x: 420, y: 150 }
+      ];
+
+      demoBatch.forEach((d, idx) => {
+        const xp = calculateExpectedPoints(d.x, d.y, 'Jump Shot', 'Slight', d.outcome);
+        game.possessions.push({
+          id: Date.now() + idx,
+          playerNum: d.num,
+          playerName: d.name,
+          playCode: d.play,
+          executionStatus: 'Executed',
+          outcome: d.outcome,
+          shotType: 'Jump Shot',
+          contest: 'Slight',
+          clockPhase: d.phase,
+          x: d.x,
+          y: d.y,
+          pts: d.pts,
+          xp,
+          poe: parseFloat((d.pts - xp).toFixed(2)),
+          ppp: d.pts
+        });
+      });
+
+      closeSynergyModal();
+      renderAll();
+      showToast("Loaded Demo Synergy Batch into active game!");
+    }
+
+    function exportGameCsv() {
+      const game = getActiveGame();
+      if (game.possessions.length === 0) {
+        showToast("No possessions to export");
+        return;
+      }
+
+      let csv = "PlayerNum,PlayerName,PlayCode,ClockPhase,Execution,Outcome,PTS,xP,POE\n";
+      game.possessions.forEach(p => {
+        csv += `"${p.playerNum}","${p.playerName}","${p.playCode}","${p.clockPhase}","${p.executionStatus}","${p.outcome}",${p.pts},${p.xp},${p.poe}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `${game.name.replace(/\s+/g, '_')}_Analytics.csv`);
+      a.click();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
