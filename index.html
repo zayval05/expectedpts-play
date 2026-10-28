@@ -63,6 +63,40 @@
       border-radius: 4px;
     }
   </style>
+
+  <!-- Firebase SDK Modules -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getAuth, 
+      signInAnonymously, 
+      signInWithCustomToken, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword, 
+      signInWithPopup, 
+      GoogleAuthProvider, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      collection, 
+      getDocs, 
+      onSnapshot, 
+      deleteDoc 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Expose Firebase functions globally
+    window.fb = {
+      initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
+      signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged,
+      getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot, deleteDoc
+    };
+  </script>
 </head>
 <body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
 
@@ -70,23 +104,38 @@
   <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md px-3 py-2.5">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
-      <!-- Brand & Active Game Selector -->
+      <!-- Brand Logo, Title & Active Game Selector -->
       <div class="flex items-center space-x-3">
-        <div class="bg-amber-500 text-slate-950 p-2 rounded-xl font-black text-lg font-display flex items-center justify-center shadow-lg shadow-amber-500/20">
-          JUCO
+        <div class="relative flex items-center justify-center">
+          <img src="logo.png" alt="Play Value Logo" class="h-9 w-9 object-contain rounded-xl shadow-md" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <div class="bg-amber-500 text-slate-950 p-2 rounded-xl font-black text-lg font-display items-center justify-center shadow-lg shadow-amber-500/20" style="display:none">
+            JUCO
+          </div>
         </div>
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-            Analytics & Shot Tracker
-            <span class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">v3.0 Multi-Game</span>
+            Track the Play. Measure the Look.
+            <span id="cloudStatusBadge" class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">Guest</span>
           </h1>
           
-          <!-- Active Game Selector Dropdown -->
-          <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-[11px] text-slate-400 font-semibold uppercase">Active Game:</span>
-            <select id="activeGameSelect" onchange="switchActiveGame(this.value)" class="bg-slate-950 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-md px-2 py-0.5 focus:outline-none focus:border-amber-400">
-              <!-- Dynamically populated -->
-            </select>
+          <!-- Active Game Selector & xP Benchmark Model Dropdowns -->
+          <div class="flex items-center gap-3 mt-0.5 flex-wrap">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-400 font-semibold uppercase">Active Game:</span>
+              <select id="activeGameSelect" onchange="switchActiveGame(this.value)" class="bg-slate-950 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-md px-2 py-0.5 focus:outline-none focus:border-amber-400">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-slate-400 font-semibold uppercase">xP Baseline:</span>
+              <select id="xpBenchmarkSelect" onchange="changeBenchmarkModel(this.value)" class="bg-slate-950 border border-slate-700 text-amber-400 text-xs font-bold rounded-md px-2 py-0.5 focus:outline-none focus:border-amber-400">
+                <option value="JUCO">JUCO Averages</option>
+                <option value="D1">NCAA D1 Avg</option>
+                <option value="D2">NCAA D2 Avg</option>
+                <option value="D3">NCAA D3 Avg</option>
+                <option value="PLAYER">Active Player Stats</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -107,8 +156,14 @@
           </button>
         </div>
 
-        <!-- Management Controls -->
+        <!-- Management & Auth Controls -->
         <div class="flex items-center space-x-1.5">
+          <!-- Auth / Profile Button -->
+          <button id="authHeaderBtn" onclick="openAuthModal()" class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400/50 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span id="authHeaderBtnText">Sign In</span>
+          </button>
+
           <!-- Game Manager Modal Button -->
           <button onclick="openGamesModal()" class="flex items-center gap-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 0h6a2 2 0 012 2v8a2 2 0 01-2 2H10a2 2 0 01-2-2V7z"/></svg>
@@ -242,7 +297,7 @@
             <!-- Player Select -->
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Player</label>
-              <select id="formPlayer" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <select id="formPlayer" required onchange="updateXpPreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
                 <!-- Populated via JS -->
               </select>
             </div>
@@ -441,6 +496,84 @@
 
   </main>
 
+  <!-- MODAL: AUTH & CLOUD SYNC -->
+  <div id="authModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl relative space-y-4">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+        <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Cloud Account & Sync</h3>
+          <p class="text-[11px] text-slate-400">Save entries across devices and sync previous games</p>
+        </div>
+      </div>
+
+      <!-- State: Logged In View -->
+      <div id="authLoggedInState" class="hidden space-y-3">
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div id="authAvatarCircle" class="w-9 h-9 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm">
+              U
+            </div>
+            <div>
+              <span id="authDisplayName" class="text-xs font-bold text-white block">User</span>
+              <span id="authEmailText" class="text-[10px] text-slate-400 block font-mono">user@example.com</span>
+              <span id="authUidText" class="text-[9px] text-amber-400/80 block font-mono">UID: ...</span>
+            </div>
+          </div>
+          <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-semibold">Synced</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="syncLocalToCloud()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2 rounded-lg transition-all">
+            Upload Local Games to Cloud
+          </button>
+          <button onclick="handleSignOut()" class="bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 font-bold text-xs px-3 py-2 rounded-lg transition-all">
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- State: Logged Out View -->
+      <div id="authLoggedOutState" class="space-y-3">
+        <form onsubmit="handleEmailAuth(event)" class="space-y-2 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+          <span class="text-xs font-bold text-amber-400 uppercase block mb-1">Email Sign In / Account</span>
+          <input type="email" id="authEmail" placeholder="Coach Email" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          <input type="password" id="authPassword" placeholder="Password" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button type="submit" id="authSignInBtn" onclick="window.authMode='signin'" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2 rounded-lg transition-all">
+              Sign In
+            </button>
+            <button type="submit" id="authRegisterBtn" onclick="window.authMode='register'" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold text-xs py-2 rounded-lg transition-all">
+              Register
+            </button>
+          </div>
+        </form>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-800"></div>
+          <span class="flex-shrink mx-2 text-[10px] text-slate-500 uppercase">Or</span>
+          <div class="flex-grow border-t border-slate-800"></div>
+        </div>
+
+        <button onclick="handleGoogleSignIn()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-2 transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          Continue with Google
+        </button>
+
+        <button onclick="handleGuestSignIn()" class="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 text-xs py-1.5 rounded-xl transition-all">
+          Continue as Guest (Local Mode)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: MULTI-GAME MANAGER -->
   <div id="gamesModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl relative space-y-4">
@@ -491,13 +624,90 @@
       <button onclick="closeRosterModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
-      <h3 class="text-sm font-bold text-white">Roster Manager</h3>
-      <form onsubmit="handleAddPlayer(event)" class="grid grid-cols-12 gap-2">
-        <input type="text" id="newPlayerNum" placeholder="#" required class="col-span-3 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
-        <input type="text" id="newPlayerName" placeholder="Player Name" required class="col-span-6 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
-        <button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg">+ Add</button>
+      <h3 class="text-sm font-bold text-white">Roster & Shooting Profile Manager</h3>
+      
+      <form onsubmit="handleAddPlayer(event)" class="space-y-2.5 bg-slate-950 p-3 rounded-xl border border-slate-800">
+        <div class="grid grid-cols-12 gap-2">
+          <input type="text" id="newPlayerNum" placeholder="#" required class="col-span-2 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          <input type="text" id="newPlayerName" placeholder="Player Name" required class="col-span-6 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          <select id="newPlayerPos" class="col-span-4 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+            <option value="PG">PG</option>
+            <option value="SG">SG</option>
+            <option value="SF">SF</option>
+            <option value="PF">PF</option>
+            <option value="C">C</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-bold text-amber-400 uppercase">Shooting Profile (% or Makes/Att)</span>
+            <div class="flex items-center gap-2 text-[10px] text-slate-400">
+              <label class="cursor-pointer flex items-center gap-1">
+                <input type="radio" name="profileMode" value="pct" checked onchange="toggleProfileInputMode('pct')" class="text-amber-500"> Direct %
+              </label>
+              <label class="cursor-pointer flex items-center gap-1">
+                <input type="radio" name="profileMode" value="counts" onchange="toggleProfileInputMode('counts')" class="text-amber-500"> FGM / FGA
+              </label>
+            </div>
+          </div>
+
+          <!-- Direct Percentages Input -->
+          <div id="profilePctInputs" class="grid grid-cols-4 gap-1.5">
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">Rim %</label>
+              <input type="number" id="newPlayerRimPct" placeholder="58" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">Mid %</label>
+              <input type="number" id="newPlayerMidPct" placeholder="36" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">3PT %</label>
+              <input type="number" id="newPlayerThreePct" placeholder="34" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">FT %</label>
+              <input type="number" id="newPlayerFtPct" placeholder="69" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+            </div>
+          </div>
+
+          <!-- Counts Input (FGM/FGA) -->
+          <div id="profileCountInputs" class="grid grid-cols-4 gap-1.5 hidden">
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">Rim M/A</label>
+              <div class="flex gap-1">
+                <input type="number" id="newPlayerRimM" placeholder="29" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+                <input type="number" id="newPlayerRimA" placeholder="50" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">Mid M/A</label>
+              <div class="flex gap-1">
+                <input type="number" id="newPlayerMidM" placeholder="18" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+                <input type="number" id="newPlayerMidA" placeholder="50" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">3PT M/A</label>
+              <div class="flex gap-1">
+                <input type="number" id="newPlayerThreeM" placeholder="17" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+                <input type="number" id="newPlayerThreeA" placeholder="50" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[9px] text-slate-400 font-semibold uppercase">FT M/A</label>
+              <div class="flex gap-1">
+                <input type="number" id="newPlayerFtM" placeholder="35" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+                <input type="number" id="newPlayerFtA" placeholder="50" class="w-1/2 bg-slate-900 border border-slate-700 rounded px-1 py-1 text-xs text-white">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-1.5 rounded-lg transition-all">+ Add Player Profile</button>
       </form>
-      <div id="rosterListContainer" class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div>
+      <div id="rosterListContainer" class="max-h-52 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div>
     </div>
   </div>
 
@@ -525,15 +735,26 @@
       GAMES: 'juco_games_registry',
       ACTIVE_GAME_ID: 'juco_active_game_id',
       ROSTER: 'juco_roster',
-      PLAYBOOK: 'juco_playbook'
+      PLAYBOOK: 'juco_playbook',
+      BENCHMARK: 'juco_benchmark_model'
     };
 
+    const BENCHMARK_MODELS = {
+      JUCO: { name: 'JUCO Averages', rimPct: 0.575, midPct: 0.360, threePct: 0.340, ftPct: 0.690 },
+      D1: { name: 'NCAA D1 Avg', rimPct: 0.640, midPct: 0.390, threePct: 0.360, ftPct: 0.720 },
+      D2: { name: 'NCAA D2 Avg', rimPct: 0.600, midPct: 0.370, threePct: 0.345, ftPct: 0.700 },
+      D3: { name: 'NCAA D3 Avg', rimPct: 0.580, midPct: 0.360, threePct: 0.335, ftPct: 0.680 },
+      PLAYER: { name: 'Active Player Stats', custom: true }
+    };
+
+    let currentBenchmarkKey = localStorage.getItem(STORAGE_KEYS.BENCHMARK) || 'JUCO';
+
     const DEFAULT_ROSTER = [
-      { id: '1', num: '1', name: 'M. Johnson', pos: 'PG' },
-      { id: '2', num: '3', name: 'D. Williams', pos: 'SG' },
-      { id: '3', num: '11', name: 'T. Davis', pos: 'SF' },
-      { id: '4', num: '23', name: 'K. Miller', pos: 'PF' },
-      { id: '5', num: '34', name: 'J. Carter', pos: 'C' }
+      { id: '1', num: '1', name: 'M. Johnson', pos: 'PG', rimPct: 62, midPct: 40, threePct: 38, ftPct: 82 },
+      { id: '2', num: '3', name: 'D. Williams', pos: 'SG', rimPct: 58, midPct: 42, threePct: 41, ftPct: 85 },
+      { id: '3', num: '11', name: 'T. Davis', pos: 'SF', rimPct: 65, midPct: 36, threePct: 33, ftPct: 70 },
+      { id: '4', num: '23', name: 'K. Miller', pos: 'PF', rimPct: 68, midPct: 35, threePct: 30, ftPct: 68 },
+      { id: '5', num: '34', name: 'J. Carter', pos: 'C', rimPct: 72, midPct: 30, threePct: 22, ftPct: 62 }
     ];
 
     const DEFAULT_PLAYBOOK = [
@@ -548,15 +769,26 @@
     let roster = [];
     let playbook = [];
 
-    let currentSelectedPoint = { x: 250, y: 52.5, location: 'Paint', side: 'M', dist: 2 };
+    let currentSelectedPoint = { x: 250, y: 52.5, location: 'Rim / Paint', side: 'Center', dist: 0 };
     let selectedShotType = 'Layup';
     let selectedContest = 3;
 
+    // Firebase state
+    let auth = null;
+    let db = null;
+    let currentUser = null;
+    let unsubscribeCloudGames = null;
+
     window.onload = function() {
       initApp();
+      initFirebase();
     };
 
     function initApp() {
+      // Set initial benchmark dropdown selection
+      const bmSelect = document.getElementById('xpBenchmarkSelect');
+      if (bmSelect) bmSelect.value = currentBenchmarkKey;
+
       // 1. Load Roster & Playbook
       const rawRoster = localStorage.getItem(STORAGE_KEYS.ROSTER);
       roster = rawRoster ? JSON.parse(rawRoster) : DEFAULT_ROSTER;
@@ -565,28 +797,8 @@
       playbook = rawPlaybook ? JSON.parse(rawPlaybook) : DEFAULT_PLAYBOOK;
 
       // 2. Load Multi-Games Registry
-      const rawGames = localStorage.getItem(STORAGE_KEYS.GAMES);
-      if (rawGames) {
-        try { games = JSON.parse(rawGames); } catch (e) { games = []; }
-      }
+      loadFromLocalStorage();
 
-      if (games.length === 0) {
-        // Create initial default game file
-        const defaultGame = {
-          id: 'game_' + Date.now(),
-          title: 'Game 1 vs Opponent',
-          date: new Date().toLocaleDateString(),
-          possessions: []
-        };
-        games.push(defaultGame);
-        activeGameId = defaultGame.id;
-        saveGamesToStorage();
-      } else {
-        activeGameId = localStorage.getItem(STORAGE_KEYS.ACTIVE_GAME_ID) || games[0].id;
-        if (!games.find(g => g.id === activeGameId)) activeGameId = games[0].id;
-      }
-
-      saveGamesToStorage();
       populateGameDropdown();
       populateDropdowns();
       selectShotType('Layup');
@@ -594,35 +806,679 @@
       reRenderAllUI();
     }
 
-    function saveGamesToStorage() {
+    function changeBenchmarkModel(key) {
+      currentBenchmarkKey = key;
+      localStorage.setItem(STORAGE_KEYS.BENCHMARK, key);
+      updateXpPreview();
+      showToast(`xP Baseline: ${BENCHMARK_MODELS[key] ? BENCHMARK_MODELS[key].name : key}`);
+    }
+
+    function loadFromLocalStorage() {
+      const rawGames = localStorage.getItem(STORAGE_KEYS.GAMES);
+      if (rawGames) {
+        try { games = JSON.parse(rawGames); } catch (e) { games = []; }
+      }
+
+      if (!games || games.length === 0) {
+        const defaultGame = {
+          id: 'game_' + Date.now(),
+          title: 'Game 1 vs Chipola',
+          date: new Date().toLocaleDateString(),
+          possessions: [
+            { id: 101, playerNum: '1', playerName: 'M. Johnson', playCode: 'P&R High', playName: 'High Ball Screen', outcome: 'Made FG', x: 250, y: 50, location: 'Rim / Paint', shotType: 'Layup', contest: 3, pts: 2, xp: 1.44, poe: 0.56 },
+            { id: 102, playerNum: '3', playerName: 'D. Williams', playCode: 'Horns-2', playName: 'Horns Action', outcome: 'Made FG', x: 70, y: 150, location: '3-Pointer', shotType: 'Catch & Shoot', contest: 3, pts: 3, xp: 1.37, poe: 1.63 },
+            { id: 103, playerNum: '11', playerName: 'T. Davis', playCode: 'ISO Mid', playName: 'Isolation Mid Post', outcome: 'Missed FG', x: 180, y: 220, location: 'Midrange', shotType: 'Off the Dribble', contest: 1, pts: 0, xp: 0.48, poe: -0.48 },
+            { id: 104, playerNum: '23', playerName: 'K. Miller', playCode: 'P&R High', playName: 'High Ball Screen', outcome: 'Shooting Foul', x: 240, y: 70, location: 'Rim / Paint', shotType: 'Layup', contest: 2, pts: 2, xp: 1.31, poe: 0.69 }
+          ]
+        };
+        games = [defaultGame];
+        activeGameId = defaultGame.id;
+        saveGamesToStorage();
+      } else {
+        activeGameId = localStorage.getItem(STORAGE_KEYS.ACTIVE_GAME_ID) || games[0].id;
+        if (!games.find(g => g.id === activeGameId)) activeGameId = games[0].id;
+      }
+    }
+
+    /* FIREBASE INITIALIZATION & SYNC */
+    async function initFirebase() {
+      if (!window.fb) return;
+      try {
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+        const defaultConfig = {
+          apiKey: "AIzaSyA_Demo_ApiKey_JUCO_Tracker",
+          authDomain: "juco-tracker.firebaseapp.com",
+          projectId: "juco-tracker",
+          storageBucket: "juco-tracker.appspot.com",
+          messagingSenderId: "100000000000",
+          appId: "1:100000000000:web:abcdef123456"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultConfig;
+
+        const app = window.fb.initializeApp(firebaseConfig);
+        auth = window.fb.getAuth(app);
+        db = window.fb.getFirestore(app);
+
+        // Custom token priority check
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          try {
+            await window.fb.signInWithCustomToken(auth, __initial_auth_token);
+          } catch (e) {
+            console.warn("Custom token sign in skipped/failed:", e);
+          }
+        }
+
+        window.fb.onAuthStateChanged(auth, async (user) => {
+          currentUser = user;
+          updateAuthUI(user);
+          if (user) {
+            await syncFromCloud(user.uid);
+          } else {
+            if (unsubscribeCloudGames) {
+              unsubscribeCloudGames();
+              unsubscribeCloudGames = null;
+            }
+            loadFromLocalStorage();
+            populateGameDropdown();
+            reRenderAllUI();
+          }
+        });
+      } catch (err) {
+        console.warn("Firebase offline or fallback mode enabled:", err);
+      }
+    }
+
+    function updateAuthUI(user) {
+      const badge = document.getElementById('cloudStatusBadge');
+      const authHeaderBtnText = document.getElementById('authHeaderBtnText');
+      const loggedInView = document.getElementById('authLoggedInState');
+      const loggedOutView = document.getElementById('authLoggedOutState');
+
+      if (user) {
+        const displayName = user.displayName || user.email || 'Coach';
+        badge.innerText = "Cloud Synced";
+        badge.className = "text-[10px] font-normal text-emerald-400 bg-emerald-950/80 border border-emerald-800/60 px-2 py-0.5 rounded-full font-mono";
+        authHeaderBtnText.innerText = displayName.split('@')[0];
+
+        loggedInView.classList.remove('hidden');
+        loggedOutView.classList.add('hidden');
+
+        document.getElementById('authDisplayName').innerText = displayName;
+        document.getElementById('authEmailText').innerText = user.email || 'No email associated';
+        document.getElementById('authUidText').innerText = `UID: ${user.uid}`;
+        document.getElementById('authAvatarCircle').innerText = (displayName[0] || 'C').toUpperCase();
+      } else {
+        badge.innerText = "Guest Mode";
+        badge.className = "text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono";
+        authHeaderBtnText.innerText = "Sign In";
+
+        loggedInView.classList.add('hidden');
+        loggedOutView.classList.remove('hidden');
+      }
+    }
+
+    async function syncFromCloud(userId) {
+      if (!db || !userId) return;
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+      const gamesColRef = window.fb.collection(db, 'artifacts', appId, 'users', userId, 'games');
+
+      if (unsubscribeCloudGames) unsubscribeCloudGames();
+      
+      unsubscribeCloudGames = window.fb.onSnapshot(gamesColRef, (snapshot) => {
+        if (!snapshot.empty) {
+          const cloudGames = snapshot.docs.map(doc => doc.data());
+          if (cloudGames.length > 0) {
+            games = cloudGames;
+            if (!games.find(g => g.id === activeGameId)) {
+              activeGameId = games[0].id;
+            }
+            saveGamesToStorage(false);
+            populateGameDropdown();
+            reRenderAllUI();
+          }
+        }
+      }, (err) => {
+        console.error("Firestore Games sync error:", err);
+      });
+    }
+
+    async function syncLocalToCloud() {
+      if (!db || !currentUser) {
+        showToast("Please sign in to upload data to cloud!");
+        return;
+      }
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+      try {
+        for (const g of games) {
+          const gameDocRef = window.fb.doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', g.id);
+          await window.fb.setDoc(gameDocRef, g);
+        }
+        showToast("All local games synced to Cloud!");
+      } catch (err) {
+        console.error("Cloud upload error:", err);
+        showToast("Failed to sync local games to cloud.");
+      }
+    }
+
+    function saveGamesToStorage(pushToCloud = true) {
       localStorage.setItem(STORAGE_KEYS.GAMES, JSON.stringify(games));
       localStorage.setItem(STORAGE_KEYS.ACTIVE_GAME_ID, activeGameId);
+
+      if (pushToCloud && currentUser && db) {
+        const currentGame = getActiveGame();
+        if (currentGame) {
+          const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+          const gameDocRef = window.fb.doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', currentGame.id);
+          window.fb.setDoc(gameDocRef, currentGame).catch(err => console.error("Cloud save failed:", err));
+        }
+      }
+    }
+
+    function saveRosterToStorage() {
+      localStorage.setItem(STORAGE_KEYS.ROSTER, JSON.stringify(roster));
+    }
+
+    function savePlaybookToStorage() {
+      localStorage.setItem(STORAGE_KEYS.PLAYBOOK, JSON.stringify(playbook));
     }
 
     function getActiveGame() {
       return games.find(g => g.id === activeGameId) || games[0];
     }
 
-    function populateGameDropdown() {
-      const select = document.getElementById('activeGameSelect');
-      select.innerHTML = games.map(g => `<option value="${g.id}" ${g.id === activeGameId ? 'selected' : ''}>${g.title} (${g.possessions.length} entries)</option>`).join('');
+    /* AUTH MODAL HANDLERS */
+    function openAuthModal() {
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
     }
 
-    function switchActiveGame(id) {
-      activeGameId = id;
+    async function handleEmailAuth(e) {
+      e.preventDefault();
+      if (!auth) {
+        showToast("Authentication module loading...");
+        return;
+      }
+      const email = document.getElementById('authEmail').value;
+      const pass = document.getElementById('authPassword').value;
+      const mode = window.authMode || 'signin';
+
+      try {
+        if (mode === 'register') {
+          await window.fb.createUserWithEmailAndPassword(auth, email, pass);
+          showToast("Account created successfully!");
+        } else {
+          await window.fb.signInWithEmailAndPassword(auth, email, pass);
+          showToast("Signed in successfully!");
+        }
+        closeAuthModal();
+      } catch (err) {
+        showToast(err.message || "Authentication failed");
+      }
+    }
+
+    async function handleGoogleSignIn() {
+      if (!auth) return;
+      const provider = new window.fb.GoogleAuthProvider();
+      try {
+        await window.fb.signInWithPopup(auth, provider);
+        showToast("Google Sign-In successful!");
+        closeAuthModal();
+      } catch (err) {
+        showToast("Google sign in failed: " + err.message);
+      }
+    }
+
+    async function handleGuestSignIn() {
+      if (!auth) {
+        closeAuthModal();
+        return;
+      }
+      try {
+        await window.fb.signInAnonymously(auth);
+        showToast("Signed in as Guest");
+        closeAuthModal();
+      } catch (err) {
+        closeAuthModal();
+      }
+    }
+
+    async function handleSignOut() {
+      if (!auth) return;
+      try {
+        await window.fb.signOut(auth);
+        showToast("Signed out");
+        closeAuthModal();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    /* NAVIGATION & TAB MANAGEMENT */
+    function switchTab(tabName) {
+      document.getElementById('tabTracker').classList.add('hidden');
+      document.getElementById('tabAnalytics').classList.add('hidden');
+      document.getElementById('tabLog').classList.add('hidden');
+
+      const tabs = ['Tracker', 'Analytics', 'Log'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab${t}Btn`);
+        if (btn) btn.className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
+      });
+
+      if (tabName === 'tracker') {
+        document.getElementById('tabTracker').classList.remove('hidden');
+        document.getElementById('tabTrackerBtn').className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+      } else if (tabName === 'analytics') {
+        document.getElementById('tabAnalytics').classList.remove('hidden');
+        document.getElementById('tabAnalyticsBtn').className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+        renderAnalyticsDashboard();
+      } else if (tabName === 'log') {
+        document.getElementById('tabLog').classList.remove('hidden');
+        document.getElementById('tabLogBtn').className = "px-3 py-1.5 rounded-md bg-amber-500 text-slate-950 font-semibold shadow transition-all";
+        renderPossessionLogTable();
+      }
+    }
+
+    /* COURT INTERACTION & SPATIAL MATH */
+    function handleCourtClick(event) {
+      const svg = document.getElementById('courtSvg');
+      const rect = svg.getBoundingClientRect();
+      const x = Math.round(((event.clientX - rect.left) / rect.width) * 500);
+      const y = Math.round(((event.clientY - rect.top) / rect.height) * 470);
+
+      const dx = x - 250;
+      const dy = y - 52.5;
+      const distFeet = Math.round(Math.hypot(dx, dy) / 10);
+
+      const is3Pt = (y <= 130 && (x <= 30 || x >= 470)) || (Math.hypot(dx, dy) >= 221.5);
+      let locationStr = 'Midrange';
+      if (Math.hypot(dx, dy) <= 80) locationStr = 'Rim / Paint';
+      else if (is3Pt) locationStr = '3-Pointer';
+
+      let sideStr = 'Center';
+      if (x < 200) sideStr = 'Left';
+      else if (x > 300) sideStr = 'Right';
+
+      currentSelectedPoint = { x, y, location: locationStr, side: sideStr, dist: distFeet };
+
+      const marker = document.getElementById('activeTargetMarker');
+      marker.setAttribute('transform', `translate(${x}, ${y})`);
+      marker.style.display = 'block';
+
+      document.getElementById('clickCoordinates').innerText = `(${x}, ${y})`;
+      document.getElementById('readoutLocation').innerText = locationStr;
+      document.getElementById('readoutSide').innerText = sideStr;
+      document.getElementById('readoutDistance').innerText = `${distFeet} ft`;
+
+      updateFormFields();
+      updateXpPreview();
+    }
+
+    function selectShotType(type) {
+      selectedShotType = type;
+      document.querySelectorAll('.shot-type-chip').forEach(btn => {
+        if (btn.dataset.val === type) {
+          btn.className = "shot-type-chip px-1.5 py-1 rounded border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-[11px] text-center";
+        } else {
+          btn.className = "shot-type-chip px-1.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-300 text-[11px] font-medium text-center";
+        }
+      });
+      updateXpPreview();
+    }
+
+    function selectContest(level) {
+      selectedContest = parseInt(level);
+      document.querySelectorAll('.contest-chip').forEach(btn => {
+        const val = parseInt(btn.dataset.val);
+        if (val === selectedContest) {
+          btn.classList.add('ring-2', 'ring-amber-400', 'scale-105');
+        } else {
+          btn.classList.remove('ring-2', 'ring-amber-400', 'scale-105');
+        }
+      });
+      updateXpPreview();
+    }
+
+    function updateFormFields() {
+      const outcome = document.getElementById('formOutcome').value;
+      const ftContainer = document.getElementById('ftTripContainer');
+      const actualPtsInput = document.getElementById('formActualPts');
+      const shotSection = document.getElementById('shotTypeSection');
+      const contestSection = document.getElementById('contestSection');
+
+      if (outcome === 'Shooting Foul') {
+        ftContainer.classList.remove('hidden');
+        shotSection.classList.remove('opacity-40', 'pointer-events-none');
+        contestSection.classList.remove('opacity-40', 'pointer-events-none');
+        calcFtActualPts();
+      } else {
+        ftContainer.classList.add('hidden');
+        if (outcome === 'Turnover' || outcome === 'Non-Shooting Foul') {
+          actualPtsInput.value = 0;
+          shotSection.classList.add('opacity-40', 'pointer-events-none');
+          contestSection.classList.add('opacity-40', 'pointer-events-none');
+        } else {
+          shotSection.classList.remove('opacity-40', 'pointer-events-none');
+          contestSection.classList.remove('opacity-40', 'pointer-events-none');
+          if (outcome === 'Made FG') {
+            actualPtsInput.value = (currentSelectedPoint.location === '3-Pointer') ? 3 : 2;
+          } else {
+            actualPtsInput.value = 0;
+          }
+        }
+      }
+      updateXpPreview();
+    }
+
+    function calcFtActualPts() {
+      const val = document.getElementById('formFtResult').value;
+      const input = document.getElementById('formActualPts');
+      const map = { 
+        '2/2': 2, '1/2': 1, '0/2': 0, 
+        '3/3': 3, '2/3': 2, '1/3': 1, '0/3': 0, 
+        '1/1 And-1': (currentSelectedPoint.location === '3-Pointer' ? 4 : 3) 
+      };
+      input.value = map[val] !== undefined ? map[val] : 2;
+      updateXpPreview();
+    }
+
+    function calculateExpectedPoints(x, y, shotType, contest, outcome, playerId) {
+      if (outcome === 'Turnover') return 0.0;
+
+      let model = BENCHMARK_MODELS[currentBenchmarkKey] || BENCHMARK_MODELS.JUCO;
+      let rimPct = model.rimPct;
+      let midPct = model.midPct;
+      let threePct = model.threePct;
+      let ftPct = model.ftPct;
+
+      // If Active Player custom profile selected, override baseline with player profile stats
+      if (currentBenchmarkKey === 'PLAYER') {
+        const targetId = playerId || document.getElementById('formPlayer')?.value;
+        const player = roster.find(p => p.id === targetId);
+        if (player) {
+          if (player.rimPct !== undefined && player.rimPct !== null) rimPct = player.rimPct / 100;
+          if (player.midPct !== undefined && player.midPct !== null) midPct = player.midPct / 100;
+          if (player.threePct !== undefined && player.threePct !== null) threePct = player.threePct / 100;
+          if (player.ftPct !== undefined && player.ftPct !== null) ftPct = player.ftPct / 100;
+        }
+      }
+
+      if (outcome === 'Shooting Foul') return roundVal(2 * ftPct * 0.95);
+      if (outcome === 'Non-Shooting Foul') return roundVal(2 * ftPct * 0.60);
+
+      const dx = x - 250;
+      const dy = y - 52.5;
+      const distFt = Math.hypot(dx, dy) / 10.0;
+      const is3 = (y <= 130 && (x <= 30 || x >= 470)) || distFt >= 22.15;
+
+      let baseExpected = 0;
+      if (is3) {
+        baseExpected = 3 * threePct;
+        if (shotType === 'Catch & Shoot') baseExpected += 0.12;
+        else if (shotType === 'Off the Dribble') baseExpected -= 0.10;
+      } else if (distFt <= 8.0) {
+        baseExpected = 2 * rimPct;
+        if (shotType === 'Dunk') baseExpected = Math.max(baseExpected, 1.70);
+        else if (shotType === 'Layup') baseExpected += 0.05;
+      } else {
+        baseExpected = 2 * midPct;
+        if (shotType === 'Off the Dribble') baseExpected -= 0.08;
+      }
+
+      let contestMod = 1.0;
+      if (contest === 3) contestMod = 1.20;
+      else if (contest === 2) contestMod = 1.00;
+      else if (contest === 1) contestMod = 0.75;
+
+      let xp = roundVal(baseExpected * contestMod);
+      return Math.min(Math.max(xp, 0.0), 3.0);
+    }
+
+    function updateXpPreview() {
+      const outcome = document.getElementById('formOutcome').value;
+      const playerId = document.getElementById('formPlayer').value;
+      const xp = calculateExpectedPoints(currentSelectedPoint.x, currentSelectedPoint.y, selectedShotType, selectedContest, outcome, playerId);
+      document.getElementById('xpPreviewBadge').innerText = `Est xP: ${xp.toFixed(2)}`;
+    }
+
+    /* POSSESSION LOGGING */
+    function handlePossessionSubmit(event) {
+      event.preventDefault();
+      const currentGame = getActiveGame();
+
+      const playerId = document.getElementById('formPlayer').value;
+      const playId = document.getElementById('formPlay').value;
+      const outcome = document.getElementById('formOutcome').value;
+      const actualPts = parseFloat(document.getElementById('formActualPts').value) || 0;
+
+      const xp = calculateExpectedPoints(currentSelectedPoint.x, currentSelectedPoint.y, selectedShotType, selectedContest, outcome, playerId);
+      const poe = roundVal(actualPts - xp);
+
+      const playerObj = roster.find(p => p.id === playerId) || { num: '?', name: 'Unknown' };
+      const playObj = playbook.find(p => p.id === playId) || { code: 'UNK', name: 'Unknown' };
+
+      const entry = {
+        id: Date.now(),
+        playerNum: playerObj.num,
+        playerName: playerObj.name,
+        playCode: playObj.code,
+        playName: playObj.name,
+        outcome: outcome,
+        x: currentSelectedPoint.x,
+        y: currentSelectedPoint.y,
+        location: currentSelectedPoint.location,
+        shotType: selectedShotType,
+        contest: selectedContest,
+        pts: actualPts,
+        xp: xp,
+        poe: poe
+      };
+
+      if (!currentGame.possessions) currentGame.possessions = [];
+      currentGame.possessions.push(entry);
       saveGamesToStorage();
+      showToast("Possession logged successfully!");
       reRenderAllUI();
-      showToast(`Switched active game`, 'info');
     }
 
+    /* UI RENDERING ENGINES */
     function reRenderAllUI() {
-      populateGameDropdown();
       renderCourtOverlay();
       renderAnalyticsDashboard();
       renderPossessionLogTable();
     }
 
-    // MULTI-GAME MANAGER MODAL
+    function renderCourtOverlay() {
+      const container = document.getElementById('courtOverlayGroup');
+      container.innerHTML = '';
+
+      if (!document.getElementById('toggleShotPins').checked) return;
+
+      const currentGame = getActiveGame();
+      if (!currentGame || !currentGame.possessions) return;
+
+      currentGame.possessions.forEach((p, idx) => {
+        let fill = '#f59e0b';
+        if (p.outcome === 'Made FG' || p.pts > 0) fill = '#10b981';
+        else if (p.outcome === 'Missed FG' || p.outcome === 'Turnover') fill = '#ef4444';
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', p.x);
+        circle.setAttribute('cy', p.y);
+        circle.setAttribute('r', '6');
+        circle.setAttribute('fill', fill);
+        circle.setAttribute('stroke', '#ffffff');
+        circle.setAttribute('stroke-width', '1.5');
+        circle.setAttribute('class', 'court-pin');
+
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = `#${idx + 1} | ${p.playerName} - ${p.outcome} (${p.pts} pts, xP: ${p.xp})`;
+        circle.appendChild(title);
+
+        container.appendChild(circle);
+      });
+    }
+
+    function renderAnalyticsDashboard() {
+      const game = getActiveGame();
+      if (!game) return;
+      const poss = game.possessions || [];
+      const count = poss.length;
+
+      let totalPts = 0, totalXp = 0, openShots = 0;
+      poss.forEach(p => {
+        totalPts += p.pts;
+        totalXp += p.xp;
+        if (p.contest === 3) openShots++;
+      });
+
+      const pps = count > 0 ? (totalPts / count).toFixed(2) : '0.00';
+      const poe = totalPts - totalXp;
+      const sqi = count > 0 ? (totalXp / count).toFixed(2) : '0.00';
+      const execRate = count > 0 ? Math.round((openShots / count) * 100) : 0;
+
+      document.getElementById('kpiPossessions').innerText = count;
+      document.getElementById('kpiActualPts').innerText = totalPts;
+      document.getElementById('kpiPps').innerText = `${pps} PPS`;
+      document.getElementById('kpiExpectedPts').innerText = totalXp.toFixed(2);
+      document.getElementById('kpiPoe').innerText = (poe >= 0 ? '+' : '') + poe.toFixed(2);
+      document.getElementById('kpiSqi').innerText = sqi;
+      document.getElementById('kpiExecution').innerText = `${execRate}%`;
+
+      // Player Breakdown Table
+      const playerMap = {};
+      poss.forEach(p => {
+        if (!playerMap[p.playerName]) {
+          playerMap[p.playerName] = { poss: 0, pts: 0, xp: 0 };
+        }
+        playerMap[p.playerName].poss++;
+        playerMap[p.playerName].pts += p.pts;
+        playerMap[p.playerName].xp += p.xp;
+      });
+
+      const pTable = document.getElementById('playerAnalyticsTable');
+      pTable.innerHTML = '';
+      Object.keys(playerMap).forEach(pName => {
+        const item = playerMap[pName];
+        const pPoe = item.pts - item.xp;
+        const pSqi = (item.xp / item.poss).toFixed(2);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-white">${pName}</td>
+          <td class="p-2 text-center font-mono">${item.poss}</td>
+          <td class="p-2 text-center font-mono text-emerald-400 font-bold">${item.pts}</td>
+          <td class="p-2 text-center font-mono text-amber-400">${item.xp.toFixed(2)}</td>
+          <td class="p-2 text-center font-mono ${pPoe >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${pPoe >= 0 ? '+' : ''}${pPoe.toFixed(2)}</td>
+          <td class="p-2 text-center font-mono text-cyan-400">${pSqi}</td>
+        `;
+        pTable.appendChild(tr);
+      });
+
+      // Play Breakdown Table
+      const playMap = {};
+      poss.forEach(p => {
+        if (!playMap[p.playCode]) {
+          playMap[p.playCode] = { code: p.playCode, runs: 0, pts: 0, xp: 0, open: 0, to: 0 };
+        }
+        playMap[p.playCode].runs++;
+        playMap[p.playCode].pts += p.pts;
+        playMap[p.playCode].xp += p.xp;
+        if (p.contest === 3) playMap[p.playCode].open++;
+        if (p.outcome === 'Turnover') playMap[p.playCode].to++;
+      });
+
+      const plTable = document.getElementById('playAnalyticsTable');
+      plTable.innerHTML = '';
+      Object.keys(playMap).forEach(code => {
+        const item = playMap[code];
+        const avgXp = (item.xp / item.runs).toFixed(2);
+        const openPct = Math.round((item.open / item.runs) * 100);
+        const toPct = Math.round((item.to / item.runs) * 100);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 font-semibold text-white">${item.code}</td>
+          <td class="p-2 text-center font-mono">${item.runs}</td>
+          <td class="p-2 text-center font-mono text-emerald-400 font-bold">${item.pts}</td>
+          <td class="p-2 text-center font-mono text-amber-400">${avgXp}</td>
+          <td class="p-2 text-center font-mono text-emerald-300">${openPct}%</td>
+          <td class="p-2 text-center font-mono text-rose-400">${toPct}%</td>
+        `;
+        plTable.appendChild(tr);
+      });
+    }
+
+    function renderPossessionLogTable() {
+      const game = getActiveGame();
+      if (!game) return;
+      const query = (document.getElementById('logSearchInput').value || '').toLowerCase();
+      const tbody = document.getElementById('possessionLogTable');
+      tbody.innerHTML = '';
+
+      (game.possessions || []).forEach((p, idx) => {
+        if (query && !p.playerName.toLowerCase().includes(query) && !p.playCode.toLowerCase().includes(query) && !p.outcome.toLowerCase().includes(query)) {
+          return;
+        }
+
+        let contestBadge = '<span class="text-emerald-400 font-bold">Open</span>';
+        if (p.contest === 2) contestBadge = '<span class="text-amber-400 font-bold">Slight</span>';
+        if (p.contest === 1) contestBadge = '<span class="text-rose-400 font-bold">Heavy</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition-all";
+        tr.innerHTML = `
+          <td class="p-2.5 text-center font-bold text-slate-500">${idx + 1}</td>
+          <td class="p-2.5 font-bold text-white">${p.playerName}</td>
+          <td class="p-2.5 text-slate-300">${p.playCode}</td>
+          <td class="p-2.5 font-semibold ${p.outcome.includes('Made') ? 'text-emerald-400' : p.outcome.includes('Turnover') ? 'text-rose-400' : 'text-amber-400'}">${p.outcome}</td>
+          <td class="p-2.5 text-slate-400">${p.location}</td>
+          <td class="p-2.5 text-slate-400">${p.shotType || '-'}</td>
+          <td class="p-2.5 text-center">${contestBadge}</td>
+          <td class="p-2.5 text-center font-bold text-emerald-400">${p.pts}</td>
+          <td class="p-2.5 text-center text-amber-400">${p.xp.toFixed(2)}</td>
+          <td class="p-2.5 text-center ${p.poe >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${p.poe >= 0 ? '+' : ''}${p.poe.toFixed(2)}</td>
+          <td class="p-2.5 text-right">
+            <button onclick="deletePossession(${idx})" class="text-rose-400 hover:text-rose-300 text-xs px-1.5 py-0.5 rounded bg-rose-950/40 border border-rose-800/50">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function deletePossession(index) {
+      const game = getActiveGame();
+      if (!game) return;
+      game.possessions.splice(index, 1);
+      saveGamesToStorage();
+      showToast("Possession removed");
+      reRenderAllUI();
+    }
+
+    /* DROPDOWNS & MODALS */
+    function populateDropdowns() {
+      const pSelect = document.getElementById('formPlayer');
+      pSelect.innerHTML = roster.map(p => `<option value="${p.id}">#${p.num} - ${p.name} (${p.pos})</option>`).join('');
+
+      const plSelect = document.getElementById('formPlay');
+      plSelect.innerHTML = playbook.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+    }
+
+    function populateGameDropdown() {
+      const select = document.getElementById('activeGameSelect');
+      select.innerHTML = games.map(g => `<option value="${g.id}" ${g.id === activeGameId ? 'selected' : ''}>${g.title}</option>`).join('');
+    }
+
+    function switchActiveGame(gameId) {
+      activeGameId = gameId;
+      saveGamesToStorage(false);
+      reRenderAllUI();
+      showToast("Switched active game");
+    }
+
+    /* GAME MANAGER MODAL */
     function openGamesModal() {
       renderGamesList();
       document.getElementById('gamesModal').classList.remove('hidden');
@@ -632,446 +1488,242 @@
       document.getElementById('gamesModal').classList.add('hidden');
     }
 
+    function handleCreateNewGame(e) {
+      e.preventDefault();
+      const input = document.getElementById('newGameTitle');
+      const title = input.value.trim();
+      if (!title) return;
+
+      const newGame = {
+        id: 'game_' + Date.now(),
+        title: title,
+        date: new Date().toLocaleDateString(),
+        possessions: []
+      };
+      games.push(newGame);
+      activeGameId = newGame.id;
+      saveGamesToStorage();
+      populateGameDropdown();
+      renderGamesList();
+      input.value = '';
+      reRenderAllUI();
+      showToast("New game created!");
+    }
+
     function renderGamesList() {
       const container = document.getElementById('gamesListContainer');
       container.innerHTML = games.map(g => `
-        <div class="flex items-center justify-between p-2.5 text-xs ${g.id === activeGameId ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}">
+        <div class="flex items-center justify-between p-2.5 ${g.id === activeGameId ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}">
           <div>
-            <span class="font-bold text-white block">${g.title}</span>
-            <span class="text-[10px] text-slate-400">${g.date} • ${g.possessions.length} Possessions</span>
+            <span class="text-xs font-bold text-white block">${g.title}</span>
+            <span class="text-[10px] text-slate-400 font-mono">${g.date} | ${g.possessions ? g.possessions.length : 0} Possessions</span>
           </div>
           <div class="flex items-center gap-1.5">
-            ${g.id !== activeGameId ? `<button onclick="switchActiveGame('${g.id}'); closeGamesModal();" class="text-amber-400 font-semibold text-[11px] hover:underline">Load</button>` : `<span class="text-emerald-400 font-bold text-[10px]">Active</span>`}
-            ${games.length > 1 ? `<button onclick="deleteGame('${g.id}')" class="text-rose-400 font-bold text-[11px] ml-2">Delete</button>` : ''}
+            ${g.id !== activeGameId ? `<button onclick="switchActiveGame('${g.id}'); renderGamesList();" class="text-xs bg-slate-800 text-amber-300 px-2 py-1 rounded">Select</button>` : '<span class="text-[10px] text-amber-400 font-bold px-1.5 py-0.5 bg-amber-950 border border-amber-800 rounded">ACTIVE</span>'}
+            ${games.length > 1 ? `<button onclick="deleteGame('${g.id}')" class="text-xs text-rose-400 hover:text-rose-300 p-1">✕</button>` : ''}
           </div>
         </div>
       `).join('');
     }
 
-    function handleCreateNewGame(e) {
-      e.preventDefault();
-      const title = document.getElementById('newGameTitle').value.trim();
-      if (!title) return;
-
-      const newGame = {
-        id: 'game_' + Date.now(),
-        title,
-        date: new Date().toLocaleDateString(),
-        possessions: []
-      };
-
-      games.unshift(newGame);
-      activeGameId = newGame.id;
-      saveGamesToStorage();
-
-      document.getElementById('newGameTitle').value = '';
-      closeGamesModal();
-      reRenderAllUI();
-      showToast(`Created & loaded: ${title}`, 'success');
-    }
-
-    function deleteGame(id) {
+    async function deleteGame(gameId) {
       if (games.length <= 1) return;
-      games = games.filter(g => g.id !== id);
-      if (activeGameId === id) activeGameId = games[0].id;
-      saveGamesToStorage();
+      const targetGame = games.find(g => g.id === gameId);
+      games = games.filter(g => g.id !== gameId);
+      if (activeGameId === gameId) activeGameId = games[0].id;
+      
+      saveGamesToStorage(false);
+
+      if (currentUser && db && targetGame) {
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+        const docRef = window.fb.doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', targetGame.id);
+        window.fb.deleteDoc(docRef).catch(e => console.error("Cloud delete error:", e));
+      }
+
+      populateGameDropdown();
       renderGamesList();
       reRenderAllUI();
-      showToast('Game file deleted', 'info');
+      showToast("Game file deleted");
     }
 
-    // EXPORT & IMPORT BACKUPS
+    /* ROSTER MODAL */
+    function openRosterModal() {
+      renderRosterList();
+      document.getElementById('rosterModal').classList.remove('hidden');
+    }
+    function closeRosterModal() {
+      document.getElementById('rosterModal').classList.add('hidden');
+    }
+
+    function toggleProfileInputMode(mode) {
+      const pctBox = document.getElementById('profilePctInputs');
+      const countBox = document.getElementById('profileCountInputs');
+      if (mode === 'pct') {
+        pctBox.classList.remove('hidden');
+        countBox.classList.add('hidden');
+      } else {
+        pctBox.classList.add('hidden');
+        countBox.classList.remove('hidden');
+      }
+    }
+
+    function handleAddPlayer(e) {
+      e.preventDefault();
+      const num = document.getElementById('newPlayerNum').value;
+      const name = document.getElementById('newPlayerName').value;
+      const pos = document.getElementById('newPlayerPos').value;
+
+      const mode = document.querySelector('input[name="profileMode"]:checked').value;
+      let rimPct = 58, midPct = 36, threePct = 34, ftPct = 69;
+
+      if (mode === 'pct') {
+        rimPct = parseFloat(document.getElementById('newPlayerRimPct').value) || 58;
+        midPct = parseFloat(document.getElementById('newPlayerMidPct').value) || 36;
+        threePct = parseFloat(document.getElementById('newPlayerThreePct').value) || 34;
+        ftPct = parseFloat(document.getElementById('newPlayerFtPct').value) || 69;
+      } else {
+        const rimM = parseFloat(document.getElementById('newPlayerRimM').value) || 0;
+        const rimA = parseFloat(document.getElementById('newPlayerRimA').value) || 1;
+        rimPct = Math.round((rimM / rimA) * 100);
+
+        const midM = parseFloat(document.getElementById('newPlayerMidM').value) || 0;
+        const midA = parseFloat(document.getElementById('newPlayerMidA').value) || 1;
+        midPct = Math.round((midM / midA) * 100);
+
+        const threeM = parseFloat(document.getElementById('newPlayerThreeM').value) || 0;
+        const threeA = parseFloat(document.getElementById('newPlayerThreeA').value) || 1;
+        threePct = Math.round((threeM / threeA) * 100);
+
+        const ftM = parseFloat(document.getElementById('newPlayerFtM').value) || 0;
+        const ftA = parseFloat(document.getElementById('newPlayerFtA').value) || 1;
+        ftPct = Math.round((ftM / ftA) * 100);
+      }
+
+      roster.push({ id: String(Date.now()), num, name, pos, rimPct, midPct, threePct, ftPct });
+      saveRosterToStorage();
+      populateDropdowns();
+      renderRosterList();
+      updateXpPreview();
+      
+      document.getElementById('newPlayerNum').value = '';
+      document.getElementById('newPlayerName').value = '';
+      showToast("Player Profile added!");
+    }
+
+    function renderRosterList() {
+      document.getElementById('rosterListContainer').innerHTML = roster.map((p, i) => `
+        <div class="flex items-center justify-between p-2.5">
+          <div>
+            <span class="text-xs font-bold text-white block">#${p.num} ${p.name} (${p.pos})</span>
+            <span class="text-[10px] text-amber-400 font-mono">Rim: ${p.rimPct || 58}% | Mid: ${p.midPct || 36}% | 3PT: ${p.threePct || 34}% | FT: ${p.ftPct || 69}%</span>
+          </div>
+          <button onclick="deletePlayer(${i})" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-0.5 bg-rose-950/40 border border-rose-800/40 rounded">Remove</button>
+        </div>
+      `).join('');
+    }
+    function deletePlayer(i) {
+      roster.splice(i, 1);
+      saveRosterToStorage();
+      populateDropdowns();
+      renderRosterList();
+      updateXpPreview();
+    }
+
+    /* PLAYBOOK MODAL */
+    function openPlaybookModal() {
+      renderPlaybookList();
+      document.getElementById('playbookModal').classList.remove('hidden');
+    }
+    function closePlaybookModal() {
+      document.getElementById('playbookModal').classList.add('hidden');
+    }
+    function handleAddPlay(e) {
+      e.preventDefault();
+      const code = document.getElementById('newPlayCode').value;
+      const name = document.getElementById('newPlayName').value;
+      playbook.push({ id: 'p_' + Date.now(), code, name });
+      savePlaybookToStorage();
+      populateDropdowns();
+      renderPlaybookList();
+      document.getElementById('newPlayCode').value = '';
+      document.getElementById('newPlayName').value = '';
+      showToast("Play set added");
+    }
+    function renderPlaybookList() {
+      document.getElementById('playbookListContainer').innerHTML = playbook.map((p, i) => `
+        <div class="flex items-center justify-between p-2">
+          <span class="text-xs font-bold text-white">${p.code} - ${p.name}</span>
+          <button onclick="deletePlay(${i})" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-0.5">Remove</button>
+        </div>
+      `).join('');
+    }
+    function deletePlay(i) {
+      playbook.splice(i, 1);
+      savePlaybookToStorage();
+      populateDropdowns();
+      renderPlaybookList();
+    }
+
+    /* BACKUP / EXPORT & CSV UTILITIES */
     function exportAllGamesBackup() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(games, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `juco_analytics_all_games_${Date.now()}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function exportCurrentGameCsv() {
-      const activeGame = getActiveGame();
-      if (!activeGame.possessions.length) return showToast('No possessions to export', 'error');
-
-      let csv = 'Player,Play,Outcome,Location,Side,ShotType,Contest,ActualPts,xP,POE\n';
-      activeGame.possessions.forEach(p => {
-        csv += `"${p.player}","${p.play}","${p.outcome}","${p.location}","${p.side}","${p.type}",${p.contest},${p.actualPts},${p.xp},${p.poe}\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
+      const payload = { games, roster, playbook };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', `${activeGame.title.replace(/\s+/g, '_')}_possessions.csv`);
+      a.href = URL.createObjectURL(blob);
+      a.download = `juco_analytics_backup_${Date.now()}.json`;
       a.click();
     }
 
-    function importGamesJson(event) {
-      const file = event.target.files[0];
+    function importGamesJson(e) {
+      const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function(evt) {
         try {
-          const importedGames = JSON.parse(e.target.result);
-          if (Array.isArray(importedGames)) {
-            games = importedGames;
-            activeGameId = games[0].id;
-            saveGamesToStorage();
-            closeGamesModal();
-            reRenderAllUI();
-            showToast('Imported games successfully!', 'success');
-          }
+          const data = JSON.parse(evt.target.result);
+          if (data.games) games = data.games;
+          if (data.roster) roster = data.roster;
+          if (data.playbook) playbook = data.playbook;
+          activeGameId = games[0].id;
+          saveGamesToStorage();
+          saveRosterToStorage();
+          savePlaybookToStorage();
+          populateGameDropdown();
+          populateDropdowns();
+          reRenderAllUI();
+          showToast("Data imported successfully!");
         } catch (err) {
-          showToast('Invalid JSON file format', 'error');
+          showToast("Failed to parse JSON backup");
         }
       };
       reader.readAsText(file);
     }
 
-    // POSSESSION LOGGING ENGINE
-    function handlePossessionSubmit(e) {
-      e.preventDefault();
-      const activeGame = getActiveGame();
-
-      const player = document.getElementById('formPlayer').value;
-      const play = document.getElementById('formPlay').value;
-      const outcome = document.getElementById('formOutcome').value;
-      const actualPts = parseInt(document.getElementById('formActualPts').value) || 0;
-
-      const xp = calculateXp(currentSelectedPoint.location, selectedShotType, selectedContest, outcome);
-      const poe = parseFloat((actualPts - xp).toFixed(2));
-
-      const newEntry = {
-        id: Date.now(),
-        player,
-        play,
-        outcome,
-        location: currentSelectedPoint.location,
-        side: currentSelectedPoint.side,
-        dist: currentSelectedPoint.dist,
-        type: selectedShotType,
-        contest: selectedContest,
-        actualPts,
-        xp,
-        poe,
-        x: currentSelectedPoint.x,
-        y: currentSelectedPoint.y
-      };
-
-      activeGame.possessions.unshift(newEntry);
-      saveGamesToStorage();
-
-      reRenderAllUI();
-      showToast(`Logged #${activeGame.possessions.length}: ${player} (${outcome})`, 'success');
-    }
-
-    // SPATIAL MATH & CALCULATION ENGINE
-    function handleCourtClick(e) {
-      const svg = document.getElementById('courtSvg');
-      const rect = svg.getBoundingClientRect();
-      const x = Math.round(((e.clientX - rect.left) / rect.width) * 500);
-      const y = Math.round(((e.clientY - rect.top) / rect.height) * 470);
-
-      const rimX = 250, rimY = 52.5;
-      const distPx = Math.sqrt(Math.pow(x - rimX, 2) + Math.pow(y - rimY, 2));
-      const distFt = Math.round(distPx / 10);
-
-      let location = 'Paint', side = 'M';
-      if (x < 210) side = 'L';
-      else if (x > 290) side = 'R';
-
-      const is3pt = (y < 130 && (x < 30 || x > 470)) || (y >= 130 && distPx >= 221.5);
-      const isPaint = (x >= 170 && x <= 330 && y <= 200);
-
-      if (is3pt) {
-        if (y < 130) location = 'Corner 3';
-        else if (x < 170 || x > 330) location = 'Wing 3';
-        else location = 'Slot 3';
-      } else if (isPaint) {
-        location = 'Paint';
-      } else {
-        if (y < 130) location = 'Baseline Midrange';
-        else if (x < 170 || x > 330) location = 'Wing Midrange';
-        else location = 'Elbow / Top Midrange';
-      }
-
-      currentSelectedPoint = { x, y, location, side, dist: distFt };
-
-      const marker = document.getElementById('activeTargetMarker');
-      marker.setAttribute('transform', `translate(${x}, ${y})`);
-      marker.style.display = 'block';
-
-      document.getElementById('readoutLocation').textContent = location;
-      document.getElementById('readoutSide').textContent = side === 'L' ? 'Left' : side === 'R' ? 'Right' : 'Middle';
-      document.getElementById('readoutDistance').textContent = `~${distFt} ft`;
-      document.getElementById('clickCoordinates').textContent = `X:${x} Y:${y}`;
-
-      if (location === 'Paint' && distFt <= 4) selectShotType('Layup');
-      else if (is3pt) selectShotType('Catch & Shoot');
-
-      updateXpPreview();
-    }
-
-    function calculateXp(location, shotType, contestLevel, outcome) {
-      if (outcome === 'Turnover' || outcome === 'Non-Shooting Foul') return 0.00;
-      const is3pt = location.includes('3');
-      const isPaint = location === 'Paint';
-
-      let baseVal = is3pt ? 3.0 : 2.0;
-      let basePct = 0.45;
-
-      if (isPaint) {
-        if (shotType === 'Dunk') basePct = 0.82;
-        else if (shotType === 'Layup') basePct = 0.65;
-        else basePct = 0.52;
-      } else if (is3pt) {
-        basePct = location.includes('Corner') ? 0.39 : 0.36;
-      } else {
-        basePct = shotType === 'Catch & Shoot' ? 0.44 : 0.38;
-      }
-
-      let contestMult = contestLevel === 3 ? 1.15 : contestLevel === 2 ? 0.95 : 0.70;
-      let xp = baseVal * basePct * contestMult;
-      if (outcome === 'Shooting Foul') xp = is3pt ? 2.10 : 1.40;
-
-      return parseFloat(xp.toFixed(2));
-    }
-
-    function updateXpPreview() {
-      const outcome = document.getElementById('formOutcome').value;
-      const xp = calculateXp(currentSelectedPoint.location, selectedShotType, selectedContest, outcome);
-      document.getElementById('xpPreviewBadge').textContent = `Est xP: ${xp.toFixed(2)}`;
-    }
-
-    function selectShotType(type) {
-      selectedShotType = type;
-      document.querySelectorAll('.shot-type-chip').forEach(btn => {
-        if (btn.getAttribute('data-val') === type) {
-          btn.className = "shot-type-chip px-1.5 py-1 rounded border border-amber-500 bg-amber-500/20 text-amber-300 text-[11px] font-bold text-center";
-        } else {
-          btn.className = "shot-type-chip px-1.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400 text-[11px] font-medium text-center";
-        }
+    function exportCurrentGameCsv() {
+      const game = getActiveGame();
+      if (!game) return;
+      let csv = 'Possession,#,Player,PlayCode,Outcome,Location,ShotType,Contest,Points,xP,POE\n';
+      (game.possessions || []).forEach((p, i) => {
+        csv += `${i + 1},#${p.playerNum} ${p.playerName},"${p.playCode}","${p.outcome}","${p.location}","${p.shotType || ''}",${p.contest},${p.pts},${p.xp},${p.poe}\n`;
       });
-      updateXpPreview();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${game.title.replace(/\s+/g, '_')}_export.csv`;
+      a.click();
     }
 
-    function selectContest(level) {
-      selectedContest = level;
-      document.querySelectorAll('.contest-chip').forEach(btn => {
-        const val = parseInt(btn.getAttribute('data-val'));
-        if (val === level) btn.classList.add('ring-2', 'ring-white');
-        else btn.classList.remove('ring-2', 'ring-white');
-      });
-      updateXpPreview();
-    }
-
-    function updateFormFields() {
-      const outcome = document.getElementById('formOutcome').value;
-      const ftContainer = document.getElementById('ftTripContainer');
-      const actualInput = document.getElementById('formActualPts');
-
-      if (outcome === 'Shooting Foul') {
-        ftContainer.classList.remove('hidden');
-        calcFtActualPts();
-      } else {
-        ftContainer.classList.add('hidden');
-        if (outcome === 'Made FG') actualInput.value = currentSelectedPoint.location.includes('3') ? 3 : 2;
-        else actualInput.value = 0;
-      }
-      updateXpPreview();
-    }
-
-    function calcFtActualPts() {
-      const ftVal = document.getElementById('formFtResult').value;
-      const actualInput = document.getElementById('formActualPts');
-      if (ftVal.startsWith('3/3')) actualInput.value = 3;
-      else if (ftVal.startsWith('2/2') || ftVal.startsWith('2/3')) actualInput.value = 2;
-      else if (ftVal.startsWith('1/2') || ftVal.startsWith('1/3') || ftVal.includes('And-1')) actualInput.value = 1;
-      else actualInput.value = 0;
-    }
-
-    function renderCourtOverlay() {
-      const overlayGroup = document.getElementById('courtOverlayGroup');
-      overlayGroup.innerHTML = '';
-      const activeGame = getActiveGame();
-
-      if (!document.getElementById('toggleShotPins').checked || !activeGame.possessions.length) return;
-
-      activeGame.possessions.forEach((p, idx) => {
-        if (!p.x || !p.y) return;
-        let color = p.outcome === 'Made FG' ? '#22c55e' : p.outcome === 'Missed FG' ? '#ef4444' : p.outcome === 'Shooting Foul' ? '#f59e0b' : '#64748b';
-
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.setAttribute('class', 'court-pin');
-        g.setAttribute('transform', `translate(${p.x}, ${p.y})`);
-
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('r', '5');
-        circle.setAttribute('fill', color);
-        circle.setAttribute('stroke', '#ffffff');
-        circle.setAttribute('stroke-width', '1.5');
-
-        g.appendChild(circle);
-        overlayGroup.appendChild(g);
-      });
-    }
-
-    function renderAnalyticsDashboard() {
-      const activeGame = getActiveGame();
-      const poss = activeGame.possessions;
-      const total = poss.length;
-
-      if (total === 0) {
-        document.getElementById('kpiPossessions').textContent = '0';
-        document.getElementById('kpiActualPts').textContent = '0';
-        document.getElementById('kpiExpectedPts').textContent = '0.00';
-        document.getElementById('kpiPoe').textContent = '+0.00';
-        document.getElementById('kpiSqi').textContent = '0.00';
-        document.getElementById('kpiExecution').textContent = '0%';
-        return;
-      }
-
-      let totalActual = 0, totalXp = 0, openLooks = 0;
-      const playerMap = {}, playMap = {};
-
-      poss.forEach(p => {
-        totalActual += p.actualPts;
-        totalXp += p.xp;
-        if (p.contest === 3) openLooks++;
-
-        if (!playerMap[p.player]) playerMap[p.player] = { poss: 0, pts: 0, xp: 0 };
-        playerMap[p.player].poss += 1;
-        playerMap[p.player].pts += p.actualPts;
-        playerMap[p.player].xp += p.xp;
-
-        if (!playMap[p.play]) playMap[p.play] = { runs: 0, pts: 0, xp: 0, openCount: 0, toCount: 0 };
-        playMap[p.play].runs += 1;
-        playMap[p.play].pts += p.actualPts;
-        playMap[p.play].xp += p.xp;
-        if (p.contest === 3) playMap[p.play].openCount += 1;
-        if (p.outcome === 'Turnover') playMap[p.play].toCount += 1;
-      });
-
-      document.getElementById('kpiPossessions').textContent = total;
-      document.getElementById('kpiActualPts').textContent = totalActual;
-      document.getElementById('kpiPps').textContent = `${(totalActual/total).toFixed(2)} PPS`;
-      document.getElementById('kpiExpectedPts').textContent = totalXp.toFixed(2);
-      
-      const poe = totalActual - totalXp;
-      document.getElementById('kpiPoe').textContent = `${poe >= 0 ? '+' : ''}${poe.toFixed(2)}`;
-      document.getElementById('kpiSqi').textContent = (totalXp/total).toFixed(2);
-      document.getElementById('kpiExecution').textContent = `${Math.round((openLooks/total)*100)}%`;
-
-      // Render Tables
-      document.getElementById('playerAnalyticsTable').innerHTML = Object.keys(playerMap).map(name => {
-        const s = playerMap[name];
-        return `<tr><td class="p-2 font-bold">${name}</td><td class="p-2 text-center">${s.poss}</td><td class="p-2 text-center text-emerald-400 font-bold">${s.pts}</td><td class="p-2 text-center text-amber-400">${s.xp.toFixed(2)}</td><td class="p-2 text-center">${(s.pts - s.xp).toFixed(2)}</td><td class="p-2 text-center text-cyan-400">${(s.xp/s.poss).toFixed(2)}</td></tr>`;
-      }).join('');
-
-      document.getElementById('playAnalyticsTable').innerHTML = Object.keys(playMap).map(code => {
-        const s = playMap[code];
-        return `<tr><td class="p-2 font-bold text-amber-400">${code}</td><td class="p-2 text-center">${s.runs}</td><td class="p-2 text-center text-emerald-400 font-bold">${s.pts}</td><td class="p-2 text-center text-cyan-400">${(s.xp/s.runs).toFixed(2)}</td><td class="p-2 text-center">${Math.round((s.openCount/s.runs)*100)}%</td><td class="p-2 text-center text-rose-400">${Math.round((s.toCount/s.runs)*100)}%</td></tr>`;
-      }).join('');
-    }
-
-    function renderPossessionLogTable() {
-      const activeGame = getActiveGame();
-      const poss = activeGame.possessions;
-      const container = document.getElementById('possessionLogTable');
-
-      if (!poss.length) {
-        container.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-slate-500 italic">No entries in this game file yet.</td></tr>`;
-        return;
-      }
-
-      container.innerHTML = poss.map((p, idx) => `
-        <tr class="hover:bg-slate-800/40">
-          <td class="p-2 text-center text-slate-500 text-[10px]">${poss.length - idx}</td>
-          <td class="p-2 font-bold text-slate-200">${p.player}</td>
-          <td class="p-2 text-amber-400">${p.play}</td>
-          <td class="p-2">${p.outcome}</td>
-          <td class="p-2">${p.location}</td>
-          <td class="p-2 text-slate-400">${p.type}</td>
-          <td class="p-2 text-center">${p.contest === 3 ? 'Open' : p.contest === 2 ? 'Slight' : 'Heavy'}</td>
-          <td class="p-2 text-center font-bold text-emerald-400">${p.actualPts}</td>
-          <td class="p-2 text-center text-amber-400">${p.xp.toFixed(2)}</td>
-          <td class="p-2 text-center">${p.poe >= 0 ? '+' : ''}${p.poe.toFixed(2)}</td>
-          <td class="p-2 text-right"><button onclick="deletePossession(${p.id})" class="text-rose-400 font-bold">X</button></td>
-        </tr>
-      `).join('');
-    }
-
-    function deletePossession(id) {
-      const activeGame = getActiveGame();
-      activeGame.possessions = activeGame.possessions.filter(p => p.id !== id);
-      saveGamesToStorage();
-      reRenderAllUI();
-    }
-
-    function switchTab(tab) {
-      document.getElementById('tabTracker').classList.add('hidden');
-      document.getElementById('tabAnalytics').classList.add('hidden');
-      document.getElementById('tabLog').classList.add('hidden');
-      if (tab === 'tracker') document.getElementById('tabTracker').classList.remove('hidden');
-      if (tab === 'analytics') { document.getElementById('tabAnalytics').classList.remove('hidden'); renderAnalyticsDashboard(); }
-      if (tab === 'log') { document.getElementById('tabLog').classList.remove('hidden'); renderPossessionLogTable(); }
-    }
-
-    function populateDropdowns() {
-      document.getElementById('formPlayer').innerHTML = roster.map(p => `<option value="${p.name}">#${p.num} - ${p.name}</option>`).join('');
-      document.getElementById('formPlay').innerHTML = playbook.map(p => `<option value="${p.code}">${p.code} - ${p.name}</option>`).join('');
-    }
-
-    function openRosterModal() { renderRosterList(); document.getElementById('rosterModal').classList.remove('hidden'); }
-    function closeRosterModal() { document.getElementById('rosterModal').classList.add('hidden'); }
-    function renderRosterList() {
-      document.getElementById('rosterListContainer').innerHTML = roster.map(p => `<div class="flex items-center justify-between p-2 text-xs"><span class="font-bold">#${p.num} ${p.name}</span><button onclick="removePlayer('${p.id}')" class="text-rose-400 font-bold">Remove</button></div>`).join('');
-    }
-    function handleAddPlayer(e) {
-      e.preventDefault();
-      const num = document.getElementById('newPlayerNum').value.trim();
-      const name = document.getElementById('newPlayerName').value.trim();
-      if (!num || !name) return;
-      roster.push({ id: Date.now().toString(), num, name, pos: 'G' });
-      localStorage.setItem(STORAGE_KEYS.ROSTER, JSON.stringify(roster));
-      populateDropdowns(); renderRosterList();
-    }
-    function removePlayer(id) {
-      roster = roster.filter(p => p.id !== id);
-      localStorage.setItem(STORAGE_KEYS.ROSTER, JSON.stringify(roster));
-      populateDropdowns(); renderRosterList();
-    }
-
-    function openPlaybookModal() { renderPlaybookList(); document.getElementById('playbookModal').classList.remove('hidden'); }
-    function closePlaybookModal() { document.getElementById('playbookModal').classList.add('hidden'); }
-    function renderPlaybookList() {
-      document.getElementById('playbookListContainer').innerHTML = playbook.map(p => `<div class="flex items-center justify-between p-2 text-xs"><span class="font-bold text-amber-400">${p.code}</span><button onclick="removePlay('${p.id}')" class="text-rose-400 font-bold">Remove</button></div>`).join('');
-    }
-    function handleAddPlay(e) {
-      e.preventDefault();
-      const code = document.getElementById('newPlayCode').value.trim();
-      const name = document.getElementById('newPlayName').value.trim();
-      if (!code || !name) return;
-      playbook.push({ id: Date.now().toString(), code, name });
-      localStorage.setItem(STORAGE_KEYS.PLAYBOOK, JSON.stringify(playbook));
-      populateDropdowns(); renderPlaybookList();
-    }
-    function removePlay(id) {
-      playbook = playbook.filter(p => p.id !== id);
-      localStorage.setItem(STORAGE_KEYS.PLAYBOOK, JSON.stringify(playbook));
-      populateDropdowns(); renderPlaybookList();
-    }
-
-    function showToast(msg, type = 'info') {
+    function showToast(msg) {
       const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `pointer-events-auto border px-3 py-2 rounded-xl text-xs font-bold text-white ${type === 'success' ? 'bg-emerald-950 border-emerald-700' : 'bg-slate-900 border-slate-700'}`;
-      toast.textContent = msg;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 2500);
+      const div = document.createElement('div');
+      div.className = "bg-slate-900 border border-amber-500 text-amber-300 font-bold px-3 py-2 rounded-xl text-xs shadow-xl animate-bounce pointer-events-auto";
+      div.innerText = msg;
+      container.appendChild(div);
+      setTimeout(() => div.remove(), 2500);
+    }
+
+    function roundVal(num) {
+      return Math.round((num + Number.EPSILON) * 100) / 100;
     }
   </script>
 </body>
