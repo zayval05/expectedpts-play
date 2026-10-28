@@ -107,15 +107,15 @@
       <!-- Brand Logo, Title & Active Game Selector -->
       <div class="flex items-center space-x-3">
         <div class="relative flex items-center justify-center">
-          <img src="logo.png" alt="Play Value Logo" class="h-9 w-9 object-contain rounded-xl shadow-md" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-          <div class="bg-amber-500 text-slate-950 p-2 rounded-xl font-black text-lg font-display items-center justify-center shadow-lg shadow-amber-500/20" style="display:none">
+          <img src="logo.png" alt="JUCO Logo" class="h-8 w-auto rounded-lg object-contain" onerror="this.style.display='none'; document.getElementById('fallbackLogo').style.display='flex';">
+          <div id="fallbackLogo" class="hidden bg-amber-500 text-slate-950 px-2.5 py-1.5 rounded-xl font-black text-base font-display items-center justify-center shadow-lg shadow-amber-500/20">
             JUCO
           </div>
         </div>
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
             Track the Play. Measure the Look.
-            <span id="cloudStatusBadge" class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">Guest</span>
+            <span id="cloudStatusBadge" class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">Guest Mode</span>
           </h1>
           
           <!-- Active Game Selector & xP Benchmark Model Dropdowns -->
@@ -310,6 +310,19 @@
               </select>
             </div>
 
+            <!-- Play Execution Status Toggle -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Play Execution</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="execBtnExecuted" onclick="selectExecutionStatus('Executed')" class="px-2 py-1.5 rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-300 font-bold text-xs text-center transition-all">
+                  ✓ Executed
+                </button>
+                <button type="button" id="execBtnBroken" onclick="selectExecutionStatus('Broken')" class="px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-400 font-medium text-xs text-center transition-all">
+                  ⚠ Broken Play
+                </button>
+              </div>
+            </div>
+
             <!-- Primary Outcome -->
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Outcome</label>
@@ -449,6 +462,7 @@
                   <th class="p-2 text-center">Runs</th>
                   <th class="p-2 text-center">PTS</th>
                   <th class="p-2 text-center">Avg xP</th>
+                  <th class="p-2 text-center">Exec %</th>
                   <th class="p-2 text-center">Open %</th>
                   <th class="p-2 text-center">TO %</th>
                 </tr>
@@ -478,6 +492,7 @@
                 <th class="p-2.5 text-center">#</th>
                 <th class="p-2.5">Player</th>
                 <th class="p-2.5">Play</th>
+                <th class="p-2.5 text-center">Execution</th>
                 <th class="p-2.5">Outcome</th>
                 <th class="p-2.5">Location</th>
                 <th class="p-2.5">Type</th>
@@ -719,9 +734,9 @@
       </button>
       <h3 class="text-sm font-bold text-white">Playbook Manager</h3>
       <form onsubmit="handleAddPlay(event)" class="grid grid-cols-12 gap-2">
-        <input type="text" id="newPlayCode" placeholder="Code (e.g. Horns-1)" required class="col-span-4 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
-        <input type="text" id="newPlayName" placeholder="Set Name" required class="col-span-5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
-        <button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg">+ Add</button>
+        <input type="text" id="newPlayName" placeholder="Play Name (e.g. Horns Flex)" required class="col-span-5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+        <input type="text" id="newPlaySet" placeholder="Set / Details (Optional)" class="col-span-4 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+        <button type="submit" class="col-span-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg">+ Add Play</button>
       </form>
       <div id="playbookListContainer" class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950"></div>
     </div>
@@ -758,10 +773,10 @@
     ];
 
     const DEFAULT_PLAYBOOK = [
-      { id: 'p1', code: 'P&R High', name: 'High Ball Screen' },
-      { id: 'p2', code: 'Horns-2', name: 'Horns Action' },
-      { id: 'p3', code: 'ISO Mid', name: 'Isolation Mid Post' },
-      { id: 'p4', code: 'Transition', name: 'Early Offense' }
+      { id: 'p1', name: 'High Ball Screen', set: 'P&R' },
+      { id: 'p2', name: 'Horns Action', set: 'Horns-2' },
+      { id: 'p3', name: 'Isolation Mid Post', set: 'ISO' },
+      { id: 'p4', name: 'Early Offense', set: 'Transition' }
     ];
 
     let games = [];
@@ -772,6 +787,7 @@
     let currentSelectedPoint = { x: 250, y: 52.5, location: 'Rim / Paint', side: 'Center', dist: 0 };
     let selectedShotType = 'Layup';
     let selectedContest = 3;
+    let selectedExecutionStatus = 'Executed';
 
     // Firebase state
     let auth = null;
@@ -785,10 +801,6 @@
     };
 
     function initApp() {
-      // Set initial benchmark dropdown selection
-      const bmSelect = document.getElementById('xpBenchmarkSelect');
-      if (bmSelect) bmSelect.value = currentBenchmarkKey;
-
       // 1. Load Roster & Playbook
       const rawRoster = localStorage.getItem(STORAGE_KEYS.ROSTER);
       roster = rawRoster ? JSON.parse(rawRoster) : DEFAULT_ROSTER;
@@ -796,21 +808,19 @@
       const rawPlaybook = localStorage.getItem(STORAGE_KEYS.PLAYBOOK);
       playbook = rawPlaybook ? JSON.parse(rawPlaybook) : DEFAULT_PLAYBOOK;
 
-      // 2. Load Multi-Games Registry
+      // 2. Set Benchmark Selector Value
+      const benchmarkSelect = document.getElementById('xpBenchmarkSelect');
+      if (benchmarkSelect) benchmarkSelect.value = currentBenchmarkKey;
+
+      // 3. Load Games
       loadFromLocalStorage();
 
       populateGameDropdown();
       populateDropdowns();
       selectShotType('Layup');
       selectContest(3);
+      selectExecutionStatus('Executed');
       reRenderAllUI();
-    }
-
-    function changeBenchmarkModel(key) {
-      currentBenchmarkKey = key;
-      localStorage.setItem(STORAGE_KEYS.BENCHMARK, key);
-      updateXpPreview();
-      showToast(`xP Baseline: ${BENCHMARK_MODELS[key] ? BENCHMARK_MODELS[key].name : key}`);
     }
 
     function loadFromLocalStorage() {
@@ -825,15 +835,15 @@
           title: 'Game 1 vs Chipola',
           date: new Date().toLocaleDateString(),
           possessions: [
-            { id: 101, playerNum: '1', playerName: 'M. Johnson', playCode: 'P&R High', playName: 'High Ball Screen', outcome: 'Made FG', x: 250, y: 50, location: 'Rim / Paint', shotType: 'Layup', contest: 3, pts: 2, xp: 1.44, poe: 0.56 },
-            { id: 102, playerNum: '3', playerName: 'D. Williams', playCode: 'Horns-2', playName: 'Horns Action', outcome: 'Made FG', x: 70, y: 150, location: '3-Pointer', shotType: 'Catch & Shoot', contest: 3, pts: 3, xp: 1.37, poe: 1.63 },
-            { id: 103, playerNum: '11', playerName: 'T. Davis', playCode: 'ISO Mid', playName: 'Isolation Mid Post', outcome: 'Missed FG', x: 180, y: 220, location: 'Midrange', shotType: 'Off the Dribble', contest: 1, pts: 0, xp: 0.48, poe: -0.48 },
-            { id: 104, playerNum: '23', playerName: 'K. Miller', playCode: 'P&R High', playName: 'High Ball Screen', outcome: 'Shooting Foul', x: 240, y: 70, location: 'Rim / Paint', shotType: 'Layup', contest: 2, pts: 2, xp: 1.31, poe: 0.69 }
+            { id: 101, playerNum: '1', playerName: 'M. Johnson', playName: 'High Ball Screen', playSet: 'P&R', executionStatus: 'Executed', outcome: 'Made FG', x: 250, y: 50, location: 'Rim / Paint', shotType: 'Layup', contest: 3, pts: 2, xp: 1.44, poe: 0.56 },
+            { id: 102, playerNum: '3', playerName: 'D. Williams', playName: 'Horns Action', playSet: 'Horns-2', executionStatus: 'Executed', outcome: 'Made FG', x: 70, y: 150, location: '3-Pointer', shotType: 'Catch & Shoot', contest: 3, pts: 3, xp: 1.37, poe: 1.63 },
+            { id: 103, playerNum: '11', playerName: 'T. Davis', playName: 'Isolation Mid Post', playSet: 'ISO', executionStatus: 'Broken', outcome: 'Missed FG', x: 180, y: 220, location: 'Midrange', shotType: 'Off the Dribble', contest: 1, pts: 0, xp: 0.48, poe: -0.48 },
+            { id: 104, playerNum: '23', playerName: 'K. Miller', playName: 'High Ball Screen', playSet: 'P&R', executionStatus: 'Executed', outcome: 'Shooting Foul', x: 240, y: 70, location: 'Rim / Paint', shotType: 'Layup', contest: 2, pts: 2, xp: 1.31, poe: 0.69 }
           ]
         };
         games = [defaultGame];
         activeGameId = defaultGame.id;
-        saveGamesToStorage();
+        saveGamesToStorage(false);
       } else {
         activeGameId = localStorage.getItem(STORAGE_KEYS.ACTIVE_GAME_ID) || games[0].id;
         if (!games.find(g => g.id === activeGameId)) activeGameId = games[0].id;
@@ -842,16 +852,18 @@
 
     /* FIREBASE INITIALIZATION & SYNC */
     async function initFirebase() {
-      if (!window.fb) return;
+      if (!window.fb) {
+        updateAuthUI(null);
+        return;
+      }
       try {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
         const firebaseConfig = {
           apiKey: "AIzaSyCEz0IWxW_rtm94fyVu4rdRMY7PeF5InBk",
           authDomain: "play-value-90ed5.firebaseapp.com",
           projectId: "play-value-90ed5",
           storageBucket: "play-value-90ed5.firebasestorage.app",
           messagingSenderId: "542567989712",
-          appId: "1:542567989712:web:bad63ccebaea3a3e05b9d5",
+          appId: "1:123456789:web:bad63ccebaea3a3e05b9d5",
           measurementId: "G-Q67LDR5HG3"
         };
 
@@ -859,32 +871,20 @@
         auth = window.fb.getAuth(app);
         db = window.fb.getFirestore(app);
 
-        // Custom token priority check
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          try {
-            await window.fb.signInWithCustomToken(auth, __initial_auth_token);
-          } catch (e) {
-            console.warn("Custom token sign in skipped/failed:", e);
-          }
-        }
-
-        window.fb.onAuthStateChanged(auth, async (user) => {
+        window.fb.onAuthStateChanged(auth, (user) => {
           currentUser = user;
           updateAuthUI(user);
           if (user) {
-            await syncFromCloud(user.uid);
+            syncFromCloud(user.uid);
           } else {
-            if (unsubscribeCloudGames) {
-              unsubscribeCloudGames();
-              unsubscribeCloudGames = null;
-            }
             loadFromLocalStorage();
             populateGameDropdown();
             reRenderAllUI();
           }
         });
       } catch (err) {
-        console.warn("Firebase offline or fallback mode enabled:", err);
+        console.warn("Firebase initialized in Local/Guest mode fallback:", err);
+        updateAuthUI(null);
       }
     }
 
@@ -893,6 +893,8 @@
       const authHeaderBtnText = document.getElementById('authHeaderBtnText');
       const loggedInView = document.getElementById('authLoggedInState');
       const loggedOutView = document.getElementById('authLoggedOutState');
+
+      if (!badge || !authHeaderBtnText || !loggedInView || !loggedOutView) return;
 
       if (user) {
         const displayName = user.displayName || user.email || 'Coach';
@@ -904,7 +906,7 @@
         loggedOutView.classList.add('hidden');
 
         document.getElementById('authDisplayName').innerText = displayName;
-        document.getElementById('authEmailText').innerText = user.email || 'No email associated';
+        document.getElementById('authEmailText').innerText = user.email || 'Guest User';
         document.getElementById('authUidText').innerText = `UID: ${user.uid}`;
         document.getElementById('authAvatarCircle').innerText = (displayName[0] || 'C').toUpperCase();
       } else {
@@ -986,6 +988,27 @@
       return games.find(g => g.id === activeGameId) || games[0];
     }
 
+    function changeBenchmarkModel(key) {
+      currentBenchmarkKey = key;
+      localStorage.setItem(STORAGE_KEYS.BENCHMARK, key);
+      updateXpPreview();
+      reRenderAllUI();
+      showToast(`xP Baseline: ${BENCHMARK_MODELS[key]?.name || key}`);
+    }
+
+    function selectExecutionStatus(status) {
+      selectedExecutionStatus = status;
+      const execBtn = document.getElementById('execBtnExecuted');
+      const brokenBtn = document.getElementById('execBtnBroken');
+      if (status === 'Executed') {
+        execBtn.className = "px-2 py-1.5 rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-300 font-bold text-xs text-center transition-all";
+        brokenBtn.className = "px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-400 font-medium text-xs text-center transition-all";
+      } else {
+        execBtn.className = "px-2 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-400 font-medium text-xs text-center transition-all";
+        brokenBtn.className = "px-2 py-1.5 rounded-lg border border-rose-500 bg-rose-500/20 text-rose-300 font-bold text-xs text-center transition-all";
+      }
+    }
+
     /* AUTH MODAL HANDLERS */
     function openAuthModal() {
       document.getElementById('authModal').classList.remove('hidden');
@@ -997,7 +1020,7 @@
     async function handleEmailAuth(e) {
       e.preventDefault();
       if (!auth) {
-        showToast("Authentication module loading...");
+        showToast("Authentication module operating in offline mode.");
         return;
       }
       const email = document.getElementById('authEmail').value;
@@ -1188,10 +1211,10 @@
       if (outcome === 'Turnover') return 0.0;
 
       let model = BENCHMARK_MODELS[currentBenchmarkKey] || BENCHMARK_MODELS.JUCO;
-      let rimPct = model.rimPct;
-      let midPct = model.midPct;
-      let threePct = model.threePct;
-      let ftPct = model.ftPct;
+      let rimPct = model.rimPct || 0.575;
+      let midPct = model.midPct || 0.360;
+      let threePct = model.threePct || 0.340;
+      let ftPct = model.ftPct || 0.690;
 
       // If Active Player custom profile selected, override baseline with player profile stats
       if (currentBenchmarkKey === 'PLAYER') {
@@ -1257,14 +1280,17 @@
       const poe = roundVal(actualPts - xp);
 
       const playerObj = roster.find(p => p.id === playerId) || { num: '?', name: 'Unknown' };
-      const playObj = playbook.find(p => p.id === playId) || { code: 'UNK', name: 'Unknown' };
+      const playObj = playbook.find(p => p.id === playId) || { name: 'Unknown', code: 'Unknown', set: '' };
+      const playDisplayName = playObj.name || playObj.code || 'Unknown';
 
       const entry = {
         id: Date.now(),
         playerNum: playerObj.num,
         playerName: playerObj.name,
-        playCode: playObj.code,
-        playName: playObj.name,
+        playCode: playDisplayName,
+        playName: playDisplayName,
+        playSet: playObj.set || playObj.setName || '',
+        executionStatus: selectedExecutionStatus,
         outcome: outcome,
         x: currentSelectedPoint.x,
         y: currentSelectedPoint.y,
@@ -1327,17 +1353,18 @@
       const poss = game.possessions || [];
       const count = poss.length;
 
-      let totalPts = 0, totalXp = 0, openShots = 0;
+      let totalPts = 0, totalXp = 0, openShots = 0, executedCount = 0;
       poss.forEach(p => {
         totalPts += p.pts;
         totalXp += p.xp;
         if (p.contest === 3) openShots++;
+        if (!p.executionStatus || p.executionStatus === 'Executed') executedCount++;
       });
 
       const pps = count > 0 ? (totalPts / count).toFixed(2) : '0.00';
       const poe = totalPts - totalXp;
       const sqi = count > 0 ? (totalXp / count).toFixed(2) : '0.00';
-      const execRate = count > 0 ? Math.round((openShots / count) * 100) : 0;
+      const execRate = count > 0 ? Math.round((executedCount / count) * 100) : 0;
 
       document.getElementById('kpiPossessions').innerText = count;
       document.getElementById('kpiActualPts').innerText = totalPts;
@@ -1380,30 +1407,34 @@
       // Play Breakdown Table
       const playMap = {};
       poss.forEach(p => {
-        if (!playMap[p.playCode]) {
-          playMap[p.playCode] = { code: p.playCode, runs: 0, pts: 0, xp: 0, open: 0, to: 0 };
+        const key = p.playName || p.playCode || 'Unknown';
+        if (!playMap[key]) {
+          playMap[key] = { name: key, runs: 0, pts: 0, xp: 0, open: 0, to: 0, executed: 0 };
         }
-        playMap[p.playCode].runs++;
-        playMap[p.playCode].pts += p.pts;
-        playMap[p.playCode].xp += p.xp;
-        if (p.contest === 3) playMap[p.playCode].open++;
-        if (p.outcome === 'Turnover') playMap[p.playCode].to++;
+        playMap[key].runs++;
+        playMap[key].pts += p.pts;
+        playMap[key].xp += p.xp;
+        if (p.contest === 3) playMap[key].open++;
+        if (p.outcome === 'Turnover') playMap[key].to++;
+        if (!p.executionStatus || p.executionStatus === 'Executed') playMap[key].executed++;
       });
 
       const plTable = document.getElementById('playAnalyticsTable');
       plTable.innerHTML = '';
-      Object.keys(playMap).forEach(code => {
-        const item = playMap[code];
+      Object.keys(playMap).forEach(name => {
+        const item = playMap[name];
         const avgXp = (item.xp / item.runs).toFixed(2);
+        const execPct = Math.round((item.executed / item.runs) * 100);
         const openPct = Math.round((item.open / item.runs) * 100);
         const toPct = Math.round((item.to / item.runs) * 100);
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="p-2 font-semibold text-white">${item.code}</td>
+          <td class="p-2 font-semibold text-white">${item.name}</td>
           <td class="p-2 text-center font-mono">${item.runs}</td>
           <td class="p-2 text-center font-mono text-emerald-400 font-bold">${item.pts}</td>
           <td class="p-2 text-center font-mono text-amber-400">${avgXp}</td>
+          <td class="p-2 text-center font-mono text-indigo-300 font-bold">${execPct}%</td>
           <td class="p-2 text-center font-mono text-emerald-300">${openPct}%</td>
           <td class="p-2 text-center font-mono text-rose-400">${toPct}%</td>
         `;
@@ -1419,7 +1450,8 @@
       tbody.innerHTML = '';
 
       (game.possessions || []).forEach((p, idx) => {
-        if (query && !p.playerName.toLowerCase().includes(query) && !p.playCode.toLowerCase().includes(query) && !p.outcome.toLowerCase().includes(query)) {
+        const pName = p.playName || p.playCode || 'Unknown';
+        if (query && !p.playerName.toLowerCase().includes(query) && !pName.toLowerCase().includes(query) && !p.outcome.toLowerCase().includes(query)) {
           return;
         }
 
@@ -1427,12 +1459,19 @@
         if (p.contest === 2) contestBadge = '<span class="text-amber-400 font-bold">Slight</span>';
         if (p.contest === 1) contestBadge = '<span class="text-rose-400 font-bold">Heavy</span>';
 
+        const execStatus = p.executionStatus || 'Executed';
+        let execBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">Executed</span>';
+        if (execStatus === 'Broken') {
+          execBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800">Broken</span>';
+        }
+
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-800/40 transition-all";
         tr.innerHTML = `
           <td class="p-2.5 text-center font-bold text-slate-500">${idx + 1}</td>
           <td class="p-2.5 font-bold text-white">${p.playerName}</td>
-          <td class="p-2.5 text-slate-300">${p.playCode}</td>
+          <td class="p-2.5 text-slate-300">${pName}${p.playSet ? ` <span class="text-[10px] text-slate-500">(${p.playSet})</span>` : ''}</td>
+          <td class="p-2.5 text-center">${execBadge}</td>
           <td class="p-2.5 font-semibold ${p.outcome.includes('Made') ? 'text-emerald-400' : p.outcome.includes('Turnover') ? 'text-rose-400' : 'text-amber-400'}">${p.outcome}</td>
           <td class="p-2.5 text-slate-400">${p.location}</td>
           <td class="p-2.5 text-slate-400">${p.shotType || '-'}</td>
@@ -1463,7 +1502,11 @@
       pSelect.innerHTML = roster.map(p => `<option value="${p.id}">#${p.num} - ${p.name} (${p.pos})</option>`).join('');
 
       const plSelect = document.getElementById('formPlay');
-      plSelect.innerHTML = playbook.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
+      plSelect.innerHTML = playbook.map(p => {
+        const pName = p.name || p.code;
+        const pSet = p.set || p.setName;
+        return `<option value="${p.id}">${pName}${pSet ? ` (${pSet})` : ''}</option>`;
+      }).join('');
     }
 
     function populateGameDropdown() {
@@ -1639,23 +1682,27 @@
     }
     function handleAddPlay(e) {
       e.preventDefault();
-      const code = document.getElementById('newPlayCode').value;
-      const name = document.getElementById('newPlayName').value;
-      playbook.push({ id: 'p_' + Date.now(), code, name });
+      const name = document.getElementById('newPlayName').value.trim();
+      const setVal = document.getElementById('newPlaySet').value.trim();
+      playbook.push({ id: 'p_' + Date.now(), name: name, code: name, set: setVal });
       savePlaybookToStorage();
       populateDropdowns();
       renderPlaybookList();
-      document.getElementById('newPlayCode').value = '';
       document.getElementById('newPlayName').value = '';
-      showToast("Play set added");
+      document.getElementById('newPlaySet').value = '';
+      showToast("Play added to Playbook");
     }
     function renderPlaybookList() {
-      document.getElementById('playbookListContainer').innerHTML = playbook.map((p, i) => `
-        <div class="flex items-center justify-between p-2">
-          <span class="text-xs font-bold text-white">${p.code} - ${p.name}</span>
-          <button onclick="deletePlay(${i})" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-0.5">Remove</button>
-        </div>
-      `).join('');
+      document.getElementById('playbookListContainer').innerHTML = playbook.map((p, i) => {
+        const pName = p.name || p.code;
+        const pSet = p.set || p.setName;
+        return `
+          <div class="flex items-center justify-between p-2">
+            <span class="text-xs font-bold text-white">${pName}${pSet ? ` <span class="text-slate-400 font-normal">(${pSet})</span>` : ''}</span>
+            <button onclick="deletePlay(${i})" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-0.5">Remove</button>
+          </div>
+        `;
+      }).join('');
     }
     function deletePlay(i) {
       playbook.splice(i, 1);
@@ -1702,9 +1749,9 @@
     function exportCurrentGameCsv() {
       const game = getActiveGame();
       if (!game) return;
-      let csv = 'Possession,#,Player,PlayCode,Outcome,Location,ShotType,Contest,Points,xP,POE\n';
+      let csv = 'Possession,#,Player,PlayName,PlaySet,ExecutionStatus,Outcome,Location,ShotType,Contest,Points,xP,POE\n';
       (game.possessions || []).forEach((p, i) => {
-        csv += `${i + 1},#${p.playerNum} ${p.playerName},"${p.playCode}","${p.outcome}","${p.location}","${p.shotType || ''}",${p.contest},${p.pts},${p.xp},${p.poe}\n`;
+        csv += `${i + 1},#${p.playerNum} ${p.playerName},"${p.playName || p.playCode}","${p.playSet || ''}","${p.executionStatus || 'Executed'}","${p.outcome}","${p.location}","${p.shotType || ''}",${p.contest},${p.pts},${p.xp},${p.poe}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const a = document.createElement('a');
