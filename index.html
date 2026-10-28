@@ -193,17 +193,64 @@
 
       <!-- LEFT: SVG HARDWOOD COURT (7 Cols) -->
       <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex flex-col shadow-xl">
-        <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
             <h2 class="text-xs font-bold tracking-wide uppercase text-slate-300">Interactive Shot Location</h2>
           </div>
           <div class="flex items-center gap-2 text-xs">
+            <span id="shotCountReadout" class="font-mono text-amber-400 font-bold text-[11px]">Showing 0 shots</span>
             <label class="flex items-center gap-1 text-slate-400 cursor-pointer text-[11px]">
               <input type="checkbox" id="toggleShotPins" checked onchange="renderCourtOverlay()" class="rounded bg-slate-800 border-slate-700 text-amber-500">
               Pins
             </label>
             <span id="clickCoordinates" class="font-mono text-slate-500 text-[10px]">Click Court</span>
+          </div>
+        </div>
+
+        <!-- Court Shot Chart Filter Bar -->
+        <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 mb-2.5 grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[11px]">
+          <div>
+            <label class="text-[9px] font-semibold text-slate-400 uppercase block mb-0.5">Play Call</label>
+            <select id="courtFilterPlay" onchange="updateCourtFilters()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 text-[11px]">
+              <option value="ALL">All Plays</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-semibold text-slate-400 uppercase block mb-0.5">Shot Type</label>
+            <select id="courtFilterShotType" onchange="updateCourtFilters()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 text-[11px]">
+              <option value="ALL">All Shot Types</option>
+              <option value="Catch & Shoot">Catch & Shoot</option>
+              <option value="Off the Dribble">Off Dribble</option>
+              <option value="Layup">Layup</option>
+              <option value="Dunk">Dunk</option>
+              <option value="Post Shot">Post Shot</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-semibold text-slate-400 uppercase block mb-0.5">Player</label>
+            <select id="courtFilterPlayer" onchange="updateCourtFilters()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 text-[11px]">
+              <option value="ALL">All Players</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-semibold text-slate-400 uppercase block mb-0.5">Outcome</label>
+            <select id="courtFilterOutcome" onchange="updateCourtFilters()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 text-[11px]">
+              <option value="ALL">All Outcomes</option>
+              <option value="Made FG">Made FG</option>
+              <option value="Missed FG">Missed FG</option>
+              <option value="Shooting Foul">Shooting Foul</option>
+              <option value="Turnover">Turnover</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[9px] font-semibold text-slate-400 uppercase block mb-0.5">Execution</label>
+            <select id="courtFilterExecution" onchange="updateCourtFilters()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 text-[11px]">
+              <option value="ALL">All Execution</option>
+              <option value="Executed">Executed</option>
+              <option value="Broken">Broken Play</option>
+            </select>
           </div>
         </div>
 
@@ -477,9 +524,40 @@
 
     <!-- VIEW TAB 3: POSSESSION LOG -->
     <div id="tabLog" class="hidden space-y-3">
-      <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2">
-        <input type="text" id="logSearchInput" oninput="renderPossessionLogTable()" placeholder="Search player, play..." class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
-        <button onclick="exportCurrentGameCsv()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-lg text-xs font-bold">
+      <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+          <input type="text" id="logSearchInput" oninput="updateLogFilters()" placeholder="Search player, play..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none w-32 sm:w-44">
+          
+          <select id="logFilterPlayer" onchange="updateLogFilters()" class="bg-slate-950 border border-slate-700 text-slate-300 rounded-lg px-2 py-1.5 text-xs">
+            <option value="ALL">All Players</option>
+          </select>
+
+          <select id="logFilterPlay" onchange="updateLogFilters()" class="bg-slate-950 border border-slate-700 text-slate-300 rounded-lg px-2 py-1.5 text-xs">
+            <option value="ALL">All Plays</option>
+          </select>
+
+          <select id="logFilterShotType" onchange="updateLogFilters()" class="bg-slate-950 border border-slate-700 text-slate-300 rounded-lg px-2 py-1.5 text-xs">
+            <option value="ALL">All Shot Types</option>
+            <option value="Catch & Shoot">Catch & Shoot</option>
+            <option value="Off the Dribble">Off Dribble</option>
+            <option value="Layup">Layup</option>
+            <option value="Dunk">Dunk</option>
+            <option value="Post Shot">Post Shot</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <select id="logFilterExecution" onchange="updateLogFilters()" class="bg-slate-950 border border-slate-700 text-slate-300 rounded-lg px-2 py-1.5 text-xs">
+            <option value="ALL">All Executions</option>
+            <option value="Executed">Executed</option>
+            <option value="Broken">Broken Play</option>
+          </select>
+
+          <button onclick="resetLogFilters()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white px-2 py-1.5 rounded-lg text-xs transition-all">
+            Reset
+          </button>
+        </div>
+
+        <button onclick="exportCurrentGameCsv()" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap">
           Export Game CSV
         </button>
       </div>
@@ -489,17 +567,17 @@
           <table class="w-full text-xs text-left">
             <thead class="bg-slate-950 text-slate-400 font-semibold uppercase border-b border-slate-800">
               <tr>
-                <th class="p-2.5 text-center">#</th>
-                <th class="p-2.5">Player</th>
-                <th class="p-2.5">Play</th>
-                <th class="p-2.5 text-center">Execution</th>
-                <th class="p-2.5">Outcome</th>
-                <th class="p-2.5">Location</th>
-                <th class="p-2.5">Type</th>
-                <th class="p-2.5 text-center">Contest</th>
-                <th class="p-2.5 text-center">PTS</th>
-                <th class="p-2.5 text-center">xP</th>
-                <th class="p-2.5 text-center">POE</th>
+                <th onclick="sortLogTable('index')" class="p-2.5 text-center cursor-pointer hover:text-amber-400 select-none"># <span id="sort_icon_index">▲</span></th>
+                <th onclick="sortLogTable('playerName')" class="p-2.5 cursor-pointer hover:text-amber-400 select-none">Player <span id="sort_icon_playerName"></span></th>
+                <th onclick="sortLogTable('playName')" class="p-2.5 cursor-pointer hover:text-amber-400 select-none">Play <span id="sort_icon_playName"></span></th>
+                <th onclick="sortLogTable('executionStatus')" class="p-2.5 text-center cursor-pointer hover:text-amber-400 select-none">Execution <span id="sort_icon_executionStatus"></span></th>
+                <th onclick="sortLogTable('outcome')" class="p-2.5 cursor-pointer hover:text-amber-400 select-none">Outcome <span id="sort_icon_outcome"></span></th>
+                <th onclick="sortLogTable('location')" class="p-2.5 cursor-pointer hover:text-amber-400 select-none">Location <span id="sort_icon_location"></span></th>
+                <th onclick="sortLogTable('shotType')" class="p-2.5 cursor-pointer hover:text-amber-400 select-none">Type <span id="sort_icon_shotType"></span></th>
+                <th onclick="sortLogTable('contest')" class="p-2.5 text-center cursor-pointer hover:text-amber-400 select-none">Contest <span id="sort_icon_contest"></span></th>
+                <th onclick="sortLogTable('pts')" class="p-2.5 text-center cursor-pointer hover:text-amber-400 select-none">PTS <span id="sort_icon_pts"></span></th>
+                <th onclick="sortLogTable('xp')" class="p-2.5 text-center cursor-pointer hover:text-amber-400 select-none">xP <span id="sort_icon_xp"></span></th>
+                <th onclick="sortLogTable('poe')" class="p-2.5 text-center cursor-pointer hover:text-amber-400 select-none">POE <span id="sort_icon_poe"></span></th>
                 <th class="p-2.5 text-right">Delete</th>
               </tr>
             </thead>
@@ -788,6 +866,11 @@
     let selectedShotType = 'Layup';
     let selectedContest = 3;
     let selectedExecutionStatus = 'Executed';
+
+    // Shot Chart & Game Log Filter/Sort State
+    let courtFilters = { play: 'ALL', shotType: 'ALL', player: 'ALL', outcome: 'ALL', execution: 'ALL' };
+    let logFilters = { search: '', player: 'ALL', play: 'ALL', shotType: 'ALL', execution: 'ALL' };
+    let logSort = { column: 'index', direction: 'asc' };
 
     // Firebase state
     let auth = null;
@@ -1320,12 +1403,36 @@
       const container = document.getElementById('courtOverlayGroup');
       container.innerHTML = '';
 
-      if (!document.getElementById('toggleShotPins').checked) return;
+      const readout = document.getElementById('shotCountReadout');
+
+      if (!document.getElementById('toggleShotPins').checked) {
+        if (readout) readout.innerText = "Pins Hidden";
+        return;
+      }
 
       const currentGame = getActiveGame();
-      if (!currentGame || !currentGame.possessions) return;
+      if (!currentGame || !currentGame.possessions) {
+        if (readout) readout.innerText = "Showing 0 shots";
+        return;
+      }
 
-      currentGame.possessions.forEach((p, idx) => {
+      const totalShots = currentGame.possessions.length;
+
+      // Filter possessions based on courtFilters
+      const filteredPossessions = currentGame.possessions.filter((p, idx) => {
+        p._originalIndex = idx + 1; // Preserve original 1-based index
+        const pName = p.playName || p.playCode || '';
+        if (courtFilters.play !== 'ALL' && pName !== courtFilters.play) return false;
+        if (courtFilters.shotType !== 'ALL' && (p.shotType || '') !== courtFilters.shotType) return false;
+        if (courtFilters.player !== 'ALL' && p.playerName !== courtFilters.player) return false;
+        if (courtFilters.outcome !== 'ALL' && p.outcome !== courtFilters.outcome) return false;
+        if (courtFilters.execution !== 'ALL' && (p.executionStatus || 'Executed') !== courtFilters.execution) return false;
+        return true;
+      });
+
+      if (readout) readout.innerText = `Showing ${filteredPossessions.length} of ${totalShots} shots`;
+
+      filteredPossessions.forEach((p) => {
         let fill = '#f59e0b';
         if (p.outcome === 'Made FG' || p.pts > 0) fill = '#10b981';
         else if (p.outcome === 'Missed FG' || p.outcome === 'Turnover') fill = '#ef4444';
@@ -1340,120 +1447,120 @@
         circle.setAttribute('class', 'court-pin');
 
         const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-        title.textContent = `#${idx + 1} | ${p.playerName} - ${p.outcome} (${p.pts} pts, xP: ${p.xp})`;
+        title.textContent = `#${p._originalIndex} | ${p.playerName} - ${p.playName || p.playCode || 'Play'} [${p.shotType || ''}] - ${p.outcome} (${p.pts} pts, xP: ${p.xp})`;
         circle.appendChild(title);
 
         container.appendChild(circle);
       });
     }
 
-    function renderAnalyticsDashboard() {
-      const game = getActiveGame();
-      if (!game) return;
-      const poss = game.possessions || [];
-      const count = poss.length;
+    function updateCourtFilters() {
+      courtFilters = {
+        play: document.getElementById('courtFilterPlay')?.value || 'ALL',
+        shotType: document.getElementById('courtFilterShotType')?.value || 'ALL',
+        player: document.getElementById('courtFilterPlayer')?.value || 'ALL',
+        outcome: document.getElementById('courtFilterOutcome')?.value || 'ALL',
+        execution: document.getElementById('courtFilterExecution')?.value || 'ALL'
+      };
+      renderCourtOverlay();
+    }
 
-      let totalPts = 0, totalXp = 0, openShots = 0, executedCount = 0;
-      poss.forEach(p => {
-        totalPts += p.pts;
-        totalXp += p.xp;
-        if (p.contest === 3) openShots++;
-        if (!p.executionStatus || p.executionStatus === 'Executed') executedCount++;
-      });
+    function updateLogFilters() {
+      logFilters = {
+        search: (document.getElementById('logSearchInput')?.value || '').toLowerCase(),
+        player: document.getElementById('logFilterPlayer')?.value || 'ALL',
+        play: document.getElementById('logFilterPlay')?.value || 'ALL',
+        shotType: document.getElementById('logFilterShotType')?.value || 'ALL',
+        execution: document.getElementById('logFilterExecution')?.value || 'ALL'
+      };
+      renderPossessionLogTable();
+    }
 
-      const pps = count > 0 ? (totalPts / count).toFixed(2) : '0.00';
-      const poe = totalPts - totalXp;
-      const sqi = count > 0 ? (totalXp / count).toFixed(2) : '0.00';
-      const execRate = count > 0 ? Math.round((executedCount / count) * 100) : 0;
+    function resetLogFilters() {
+      if (document.getElementById('logSearchInput')) document.getElementById('logSearchInput').value = '';
+      if (document.getElementById('logFilterPlayer')) document.getElementById('logFilterPlayer').value = 'ALL';
+      if (document.getElementById('logFilterPlay')) document.getElementById('logFilterPlay').value = 'ALL';
+      if (document.getElementById('logFilterShotType')) document.getElementById('logFilterShotType').value = 'ALL';
+      if (document.getElementById('logFilterExecution')) document.getElementById('logFilterExecution').value = 'ALL';
+      updateLogFilters();
+    }
 
-      document.getElementById('kpiPossessions').innerText = count;
-      document.getElementById('kpiActualPts').innerText = totalPts;
-      document.getElementById('kpiPps').innerText = `${pps} PPS`;
-      document.getElementById('kpiExpectedPts').innerText = totalXp.toFixed(2);
-      document.getElementById('kpiPoe').innerText = (poe >= 0 ? '+' : '') + poe.toFixed(2);
-      document.getElementById('kpiSqi').innerText = sqi;
-      document.getElementById('kpiExecution').innerText = `${execRate}%`;
-
-      // Player Breakdown Table
-      const playerMap = {};
-      poss.forEach(p => {
-        if (!playerMap[p.playerName]) {
-          playerMap[p.playerName] = { poss: 0, pts: 0, xp: 0 };
+    function sortLogTable(col) {
+      if (logSort.column === col) {
+        logSort.direction = logSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        logSort.column = col;
+        logSort.direction = 'asc';
+      }
+      
+      // Update sort indicators in table headers
+      const cols = ['index', 'playerName', 'playName', 'executionStatus', 'outcome', 'location', 'shotType', 'contest', 'pts', 'xp', 'poe'];
+      cols.forEach(c => {
+        const el = document.getElementById(`sort_icon_${c}`);
+        if (el) {
+          if (c === col) {
+            el.innerText = logSort.direction === 'asc' ? '▲' : '▼';
+          } else {
+            el.innerText = '';
+          }
         }
-        playerMap[p.playerName].poss++;
-        playerMap[p.playerName].pts += p.pts;
-        playerMap[p.playerName].xp += p.xp;
       });
 
-      const pTable = document.getElementById('playerAnalyticsTable');
-      pTable.innerHTML = '';
-      Object.keys(playerMap).forEach(pName => {
-        const item = playerMap[pName];
-        const pPoe = item.pts - item.xp;
-        const pSqi = (item.xp / item.poss).toFixed(2);
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2 font-semibold text-white">${pName}</td>
-          <td class="p-2 text-center font-mono">${item.poss}</td>
-          <td class="p-2 text-center font-mono text-emerald-400 font-bold">${item.pts}</td>
-          <td class="p-2 text-center font-mono text-amber-400">${item.xp.toFixed(2)}</td>
-          <td class="p-2 text-center font-mono ${pPoe >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${pPoe >= 0 ? '+' : ''}${pPoe.toFixed(2)}</td>
-          <td class="p-2 text-center font-mono text-cyan-400">${pSqi}</td>
-        `;
-        pTable.appendChild(tr);
-      });
-
-      // Play Breakdown Table
-      const playMap = {};
-      poss.forEach(p => {
-        const key = p.playName || p.playCode || 'Unknown';
-        if (!playMap[key]) {
-          playMap[key] = { name: key, runs: 0, pts: 0, xp: 0, open: 0, to: 0, executed: 0 };
-        }
-        playMap[key].runs++;
-        playMap[key].pts += p.pts;
-        playMap[key].xp += p.xp;
-        if (p.contest === 3) playMap[key].open++;
-        if (p.outcome === 'Turnover') playMap[key].to++;
-        if (!p.executionStatus || p.executionStatus === 'Executed') playMap[key].executed++;
-      });
-
-      const plTable = document.getElementById('playAnalyticsTable');
-      plTable.innerHTML = '';
-      Object.keys(playMap).forEach(name => {
-        const item = playMap[name];
-        const avgXp = (item.xp / item.runs).toFixed(2);
-        const execPct = Math.round((item.executed / item.runs) * 100);
-        const openPct = Math.round((item.open / item.runs) * 100);
-        const toPct = Math.round((item.to / item.runs) * 100);
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2 font-semibold text-white">${item.name}</td>
-          <td class="p-2 text-center font-mono">${item.runs}</td>
-          <td class="p-2 text-center font-mono text-emerald-400 font-bold">${item.pts}</td>
-          <td class="p-2 text-center font-mono text-amber-400">${avgXp}</td>
-          <td class="p-2 text-center font-mono text-indigo-300 font-bold">${execPct}%</td>
-          <td class="p-2 text-center font-mono text-emerald-300">${openPct}%</td>
-          <td class="p-2 text-center font-mono text-rose-400">${toPct}%</td>
-        `;
-        plTable.appendChild(tr);
-      });
+      renderPossessionLogTable();
     }
 
     function renderPossessionLogTable() {
       const game = getActiveGame();
       if (!game) return;
-      const query = (document.getElementById('logSearchInput').value || '').toLowerCase();
       const tbody = document.getElementById('possessionLogTable');
       tbody.innerHTML = '';
 
-      (game.possessions || []).forEach((p, idx) => {
+      let possessionsWithIndex = (game.possessions || []).map((p, i) => ({ ...p, _originalIndex: i + 1, _realIndex: i }));
+
+      // Filter possessions
+      let filtered = possessionsWithIndex.filter(p => {
         const pName = p.playName || p.playCode || 'Unknown';
-        if (query && !p.playerName.toLowerCase().includes(query) && !pName.toLowerCase().includes(query) && !p.outcome.toLowerCase().includes(query)) {
-          return;
+        if (logFilters.search) {
+          const matchSearch = p.playerName.toLowerCase().includes(logFilters.search) || 
+                              pName.toLowerCase().includes(logFilters.search) || 
+                              p.outcome.toLowerCase().includes(logFilters.search) ||
+                              (p.shotType || '').toLowerCase().includes(logFilters.search);
+          if (!matchSearch) return false;
         }
+        if (logFilters.player !== 'ALL' && p.playerName !== logFilters.player) return false;
+        if (logFilters.play !== 'ALL' && pName !== logFilters.play) return false;
+        if (logFilters.shotType !== 'ALL' && (p.shotType || '') !== logFilters.shotType) return false;
+        if (logFilters.execution !== 'ALL' && (p.executionStatus || 'Executed') !== logFilters.execution) return false;
+        return true;
+      });
+
+      // Sort possessions
+      filtered.sort((a, b) => {
+        let valA, valB;
+        if (logSort.column === 'index') {
+          valA = a._originalIndex;
+          valB = b._originalIndex;
+        } else if (logSort.column === 'playName') {
+          valA = (a.playName || a.playCode || '').toLowerCase();
+          valB = (b.playName || b.playCode || '').toLowerCase();
+        } else if (logSort.column === 'executionStatus') {
+          valA = (a.executionStatus || 'Executed').toLowerCase();
+          valB = (b.executionStatus || 'Executed').toLowerCase();
+        } else if (typeof a[logSort.column] === 'string') {
+          valA = (a[logSort.column] || '').toLowerCase();
+          valB = (b[logSort.column] || '').toLowerCase();
+        } else {
+          valA = a[logSort.column] !== undefined ? a[logSort.column] : 0;
+          valB = b[logSort.column] !== undefined ? b[logSort.column] : 0;
+        }
+
+        if (valA < valB) return logSort.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return logSort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      filtered.forEach((p) => {
+        const pName = p.playName || p.playCode || 'Unknown';
 
         let contestBadge = '<span class="text-emerald-400 font-bold">Open</span>';
         if (p.contest === 2) contestBadge = '<span class="text-amber-400 font-bold">Slight</span>';
@@ -1468,7 +1575,7 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-800/40 transition-all";
         tr.innerHTML = `
-          <td class="p-2.5 text-center font-bold text-slate-500">${idx + 1}</td>
+          <td class="p-2.5 text-center font-bold text-slate-500">${p._originalIndex}</td>
           <td class="p-2.5 font-bold text-white">${p.playerName}</td>
           <td class="p-2.5 text-slate-300">${pName}${p.playSet ? ` <span class="text-[10px] text-slate-500">(${p.playSet})</span>` : ''}</td>
           <td class="p-2.5 text-center">${execBadge}</td>
@@ -1480,20 +1587,11 @@
           <td class="p-2.5 text-center text-amber-400">${p.xp.toFixed(2)}</td>
           <td class="p-2.5 text-center ${p.poe >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${p.poe >= 0 ? '+' : ''}${p.poe.toFixed(2)}</td>
           <td class="p-2.5 text-right">
-            <button onclick="deletePossession(${idx})" class="text-rose-400 hover:text-rose-300 text-xs px-1.5 py-0.5 rounded bg-rose-950/40 border border-rose-800/50">Delete</button>
+            <button onclick="deletePossession(${p._realIndex})" class="text-rose-400 hover:text-rose-300 text-xs px-1.5 py-0.5 rounded bg-rose-950/40 border border-rose-800/50">Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
-    }
-
-    function deletePossession(index) {
-      const game = getActiveGame();
-      if (!game) return;
-      game.possessions.splice(index, 1);
-      saveGamesToStorage();
-      showToast("Possession removed");
-      reRenderAllUI();
     }
 
     /* DROPDOWNS & MODALS */
@@ -1507,106 +1605,32 @@
         const pSet = p.set || p.setName;
         return `<option value="${p.id}">${pName}${pSet ? ` (${pSet})` : ''}</option>`;
       }).join('');
-    }
 
-    function populateGameDropdown() {
-      const select = document.getElementById('activeGameSelect');
-      select.innerHTML = games.map(g => `<option value="${g.id}" ${g.id === activeGameId ? 'selected' : ''}>${g.title}</option>`).join('');
-    }
-
-    function switchActiveGame(gameId) {
-      activeGameId = gameId;
-      saveGamesToStorage(false);
-      reRenderAllUI();
-      showToast("Switched active game");
-    }
-
-    /* GAME MANAGER MODAL */
-    function openGamesModal() {
-      renderGamesList();
-      document.getElementById('gamesModal').classList.remove('hidden');
-    }
-
-    function closeGamesModal() {
-      document.getElementById('gamesModal').classList.add('hidden');
-    }
-
-    function handleCreateNewGame(e) {
-      e.preventDefault();
-      const input = document.getElementById('newGameTitle');
-      const title = input.value.trim();
-      if (!title) return;
-
-      const newGame = {
-        id: 'game_' + Date.now(),
-        title: title,
-        date: new Date().toLocaleDateString(),
-        possessions: []
-      };
-      games.push(newGame);
-      activeGameId = newGame.id;
-      saveGamesToStorage();
-      populateGameDropdown();
-      renderGamesList();
-      input.value = '';
-      reRenderAllUI();
-      showToast("New game created!");
-    }
-
-    function renderGamesList() {
-      const container = document.getElementById('gamesListContainer');
-      container.innerHTML = games.map(g => `
-        <div class="flex items-center justify-between p-2.5 ${g.id === activeGameId ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}">
-          <div>
-            <span class="text-xs font-bold text-white block">${g.title}</span>
-            <span class="text-[10px] text-slate-400 font-mono">${g.date} | ${g.possessions ? g.possessions.length : 0} Possessions</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            ${g.id !== activeGameId ? `<button onclick="switchActiveGame('${g.id}'); renderGamesList();" class="text-xs bg-slate-800 text-amber-300 px-2 py-1 rounded">Select</button>` : '<span class="text-[10px] text-amber-400 font-bold px-1.5 py-0.5 bg-amber-950 border border-amber-800 rounded">ACTIVE</span>'}
-            ${games.length > 1 ? `<button onclick="deleteGame('${g.id}')" class="text-xs text-rose-400 hover:text-rose-300 p-1">✕</button>` : ''}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    async function deleteGame(gameId) {
-      if (games.length <= 1) return;
-      const targetGame = games.find(g => g.id === gameId);
-      games = games.filter(g => g.id !== gameId);
-      if (activeGameId === gameId) activeGameId = games[0].id;
-      
-      saveGamesToStorage(false);
-
-      if (currentUser && db && targetGame) {
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
-        const docRef = window.fb.doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', targetGame.id);
-        window.fb.deleteDoc(docRef).catch(e => console.error("Cloud delete error:", e));
+      // Populate Court & Log Filter Dropdowns
+      const courtPlayerFilter = document.getElementById('courtFilterPlayer');
+      if (courtPlayerFilter) {
+        courtPlayerFilter.innerHTML = '<option value="ALL">All Players</option>' + roster.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
       }
 
-      populateGameDropdown();
-      renderGamesList();
-      reRenderAllUI();
-      showToast("Game file deleted");
-    }
+      const courtPlayFilter = document.getElementById('courtFilterPlay');
+      if (courtPlayFilter) {
+        courtPlayFilter.innerHTML = '<option value="ALL">All Plays</option>' + playbook.map(p => {
+          const pName = p.name || p.code;
+          return `<option value="${pName}">${pName}</option>`;
+        }).join('');
+      }
 
-    /* ROSTER MODAL */
-    function openRosterModal() {
-      renderRosterList();
-      document.getElementById('rosterModal').classList.remove('hidden');
-    }
-    function closeRosterModal() {
-      document.getElementById('rosterModal').classList.add('hidden');
-    }
+      const logPlayerFilter = document.getElementById('logFilterPlayer');
+      if (logPlayerFilter) {
+        logPlayerFilter.innerHTML = '<option value="ALL">All Players</option>' + roster.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+      }
 
-    function toggleProfileInputMode(mode) {
-      const pctBox = document.getElementById('profilePctInputs');
-      const countBox = document.getElementById('profileCountInputs');
-      if (mode === 'pct') {
-        pctBox.classList.remove('hidden');
-        countBox.classList.add('hidden');
-      } else {
-        pctBox.classList.add('hidden');
-        countBox.classList.remove('hidden');
+      const logPlayFilter = document.getElementById('logFilterPlay');
+      if (logPlayFilter) {
+        logPlayFilter.innerHTML = '<option value="ALL">All Plays</option>' + playbook.map(p => {
+          const pName = p.name || p.code;
+          return `<option value="${pName}">${pName}</option>`;
+        }).join('');
       }
     }
 
