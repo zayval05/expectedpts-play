@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Play Value">
-  <title>Track the Play. Measure the Look.</title>
+  <title>Track the Play. Measure the Look. | JUCO Analytics v3.0</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -62,22 +62,26 @@
       background: #334155;
       border-radius: 4px;
     }
+    .sort-icon {
+      display: inline-block;
+      margin-left: 2px;
+      opacity: 0.6;
+    }
   </style>
 
   <!-- Firebase SDK Modules -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
       getAuth, 
       signInAnonymously, 
-      signInWithCustomToken, 
       signInWithEmailAndPassword, 
       createUserWithEmailAndPassword, 
       signInWithPopup, 
       GoogleAuthProvider, 
       signOut, 
       onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
       getFirestore, 
       doc, 
@@ -87,11 +91,11 @@
       getDocs, 
       onSnapshot, 
       deleteDoc 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // Expose Firebase functions globally
     window.fb = {
-      initializeApp, getAuth, signInAnonymously, signInWithCustomToken,
+      initializeApp, getAuth, signInAnonymously,
       signInWithEmailAndPassword, createUserWithEmailAndPassword,
       signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged,
       getFirestore, doc, setDoc, getDoc, collection, getDocs, onSnapshot, deleteDoc
@@ -115,6 +119,7 @@
         <div>
           <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
             Track the Play. Measure the Look.
+            <span class="text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded">v3.0 Multi-Game</span>
             <span id="cloudStatusBadge" class="text-[10px] font-normal text-amber-400 bg-amber-950/80 border border-amber-800/60 px-2 py-0.5 rounded-full font-mono">Guest Mode</span>
           </h1>
           
@@ -303,7 +308,7 @@
             <g id="courtOverlayGroup"></g>
 
             <!-- Active Selected Target Marker -->
-            <g id="activeTargetMarker" style="display: none;">
+            <g id="activeTargetMarker" style="transform: translate(250px, 52.5px);">
               <circle cx="0" cy="0" r="12" fill="none" stroke="#f59e0b" stroke-width="2" class="animate-ping"/>
               <circle cx="0" cy="0" r="6" fill="#f59e0b" stroke="#ffffff" stroke-width="2"/>
             </g>
@@ -315,15 +320,15 @@
         <div class="mt-2.5 bg-slate-950 p-2.5 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
           <div>
             <span class="text-slate-500 block text-[9px] uppercase font-semibold">Location</span>
-            <span id="readoutLocation" class="font-bold text-amber-400">Select Point</span>
+            <span id="readoutLocation" class="font-bold text-amber-400">Rim / Paint</span>
           </div>
           <div>
             <span class="text-slate-500 block text-[9px] uppercase font-semibold">Side</span>
-            <span id="readoutSide" class="font-bold text-slate-200">-</span>
+            <span id="readoutSide" class="font-bold text-slate-200">Center</span>
           </div>
           <div>
             <span class="text-slate-500 block text-[9px] uppercase font-semibold">Distance</span>
-            <span id="readoutDistance" class="font-bold text-slate-200">-</span>
+            <span id="readoutDistance" class="font-bold text-slate-200">0.0 ft</span>
           </div>
         </div>
       </div>
@@ -385,7 +390,7 @@
               </select>
             </div>
 
-            <!-- Shot Type Chips (6 Types) -->
+            <!-- Shot Type Chips -->
             <div id="shotTypeSection">
               <label class="block text-[11px] font-semibold text-slate-300 uppercase mb-1">Shot Type</label>
               <div class="grid grid-cols-3 gap-1">
@@ -473,7 +478,7 @@
     <div id="tabAnalytics" class="hidden space-y-5">
       
       <!-- Key KPI Cards Grid -->
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl">
           <span class="text-xs text-slate-400 block">Total Possessions</span>
           <span id="kpiPossessions" class="text-xl font-bold font-display text-white mt-0.5 block">0</span>
@@ -582,6 +587,45 @@
           </button>
         </div>
 
+        <div class="flex items-center gap-2">
+          <label class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all">
+            Import Synergy CSV
+            <input type="file" accept=".csv" onchange="importSynergyCsv(event)" class="hidden">
+          </label>
+          <button onclick="exportCurrentGameCsv()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs transition-all shadow-md">
+            Export Game CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Possession Log Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-950 text-slate-400 font-semibold uppercase border-b border-slate-800">
+              <tr>
+                <th onclick="toggleLogSort('index')" class="p-2.5 text-center cursor-pointer hover:text-white"># <span id="sort_index" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('playerName')" class="p-2.5 cursor-pointer hover:text-white">Player <span id="sort_playerName" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('playName')" class="p-2.5 cursor-pointer hover:text-white">Play Call <span id="sort_playName" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('executionStatus')" class="p-2.5 text-center cursor-pointer hover:text-white">Execution <span id="sort_executionStatus" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('outcome')" class="p-2.5 cursor-pointer hover:text-white">Outcome <span id="sort_outcome" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('location')" class="p-2.5 cursor-pointer hover:text-white">Location <span id="sort_location" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('shotType')" class="p-2.5 cursor-pointer hover:text-white">Shot Type <span id="sort_shotType" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('contest')" class="p-2.5 text-center cursor-pointer hover:text-white">Contest <span id="sort_contest" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('pts')" class="p-2.5 text-center cursor-pointer hover:text-white">PTS <span id="sort_pts" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('xp')" class="p-2.5 text-center cursor-pointer hover:text-white">xP <span id="sort_xp" class="sort-icon">↕</span></th>
+                <th onclick="toggleLogSort('poe')" class="p-2.5 text-center cursor-pointer hover:text-white">POE <span id="sort_poe" class="sort-icon">↕</span></th>
+                <th class="p-2.5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="possessionLogTable" class="divide-y divide-slate-800 text-slate-300">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- VIEW TAB 4: VIDEO PLAYBOOK & CLIP LIBRARY -->
     <div id="tabVideo" class="hidden space-y-4">
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xl">
@@ -626,6 +670,92 @@
     </div>
 
   </main>
+
+  <!-- MODAL: CLOUD ACCOUNT & SYNC -->
+  <div id="authModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl relative space-y-4">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+        <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Cloud Account & Sync</h3>
+          <p class="text-xs text-slate-400">Save entries across devices and sync previous games</p>
+        </div>
+      </div>
+
+      <!-- Inline Messaging Banner (replaces toast popups for auth) -->
+      <div id="authInlineMsg" class="hidden p-2.5 rounded-lg text-xs font-semibold border"></div>
+
+      <!-- Logged-In State View -->
+      <div id="authLoggedInState" class="hidden space-y-3">
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
+          <div id="authAvatarCircle" class="w-10 h-10 rounded-full bg-amber-500 text-slate-950 font-extrabold flex items-center justify-center text-base">
+            C
+          </div>
+          <div class="flex-1 min-w-0">
+            <span id="authDisplayName" class="text-xs font-bold text-white block truncate">Coach</span>
+            <span id="authEmailText" class="text-[11px] text-slate-400 block truncate">coach@juco.edu</span>
+            <span id="authUidText" class="text-[9px] text-slate-600 font-mono block truncate">UID: --</span>
+          </div>
+        </div>
+
+        <button onclick="syncLocalToCloud()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Sync All Local Games to Cloud
+        </button>
+
+        <button onclick="handleSignOut()" class="w-full bg-slate-800 hover:bg-slate-700 text-rose-400 font-bold py-2 rounded-lg text-xs border border-slate-700 transition-all">
+          Sign Out
+        </button>
+      </div>
+
+      <!-- Logged-Out / Auth Form View -->
+      <div id="authLoggedOutState" class="space-y-3">
+        
+        <!-- Auth Form -->
+        <form onsubmit="handleEmailAuth(event)" class="space-y-3">
+          <div class="flex items-center justify-between bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-semibold">
+            <button type="button" id="authModeSignInBtn" onclick="setAuthMode('signin')" class="flex-1 py-1 rounded bg-amber-500 text-slate-950 font-bold">Sign In</button>
+            <button type="button" id="authModeRegisterBtn" onclick="setAuthMode('register')" class="flex-1 py-1 rounded text-slate-400 hover:text-white">Register</button>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase mb-0.5">Email Address</label>
+            <input type="email" id="authEmail" required placeholder="coach@juco.edu" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-400 uppercase mb-0.5">Password</label>
+            <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+          </div>
+
+          <button type="submit" id="authSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded-lg text-xs shadow transition-all">
+            Sign In
+          </button>
+        </form>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-slate-800"></div>
+          <span class="flex-shrink mx-2 text-[10px] text-slate-500 uppercase font-semibold">Or</span>
+          <div class="flex-grow border-t border-slate-800"></div>
+        </div>
+
+        <button onclick="handleGoogleSignIn()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          Continue with Google
+        </button>
+
+        <button onclick="handleGuestSignIn()" class="w-full bg-slate-950 hover:bg-slate-900 text-slate-400 font-medium py-2 rounded-lg text-xs border border-slate-800 transition-all">
+          Continue as Guest (Local Mode)
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: VIDEO REPLAY PLAYER -->
   <div id="videoModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
@@ -869,10 +999,10 @@
     ];
 
     const DEFAULT_PLAYBOOK = [
-      { id: 'p1', name: 'High Ball Screen', set: 'P&R' },
-      { id: 'p2', name: 'Horns Action', set: 'Horns-2' },
-      { id: 'p3', name: 'Isolation Mid Post', set: 'ISO' },
-      { id: 'p4', name: 'Early Offense', set: 'Transition' }
+      { id: 'p1', name: 'High Ball Screen', code: 'High Ball Screen', set: 'P&R' },
+      { id: 'p2', name: 'Horns Action', code: 'Horns Action', set: 'Horns-2' },
+      { id: 'p3', name: 'Isolation Mid Post', code: 'Isolation Mid Post', set: 'ISO' },
+      { id: 'p4', name: 'Early Offense', code: 'Early Offense', set: 'Transition' }
     ];
 
     let games = [];
@@ -884,12 +1014,13 @@
     let selectedShotType = 'Layup';
     let selectedContest = 3;
     let selectedExecutionStatus = 'Executed';
+    let authMode = 'signin';
 
     // Video Attachment Form State
     let attachedVideoUrl = '';
     let attachedVideoName = '';
 
-    // Shot Chart & Game Log Filter/Sort State
+    // Filters and Sorting State
     let courtFilters = { play: 'ALL', shotType: 'ALL', player: 'ALL', outcome: 'ALL', execution: 'ALL' };
     let logFilters = { search: '', player: 'ALL', play: 'ALL', shotType: 'ALL', execution: 'ALL' };
     let logSort = { column: 'index', direction: 'asc' };
@@ -906,18 +1037,15 @@
     };
 
     function initApp() {
-      // 1. Load Roster & Playbook
       const rawRoster = localStorage.getItem(STORAGE_KEYS.ROSTER);
       roster = rawRoster ? JSON.parse(rawRoster) : DEFAULT_ROSTER;
 
       const rawPlaybook = localStorage.getItem(STORAGE_KEYS.PLAYBOOK);
       playbook = rawPlaybook ? JSON.parse(rawPlaybook) : DEFAULT_PLAYBOOK;
 
-      // 2. Set Benchmark Selector Value
       const benchmarkSelect = document.getElementById('xpBenchmarkSelect');
       if (benchmarkSelect) benchmarkSelect.value = currentBenchmarkKey;
 
-      // 3. Load Games
       loadFromLocalStorage();
 
       populateGameDropdown();
@@ -955,7 +1083,7 @@
       }
     }
 
-    /* FIREBASE INITIALIZATION & SYNC */
+    /* FIREBASE INITIALIZATION */
     async function initFirebase() {
       if (!window.fb) {
         updateAuthUI(null);
@@ -963,13 +1091,13 @@
       }
       try {
         const firebaseConfig = {
-          apiKey: "AIzaSyCEz0IWxW_rtm94fyVu4rdRMY7PeF5InBk",
-          authDomain: "play-value-90ed5.firebaseapp.com",
-          projectId: "play-value-90ed5",
-          storageBucket: "play-value-90ed5.firebasestorage.app",
-          messagingSenderId: "542567989712",
-          appId: "1:123456789:web:bad63ccebaea3a3e05b9d5",
-          measurementId: "G-Q67LDR5HG3"
+          apiKey: 'AIzaSyCEz0IWxW_rtm94fyVu4rdRMY7PeF5InBk',
+          authDomain: 'play-value-90ed5.firebaseapp.com',
+          projectId: 'play-value-90ed5',
+          storageBucket: 'play-value-90ed5.firebasestorage.app',
+          messagingSenderId: '542567989712',
+          appId: '1:542567989712:web:bad63ccebaea3a3e05b9d5',
+          measurementId: 'G-Q67LDR5HG3'
         };
 
         const app = window.fb.initializeApp(firebaseConfig);
@@ -988,7 +1116,7 @@
           }
         });
       } catch (err) {
-        console.warn("Firebase initialized in Local/Guest mode fallback:", err);
+        console.log("Firebase operating in Guest / Offline mode.");
         updateAuthUI(null);
       }
     }
@@ -1024,9 +1152,25 @@
       }
     }
 
+    function setAuthInlineMsg(msg, isError = true) {
+      const el = document.getElementById('authInlineMsg');
+      if (!el) return;
+      if (!msg) {
+        el.classList.add('hidden');
+        return;
+      }
+      el.classList.remove('hidden');
+      if (isError) {
+        el.className = "p-2.5 rounded-lg text-xs font-semibold bg-rose-950/80 text-rose-300 border border-rose-800";
+      } else {
+        el.className = "p-2.5 rounded-lg text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800";
+      }
+      el.innerText = msg;
+    }
+
     async function syncFromCloud(userId) {
       if (!db || !userId) return;
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+      const appId = 'juco-play-value';
       const gamesColRef = window.fb.collection(db, 'artifacts', appId, 'users', userId, 'games');
 
       if (unsubscribeCloudGames) unsubscribeCloudGames();
@@ -1045,25 +1189,24 @@
           }
         }
       }, (err) => {
-        console.error("Firestore Games sync error:", err);
+        console.warn("Firestore Games sync notice:", err);
       });
     }
 
     async function syncLocalToCloud() {
       if (!db || !currentUser) {
-        showToast("Please sign in to upload data to cloud!");
+        setAuthInlineMsg("Please sign in to sync data to the cloud.", true);
         return;
       }
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+      const appId = 'juco-play-value';
       try {
         for (const g of games) {
           const gameDocRef = window.fb.doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', g.id);
           await window.fb.setDoc(gameDocRef, g);
         }
-        showToast("All local games synced to Cloud!");
+        setAuthInlineMsg("All local games synced to Cloud successfully!", false);
       } catch (err) {
-        console.error("Cloud upload error:", err);
-        showToast("Failed to sync local games to cloud.");
+        setAuthInlineMsg("Failed to sync games to cloud: " + err.message, true);
       }
     }
 
@@ -1074,9 +1217,9 @@
       if (pushToCloud && currentUser && db) {
         const currentGame = getActiveGame();
         if (currentGame) {
-          const appId = typeof __app_id !== 'undefined' ? __app_id : 'juco-play-value';
+          const appId = 'juco-play-value';
           const gameDocRef = window.fb.doc(db, 'artifacts', appId, 'users', currentUser.uid, 'games', currentGame.id);
-          window.fb.setDoc(gameDocRef, currentGame).catch(err => console.error("Cloud save failed:", err));
+          window.fb.setDoc(gameDocRef, currentGame).catch(err => console.warn("Cloud save pending:", err));
         }
       }
     }
@@ -1116,82 +1259,254 @@
 
     /* AUTH MODAL HANDLERS */
     function openAuthModal() {
+      setAuthInlineMsg(null);
       document.getElementById('authModal').classList.remove('hidden');
     }
     function closeAuthModal() {
+      setAuthInlineMsg(null);
       document.getElementById('authModal').classList.add('hidden');
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      setAuthInlineMsg(null);
+      const signInBtn = document.getElementById('authModeSignInBtn');
+      const registerBtn = document.getElementById('authModeRegisterBtn');
+      const submitBtn = document.getElementById('authSubmitBtn');
+
+      if (mode === 'signin') {
+        signInBtn.className = "flex-1 py-1 rounded bg-amber-500 text-slate-950 font-bold";
+        registerBtn.className = "flex-1 py-1 rounded text-slate-400 hover:text-white";
+        submitBtn.innerText = "Sign In";
+      } else {
+        registerBtn.className = "flex-1 py-1 rounded bg-amber-500 text-slate-950 font-bold";
+        signInBtn.className = "flex-1 py-1 rounded text-slate-400 hover:text-white";
+        submitBtn.innerText = "Register Account";
+      }
     }
 
     async function handleEmailAuth(e) {
       e.preventDefault();
+      setAuthInlineMsg(null);
       if (!auth) {
-        showToast("Authentication module operating in offline mode.");
+        setAuthInlineMsg("Authentication service unavailable. Operating in local mode.", true);
         return;
       }
       const email = document.getElementById('authEmail').value;
       const pass = document.getElementById('authPassword').value;
-      const mode = window.authMode || 'signin';
 
       try {
-        if (mode === 'register') {
+        if (authMode === 'register') {
           await window.fb.createUserWithEmailAndPassword(auth, email, pass);
-          showToast("Account created successfully!");
+          setAuthInlineMsg("Account created successfully!", false);
         } else {
           await window.fb.signInWithEmailAndPassword(auth, email, pass);
-          showToast("Signed in successfully!");
+          setAuthInlineMsg("Signed in successfully!", false);
         }
-        closeAuthModal();
+        setTimeout(() => closeAuthModal(), 800);
       } catch (err) {
-        showToast(err.message || "Authentication failed");
+        setAuthInlineMsg(err.message || "Authentication failed", true);
       }
     }
 
     async function handleGoogleSignIn() {
-      if (!auth) return;
+      setAuthInlineMsg(null);
+      if (!auth) {
+        setAuthInlineMsg("Google sign in unavailable in offline mode.", true);
+        return;
+      }
       const provider = new window.fb.GoogleAuthProvider();
       try {
         await window.fb.signInWithPopup(auth, provider);
-        showToast("Google Sign-In successful!");
         closeAuthModal();
       } catch (err) {
-        showToast("Google sign in failed: " + err.message);
+        setAuthInlineMsg("Google sign in failed: " + err.message, true);
       }
     }
 
     async function handleGuestSignIn() {
+      setAuthInlineMsg(null);
+      if (auth) {
+        try { await window.fb.signInAnonymously(auth); } catch (e) {}
+      }
+      closeAuthModal();
+    }
+
+    async function handleSignOut() {
       if (!auth) {
         closeAuthModal();
         return;
       }
       try {
-        await window.fb.signInAnonymously(auth);
-        showToast("Signed in as Guest");
-        closeAuthModal();
-      } catch (err) {
-        closeAuthModal();
-      }
-    }
-
-    async function handleSignOut() {
-      if (!auth) return;
-      try {
         await window.fb.signOut(auth);
-        showToast("Signed out");
         closeAuthModal();
       } catch (err) {
-        console.error(err);
+        console.warn(err);
       }
     }
 
-    /* NAVIGATION & TAB MANAGEMENT */
+    /* COURT INTERACTION & SPATIAL MATH */
+    function handleCourtClick(event) {
+      const svg = document.getElementById('courtSvg');
+      const rect = svg.getBoundingClientRect();
+      const x = Math.round(((event.clientX - rect.left) / rect.width) * 500);
+      const y = Math.round(((event.clientY - rect.top) / rect.height) * 470);
+
+      // Distance from hoop center (x=250, y=52.5)
+      const dx = (x - 250) / 10;
+      const dy = (y - 52.5) / 10;
+      const distFeet = Math.round(Math.hypot(dx, dy) * 10) / 10;
+
+      let location = 'Midrange';
+      const isThree = distFeet >= 22.15 || x <= 30 || x >= 470;
+      if (distFeet <= 8) location = 'Rim / Paint';
+      else if (isThree) location = '3-Pointer';
+
+      let side = 'Center';
+      if (x < 200) side = 'Left';
+      else if (x > 300) side = 'Right';
+
+      currentSelectedPoint = { x, y, location, side, dist: distFeet };
+
+      document.getElementById('readoutLocation').innerText = location;
+      document.getElementById('readoutSide').innerText = side;
+      document.getElementById('readoutDistance').innerText = `${distFeet} ft`;
+      document.getElementById('clickCoordinates').innerText = `X:${x} Y:${y}`;
+
+      const target = document.getElementById('activeTargetMarker');
+      target.style.transform = `translate(${x}px, ${y}px)`;
+      target.style.display = 'block';
+
+      updateXpPreview();
+    }
+
+    function selectShotType(type) {
+      selectedShotType = type;
+      document.querySelectorAll('.shot-type-chip').forEach(btn => {
+        if (btn.dataset.val === type) {
+          btn.className = "shot-type-chip px-1.5 py-1 rounded border border-amber-500 bg-amber-500/20 text-amber-300 font-bold text-[11px] text-center";
+        } else {
+          btn.className = "shot-type-chip px-1.5 py-1 rounded border border-slate-800 bg-slate-950 text-slate-400 font-medium text-[11px] text-center";
+        }
+      });
+      updateXpPreview();
+    }
+
+    function selectContest(lvl) {
+      selectedContest = parseInt(lvl);
+      document.querySelectorAll('.contest-chip').forEach(btn => {
+        const val = parseInt(btn.dataset.val);
+        if (val === selectedContest) {
+          btn.classList.add('ring-2', 'ring-amber-500');
+        } else {
+          btn.classList.remove('ring-2', 'ring-amber-500');
+        }
+      });
+      updateXpPreview();
+    }
+
+    function updateFormFields() {
+      const outcome = document.getElementById('formOutcome').value;
+      const ftTrip = document.getElementById('ftTripContainer');
+      const actualPts = document.getElementById('formActualPts');
+
+      if (outcome === 'Shooting Foul') {
+        ftTrip.classList.remove('hidden');
+        calcFtActualPts();
+      } else if (outcome === 'Turnover' || outcome === 'Non-Shooting Foul' || outcome === 'Missed FG') {
+        ftTrip.classList.add('hidden');
+        actualPts.value = 0;
+      } else if (outcome === 'Made FG') {
+        ftTrip.classList.add('hidden');
+        actualPts.value = currentSelectedPoint.location === '3-Pointer' ? 3 : 2;
+      }
+      updateXpPreview();
+    }
+
+    function calcFtActualPts() {
+      const val = document.getElementById('formFtResult').value;
+      const ptsInput = document.getElementById('formActualPts');
+      if (val.startsWith('2/2')) ptsInput.value = 2;
+      else if (val.startsWith('1/2')) ptsInput.value = 1;
+      else if (val.startsWith('0/2')) ptsInput.value = 0;
+      else if (val.startsWith('3/3')) ptsInput.value = 3;
+      else if (val.startsWith('2/3')) ptsInput.value = 2;
+      else if (val.startsWith('1/3')) ptsInput.value = 1;
+      else if (val.startsWith('0/3')) ptsInput.value = 0;
+      else if (val.includes('And-1')) ptsInput.value = 3;
+    }
+
+    function calculateExpectedPoints(x, y, shotType, contest, outcome, playerId) {
+      if (outcome === 'Turnover') return 0.00;
+
+      const dx = (x - 250) / 10;
+      const dy = (y - 52.5) / 10;
+      const distFeet = Math.hypot(dx, dy);
+      const isThree = distFeet >= 22.15 || x <= 30 || x >= 470;
+      const isRim = distFeet <= 8;
+
+      let bench = BENCHMARK_MODELS[currentBenchmarkKey] || BENCHMARK_MODELS.JUCO;
+      let rimPct = bench.rimPct;
+      let midPct = bench.midPct;
+      let threePct = bench.threePct;
+
+      if (currentBenchmarkKey === 'PLAYER' && playerId) {
+        const p = roster.find(r => r.id === playerId);
+        if (p) {
+          rimPct = (p.rimPct || 58) / 100;
+          midPct = (p.midPct || 36) / 100;
+          threePct = (p.threePct || 34) / 100;
+        }
+      }
+
+      let basePct = midPct;
+      let ptsVal = isThree ? 3 : 2;
+
+      if (isRim) basePct = rimPct;
+      else if (isThree) basePct = threePct;
+
+      let adjustedPct = basePct;
+      if (shotType === 'Catch & Shoot') adjustedPct += 0.04;
+      else if (shotType === 'Off the Dribble') adjustedPct -= 0.05;
+      else if (shotType === 'Layup' || shotType === 'Dunk') adjustedPct = Math.max(adjustedPct, 0.65);
+
+      let contestMult = 1.0;
+      if (contest === 3) contestMult = 1.15;
+      else if (contest === 2) contestMult = 1.00;
+      else if (contest === 1) contestMult = 0.75;
+
+      adjustedPct = Math.min(Math.max(adjustedPct * contestMult, 0.05), 0.95);
+
+      if (outcome === 'Shooting Foul') {
+        let ftPct = 0.70;
+        if (currentBenchmarkKey === 'PLAYER' && playerId) {
+          const p = roster.find(r => r.id === playerId);
+          if (p && p.ftPct) ftPct = p.ftPct / 100;
+        }
+        return roundVal(ftPct * (isThree ? 3 : 2));
+      }
+
+      if (outcome === 'Non-Shooting Foul') return 0.90;
+
+      return roundVal(adjustedPct * ptsVal);
+    }
+
+    function updateXpPreview() {
+      const pId = document.getElementById('formPlayer')?.value;
+      const outcome = document.getElementById('formOutcome')?.value || 'Made FG';
+      const xp = calculateExpectedPoints(currentSelectedPoint.x, currentSelectedPoint.y, selectedShotType, selectedContest, outcome, pId);
+      const badge = document.getElementById('xpPreviewBadge');
+      if (badge) badge.innerText = `Est xP: ${xp.toFixed(2)}`;
+    }
+
+    /* NAVIGATION & TAB SWITCHING */
     function switchTab(tabName) {
       document.getElementById('tabTracker').classList.add('hidden');
       document.getElementById('tabAnalytics').classList.add('hidden');
       document.getElementById('tabLog').classList.add('hidden');
       document.getElementById('tabVideo').classList.add('hidden');
 
-      const tabs = ['Tracker', 'Analytics', 'Log', 'Video'];
-      tabs.forEach(t => {
+      ['Tracker', 'Analytics', 'Log', 'Video'].forEach(t => {
         const btn = document.getElementById(`tab${t}Btn`);
         if (btn) btn.className = "px-3 py-1.5 rounded-md text-slate-300 hover:text-white transition-all";
       });
@@ -1214,7 +1529,7 @@
       }
     }
 
-    /* VIDEO ATTACHMENT HANDLERS */
+    /* VIDEO ATTACHMENTS & MODALS */
     function handleFormVideoFile(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -1223,7 +1538,7 @@
       const notice = document.getElementById('videoFilePreviewNotice');
       const text = document.getElementById('videoFileNoticeText');
       if (notice && text) {
-        text.innerText = `✓ Attached File: ${file.name}`;
+        text.innerText = `✓ File Attached: ${file.name}`;
         notice.classList.remove('hidden');
       }
     }
@@ -1319,112 +1634,205 @@
       currentGame.possessions.push(entry);
       saveGamesToStorage();
       clearFormVideo();
-      showToast("Possession logged successfully!");
+      showToast("Possession logged!");
       reRenderAllUI();
     }
 
-    /* VIDEO LIBRARY RENDERER */
-    function renderVideoLibrary() {
-      const grid = document.getElementById('videoLibraryGrid');
-      if (!grid) return;
-      grid.innerHTML = '';
+    /* COURT OVERLAY RENDERER */
+    function updateCourtFilters() {
+      courtFilters.play = document.getElementById('courtFilterPlay')?.value || 'ALL';
+      courtFilters.shotType = document.getElementById('courtFilterShotType')?.value || 'ALL';
+      courtFilters.player = document.getElementById('courtFilterPlayer')?.value || 'ALL';
+      courtFilters.outcome = document.getElementById('courtFilterOutcome')?.value || 'ALL';
+      courtFilters.execution = document.getElementById('courtFilterExecution')?.value || 'ALL';
+      renderCourtOverlay();
+    }
 
-      const filterPlay = document.getElementById('videoLibFilterPlay')?.value || 'ALL';
-      const filterExec = document.getElementById('videoLibFilterExec')?.value || 'ALL';
-      const filterSource = document.getElementById('videoLibFilterSource')?.value || 'ALL';
+    function renderCourtOverlay() {
+      const container = document.getElementById('courtOverlayGroup');
+      container.innerHTML = '';
 
-      let items = [];
-
-      // 1. Gather Playbook Reference Clips
-      if (filterSource === 'ALL' || filterSource === 'PLAYBOOK') {
-        playbook.forEach(p => {
-          const pName = p.name || p.code;
-          if (p.videoUrl) {
-            if (filterPlay !== 'ALL' && pName !== filterPlay) return;
-            items.push({
-              sourceType: 'PLAYBOOK',
-              playName: pName,
-              playSet: p.set || '',
-              videoUrl: p.videoUrl,
-              title: `Reference Clip: ${pName}`,
-              badge: 'PLAYBOOK REF'
-            });
-          }
-        });
-      }
-
-      // 2. Gather Game Possession Clips
-      if (filterSource === 'ALL' || filterSource === 'GAME') {
-        games.forEach(g => {
-          (g.possessions || []).forEach((p, idx) => {
-            if (!p.videoUrl) return;
-            const pName = p.playName || p.playCode || 'Unknown';
-            if (filterPlay !== 'ALL' && pName !== filterPlay) return;
-            if (filterExec !== 'ALL' && (p.executionStatus || 'Executed') !== filterExec) return;
-
-            items.push({
-              sourceType: 'GAME',
-              gameTitle: g.title,
-              playName: pName,
-              playSet: p.playSet || '',
-              playerName: p.playerName,
-              outcome: p.outcome,
-              execStatus: p.executionStatus || 'Executed',
-              pts: p.pts,
-              xp: p.xp,
-              videoUrl: p.videoUrl,
-              videoName: p.videoName,
-              index: idx + 1,
-              title: `Clip #${idx + 1} - ${pName}`
-            });
-          });
-        });
-      }
-
-      if (items.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 space-y-2">
-            <svg class="w-8 h-8 mx-auto text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 002-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            <p class="text-xs font-bold text-slate-400">No video clips found matching filters.</p>
-            <p class="text-[11px] text-slate-500">Attach video files or Synergy URLs when logging possessions or in the Playbook Manager.</p>
-          </div>
-        `;
+      const readout = document.getElementById('shotCountReadout');
+      if (!document.getElementById('toggleShotPins').checked) {
+        if (readout) readout.innerText = "Pins Hidden";
         return;
       }
 
-      items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-3.5 flex flex-col justify-between hover:border-amber-500/50 transition-all shadow-lg space-y-3";
+      const currentGame = getActiveGame();
+      if (!currentGame || !currentGame.possessions) {
+        if (readout) readout.innerText = "Showing 0 shots";
+        return;
+      }
 
-        let execBadge = item.execStatus === 'Broken' ? 
-          '<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">Broken</span>' : 
-          '<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Executed</span>';
+      const totalShots = currentGame.possessions.length;
 
-        if (item.sourceType === 'PLAYBOOK') {
-          execBadge = '<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">Playbook Ref</span>';
+      const filteredPossessions = currentGame.possessions.filter((p, idx) => {
+        p._originalIndex = idx + 1;
+        const pName = p.playName || p.playCode || '';
+        if (courtFilters.play !== 'ALL' && pName !== courtFilters.play) return false;
+        if (courtFilters.shotType !== 'ALL' && (p.shotType || '') !== courtFilters.shotType) return false;
+        if (courtFilters.player !== 'ALL' && p.playerName !== courtFilters.player) return false;
+        if (courtFilters.outcome !== 'ALL' && p.outcome !== courtFilters.outcome) return false;
+        if (courtFilters.execution !== 'ALL' && (p.executionStatus || 'Executed') !== courtFilters.execution) return false;
+        return true;
+      });
+
+      if (readout) readout.innerText = `Showing ${filteredPossessions.length} of ${totalShots} shots`;
+
+      filteredPossessions.forEach((p) => {
+        let fill = '#f59e0b';
+        if (p.outcome === 'Made FG' || p.pts > 0) fill = '#10b981';
+        else if (p.outcome === 'Missed FG' || p.outcome === 'Turnover') fill = '#ef4444';
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', p.x);
+        circle.setAttribute('cy', p.y);
+        circle.setAttribute('r', p.videoUrl ? '7.5' : '6');
+        circle.setAttribute('fill', fill);
+        circle.setAttribute('stroke', p.videoUrl ? '#f59e0b' : '#ffffff');
+        circle.setAttribute('stroke-width', p.videoUrl ? '2.5' : '1.5');
+        circle.setAttribute('class', 'court-pin');
+
+        if (p.videoUrl) {
+          circle.onclick = function(e) {
+            e.stopPropagation();
+            openVideoModal(p.videoUrl, `Play Clip #${p._originalIndex} - ${p.playName || p.playCode}`, p.playName || p.playCode, p.playerName, p.outcome, p.pts, p.xp, p.executionStatus || 'Executed');
+          };
         }
 
-        card.innerHTML = `
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-xs font-bold text-amber-400 truncate">${item.playName}${item.playSet ? ` (${item.playSet})` : ''}</span>
-              ${execBadge}
-            </div>
-            ${item.sourceType === 'GAME' ? `
-              <p class="text-xs font-semibold text-white">${item.playerName} - <span class="${item.outcome.includes('Made') ? 'text-emerald-400' : 'text-amber-400'}">${item.outcome}</span></p>
-              <p class="text-[10px] text-slate-500 font-mono mt-0.5">${item.gameTitle} | ${item.pts} PTS (xP: ${item.xp.toFixed(2)})</p>
-            ` : `
-              <p class="text-xs text-slate-300">Playbook Reference Clip</p>
-            `}
-          </div>
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = `#${p._originalIndex} | ${p.playerName} - ${p.playName || p.playCode || 'Play'} [${p.shotType || ''}] - ${p.outcome} (${p.pts} pts, xP: ${p.xp})${p.videoUrl ? ' [Click pin to play video]' : ''}`;
+        circle.appendChild(title);
 
-          <button onclick="openVideoModal('${item.videoUrl}', '${item.title}', '${item.playName}', '${item.playerName || 'Coach Reference'}', '${item.outcome || 'Reference'}', ${item.pts !== undefined ? item.pts : 0}, ${item.xp !== undefined ? item.xp : 0}, '${item.execStatus || 'Reference'}')" class="w-full bg-slate-950 hover:bg-amber-500 hover:text-slate-950 text-amber-300 border border-amber-500/30 text-xs font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
-            Watch Video Clip
-          </button>
-        `;
-        grid.appendChild(card);
+        container.appendChild(circle);
       });
+    }
+
+    /* ANALYTICS DASHBOARD RENDERER */
+    function renderAnalyticsDashboard() {
+      const game = getActiveGame();
+      if (!game || !game.possessions) return;
+
+      const poss = game.possessions;
+      const totalPoss = poss.length;
+      const totalPts = poss.reduce((sum, p) => sum + (p.pts || 0), 0);
+      const totalXp = poss.reduce((sum, p) => sum + (p.xp || 0), 0);
+      const totalPoe = totalPts - totalXp;
+      const pps = totalPoss > 0 ? (totalPts / totalPoss) : 0;
+      const sqi = totalPoss > 0 ? (totalXp / totalPoss) : 0;
+      const executedCount = poss.filter(p => (p.executionStatus || 'Executed') === 'Executed').length;
+      const execRate = totalPoss > 0 ? Math.round((executedCount / totalPoss) * 100) : 0;
+
+      document.getElementById('kpiPossessions').innerText = totalPoss;
+      document.getElementById('kpiActualPts').innerText = totalPts;
+      document.getElementById('kpiPps').innerText = `${pps.toFixed(2)} PPS`;
+      document.getElementById('kpiExpectedPts').innerText = totalXp.toFixed(2);
+      document.getElementById('kpiPoe').innerText = `${totalPoe >= 0 ? '+' : ''}${totalPoe.toFixed(2)}`;
+      document.getElementById('kpiSqi').innerText = sqi.toFixed(2);
+      document.getElementById('kpiExecution').innerText = `${execRate}%`;
+
+      // Player breakdown
+      const playerStats = {};
+      roster.forEach(r => {
+        playerStats[r.name] = { name: r.name, poss: 0, pts: 0, xp: 0 };
+      });
+
+      poss.forEach(p => {
+        if (!playerStats[p.playerName]) {
+          playerStats[p.playerName] = { name: p.playerName, poss: 0, pts: 0, xp: 0 };
+        }
+        playerStats[p.playerName].poss += 1;
+        playerStats[p.playerName].pts += (p.pts || 0);
+        playerStats[p.playerName].xp += (p.xp || 0);
+      });
+
+      const playerTbody = document.getElementById('playerAnalyticsTable');
+      playerTbody.innerHTML = Object.values(playerStats)
+        .filter(p => p.poss > 0)
+        .map(p => {
+          const poe = p.pts - p.xp;
+          const sqi = p.poss > 0 ? (p.xp / p.poss) : 0;
+          return `
+            <tr>
+              <td class="p-2 font-bold text-white">${p.name}</td>
+              <td class="p-2 text-center">${p.poss}</td>
+              <td class="p-2 text-center font-bold text-emerald-400">${p.pts}</td>
+              <td class="p-2 text-center text-amber-400">${p.xp.toFixed(2)}</td>
+              <td class="p-2 text-center ${poe >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${poe >= 0 ? '+' : ''}${poe.toFixed(2)}</td>
+              <td class="p-2 text-center text-cyan-400">${sqi.toFixed(2)}</td>
+            </tr>
+          `;
+        }).join('');
+
+      // Playbook breakdown
+      const playStats = {};
+      playbook.forEach(pl => {
+        const pName = pl.name || pl.code;
+        playStats[pName] = { name: pName, runs: 0, pts: 0, xp: 0, executed: 0, open: 0, turnovers: 0 };
+      });
+
+      poss.forEach(p => {
+        const pName = p.playName || p.playCode || 'Unknown';
+        if (!playStats[pName]) {
+          playStats[pName] = { name: pName, runs: 0, pts: 0, xp: 0, executed: 0, open: 0, turnovers: 0 };
+        }
+        playStats[pName].runs += 1;
+        playStats[pName].pts += (p.pts || 0);
+        playStats[pName].xp += (p.xp || 0);
+        if ((p.executionStatus || 'Executed') === 'Executed') playStats[pName].executed += 1;
+        if (p.contest === 3) playStats[pName].open += 1;
+        if (p.outcome === 'Turnover') playStats[pName].turnovers += 1;
+      });
+
+      const playTbody = document.getElementById('playAnalyticsTable');
+      playTbody.innerHTML = Object.values(playStats)
+        .filter(p => p.runs > 0)
+        .map(p => {
+          const avgXp = p.runs > 0 ? (p.xp / p.runs) : 0;
+          const execPct = p.runs > 0 ? Math.round((p.executed / p.runs) * 100) : 0;
+          const openPct = p.runs > 0 ? Math.round((p.open / p.runs) * 100) : 0;
+          const toPct = p.runs > 0 ? Math.round((p.turnovers / p.runs) * 100) : 0;
+          return `
+            <tr>
+              <td class="p-2 font-bold text-amber-300">${p.name}</td>
+              <td class="p-2 text-center">${p.runs}</td>
+              <td class="p-2 text-center font-bold text-emerald-400">${p.pts}</td>
+              <td class="p-2 text-center text-amber-400">${avgXp.toFixed(2)}</td>
+              <td class="p-2 text-center text-indigo-300">${execPct}%</td>
+              <td class="p-2 text-center text-emerald-300">${openPct}%</td>
+              <td class="p-2 text-center text-rose-300">${toPct}%</td>
+            </tr>
+          `;
+        }).join('');
+    }
+
+    /* POSSESSION LOG TABLE & SORTING */
+    function updateLogFilters() {
+      logFilters.search = (document.getElementById('logSearchInput')?.value || '').toLowerCase().trim();
+      logFilters.player = document.getElementById('logFilterPlayer')?.value || 'ALL';
+      logFilters.play = document.getElementById('logFilterPlay')?.value || 'ALL';
+      logFilters.shotType = document.getElementById('logFilterShotType')?.value || 'ALL';
+      logFilters.execution = document.getElementById('logFilterExecution')?.value || 'ALL';
+      renderPossessionLogTable();
+    }
+
+    function resetLogFilters() {
+      if (document.getElementById('logSearchInput')) document.getElementById('logSearchInput').value = '';
+      if (document.getElementById('logFilterPlayer')) document.getElementById('logFilterPlayer').value = 'ALL';
+      if (document.getElementById('logFilterPlay')) document.getElementById('logFilterPlay').value = 'ALL';
+      if (document.getElementById('logFilterShotType')) document.getElementById('logFilterShotType').value = 'ALL';
+      if (document.getElementById('logFilterExecution')) document.getElementById('logFilterExecution').value = 'ALL';
+      updateLogFilters();
+    }
+
+    function toggleLogSort(col) {
+      if (logSort.column === col) {
+        logSort.direction = logSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        logSort.column = col;
+        logSort.direction = 'asc';
+      }
+      renderPossessionLogTable();
     }
 
     function renderPossessionLogTable() {
@@ -1433,17 +1841,25 @@
       const tbody = document.getElementById('possessionLogTable');
       tbody.innerHTML = '';
 
+      // Update sort indicators
+      ['index', 'playerName', 'playName', 'executionStatus', 'outcome', 'location', 'shotType', 'contest', 'pts', 'xp', 'poe'].forEach(c => {
+        const el = document.getElementById(`sort_${c}`);
+        if (el) {
+          if (logSort.column === c) el.innerText = logSort.direction === 'asc' ? '▲' : '▼';
+          else el.innerText = '↕';
+        }
+      });
+
       let possessionsWithIndex = (game.possessions || []).map((p, i) => ({ ...p, _originalIndex: i + 1, _realIndex: i }));
 
-      // Filter possessions
       let filtered = possessionsWithIndex.filter(p => {
         const pName = p.playName || p.playCode || 'Unknown';
         if (logFilters.search) {
-          const matchSearch = p.playerName.toLowerCase().includes(logFilters.search) || 
-                              pName.toLowerCase().includes(logFilters.search) || 
-                              p.outcome.toLowerCase().includes(logFilters.search) ||
-                              (p.shotType || '').toLowerCase().includes(logFilters.search);
-          if (!matchSearch) return false;
+          const match = p.playerName.toLowerCase().includes(logFilters.search) || 
+                        pName.toLowerCase().includes(logFilters.search) || 
+                        p.outcome.toLowerCase().includes(logFilters.search) ||
+                        (p.shotType || '').toLowerCase().includes(logFilters.search);
+          if (!match) return false;
         }
         if (logFilters.player !== 'ALL' && p.playerName !== logFilters.player) return false;
         if (logFilters.play !== 'ALL' && pName !== logFilters.play) return false;
@@ -1452,7 +1868,6 @@
         return true;
       });
 
-      // Sort possessions
       filtered.sort((a, b) => {
         let valA, valB;
         if (logSort.column === 'index') {
@@ -1461,9 +1876,6 @@
         } else if (logSort.column === 'playName') {
           valA = (a.playName || a.playCode || '').toLowerCase();
           valB = (b.playName || b.playCode || '').toLowerCase();
-        } else if (logSort.column === 'executionStatus') {
-          valA = (a.executionStatus || 'Executed').toLowerCase();
-          valB = (b.executionStatus || 'Executed').toLowerCase();
         } else if (typeof a[logSort.column] === 'string') {
           valA = (a[logSort.column] || '').toLowerCase();
           valB = (b[logSort.column] || '').toLowerCase();
@@ -1515,105 +1927,283 @@
       });
     }
 
-    function renderCourtOverlay() {
-      const container = document.getElementById('courtOverlayGroup');
-      container.innerHTML = '';
+    function deletePossession(index) {
+      const game = getActiveGame();
+      if (!game || !game.possessions) return;
+      game.possessions.splice(index, 1);
+      saveGamesToStorage();
+      reRenderAllUI();
+      showToast("Possession deleted");
+    }
 
-      const readout = document.getElementById('shotCountReadout');
+    /* VIDEO LIBRARY RENDERER */
+    function renderVideoLibrary() {
+      const grid = document.getElementById('videoLibraryGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
 
-      if (!document.getElementById('toggleShotPins').checked) {
-        if (readout) readout.innerText = "Pins Hidden";
+      const filterPlay = document.getElementById('videoLibFilterPlay')?.value || 'ALL';
+      const filterExec = document.getElementById('videoLibFilterExec')?.value || 'ALL';
+      const filterSource = document.getElementById('videoLibFilterSource')?.value || 'ALL';
+
+      let items = [];
+
+      // Playbook Reference Clips
+      if (filterSource === 'ALL' || filterSource === 'PLAYBOOK') {
+        playbook.forEach(p => {
+          const pName = p.name || p.code;
+          if (p.videoUrl) {
+            if (filterPlay !== 'ALL' && pName !== filterPlay) return;
+            items.push({
+              sourceType: 'PLAYBOOK',
+              playName: pName,
+              playSet: p.set || '',
+              videoUrl: p.videoUrl,
+              title: `Reference Clip: ${pName}`
+            });
+          }
+        });
+      }
+
+      // Game Possession Clips
+      if (filterSource === 'ALL' || filterSource === 'GAME') {
+        games.forEach(g => {
+          (g.possessions || []).forEach((p, idx) => {
+            if (!p.videoUrl) return;
+            const pName = p.playName || p.playCode || 'Unknown';
+            if (filterPlay !== 'ALL' && pName !== filterPlay) return;
+            if (filterExec !== 'ALL' && (p.executionStatus || 'Executed') !== filterExec) return;
+
+            items.push({
+              sourceType: 'GAME',
+              gameTitle: g.title,
+              playName: pName,
+              playSet: p.playSet || '',
+              playerName: p.playerName,
+              outcome: p.outcome,
+              execStatus: p.executionStatus || 'Executed',
+              pts: p.pts,
+              xp: p.xp,
+              videoUrl: p.videoUrl,
+              title: `Clip #${idx + 1} - ${pName}`
+            });
+          });
+        });
+      }
+
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 space-y-2">
+            <svg class="w-8 h-8 mx-auto text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 002-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <p class="text-xs font-bold text-slate-400">No video clips found.</p>
+            <p class="text-[11px] text-slate-500">Attach video files or Synergy URLs when logging possessions or in the Playbook Manager.</p>
+          </div>
+        `;
         return;
       }
 
-      const currentGame = getActiveGame();
-      if (!currentGame || !currentGame.possessions) {
-        if (readout) readout.innerText = "Showing 0 shots";
-        return;
-      }
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-3.5 flex flex-col justify-between hover:border-amber-500/50 transition-all shadow-lg space-y-3";
 
-      const totalShots = currentGame.possessions.length;
+        let execBadge = item.execStatus === 'Broken' ? 
+          '<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">Broken</span>' : 
+          '<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Executed</span>';
 
-      // Filter possessions based on courtFilters
-      const filteredPossessions = currentGame.possessions.filter((p, idx) => {
-        p._originalIndex = idx + 1;
-        const pName = p.playName || p.playCode || '';
-        if (courtFilters.play !== 'ALL' && pName !== courtFilters.play) return false;
-        if (courtFilters.shotType !== 'ALL' && (p.shotType || '') !== courtFilters.shotType) return false;
-        if (courtFilters.player !== 'ALL' && p.playerName !== courtFilters.player) return false;
-        if (courtFilters.outcome !== 'ALL' && p.outcome !== courtFilters.outcome) return false;
-        if (courtFilters.execution !== 'ALL' && (p.executionStatus || 'Executed') !== courtFilters.execution) return false;
-        return true;
-      });
-
-      if (readout) readout.innerText = `Showing ${filteredPossessions.length} of ${totalShots} shots`;
-
-      filteredPossessions.forEach((p) => {
-        let fill = '#f59e0b';
-        if (p.outcome === 'Made FG' || p.pts > 0) fill = '#10b981';
-        else if (p.outcome === 'Missed FG' || p.outcome === 'Turnover') fill = '#ef4444';
-
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', p.x);
-        circle.setAttribute('cy', p.y);
-        circle.setAttribute('r', p.videoUrl ? '7.5' : '6');
-        circle.setAttribute('fill', fill);
-        circle.setAttribute('stroke', p.videoUrl ? '#f59e0b' : '#ffffff');
-        circle.setAttribute('stroke-width', p.videoUrl ? '2.5' : '1.5');
-        circle.setAttribute('class', 'court-pin');
-
-        if (p.videoUrl) {
-          circle.onclick = function(e) {
-            e.stopPropagation();
-            openVideoModal(p.videoUrl, `Play Clip #${p._originalIndex} - ${p.playName || p.playCode}`, p.playName || p.playCode, p.playerName, p.outcome, p.pts, p.xp, p.executionStatus || 'Executed');
-          };
+        if (item.sourceType === 'PLAYBOOK') {
+          execBadge = '<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">Playbook Ref</span>';
         }
 
-        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-        title.textContent = `#${p._originalIndex} | ${p.playerName} - ${p.playName || p.playCode || 'Play'} [${p.shotType || ''}] - ${p.outcome} (${p.pts} pts, xP: ${p.xp})${p.videoUrl ? ' [Click pin to play video]' : ''}`;
-        circle.appendChild(title);
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-bold text-amber-400 truncate">${item.playName}${item.playSet ? ` (${item.playSet})` : ''}</span>
+              ${execBadge}
+            </div>
+            ${item.sourceType === 'GAME' ? `
+              <p class="text-xs font-semibold text-white">${item.playerName} - <span class="${item.outcome.includes('Made') ? 'text-emerald-400' : 'text-amber-400'}">${item.outcome}</span></p>
+              <p class="text-[10px] text-slate-500 font-mono mt-0.5">${item.gameTitle} | ${item.pts} PTS (xP: ${item.xp.toFixed(2)})</p>
+            ` : `
+              <p class="text-xs text-slate-300">Playbook Reference Clip</p>
+            `}
+          </div>
 
-        container.appendChild(circle);
+          <button onclick="openVideoModal('${item.videoUrl}', '${item.title}', '${item.playName}', '${item.playerName || 'Coach Reference'}', '${item.outcome || 'Reference'}', ${item.pts !== undefined ? item.pts : 0}, ${item.xp !== undefined ? item.xp : 0}, '${item.execStatus || 'Reference'}')" class="w-full bg-slate-950 hover:bg-amber-500 hover:text-slate-950 text-amber-300 border border-amber-500/30 text-xs font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+            Watch Video Clip
+          </button>
+        `;
+        grid.appendChild(card);
       });
     }
 
-    /* DROPDOWNS & MODALS */
-    function populateDropdowns() {
-      const pSelect = document.getElementById('formPlayer');
-      pSelect.innerHTML = roster.map(p => `<option value="${p.id}">#${p.num} - ${p.name} (${p.pos})</option>`).join('');
+    /* MULTI-GAME MANAGER MODAL */
+    function openGamesModal() {
+      renderGamesList();
+      document.getElementById('gamesModal').classList.remove('hidden');
+    }
+    function closeGamesModal() {
+      document.getElementById('gamesModal').classList.add('hidden');
+    }
 
-      const plSelect = document.getElementById('formPlay');
-      plSelect.innerHTML = playbook.map(p => {
-        const pName = p.name || p.code;
-        const pSet = p.set || p.setName;
-        return `<option value="${p.id}">${pName}${pSet ? ` (${pSet})` : ''}</option>`;
-      }).join('');
+    function populateGameDropdown() {
+      const select = document.getElementById('activeGameSelect');
+      if (!select) return;
+      select.innerHTML = games.map(g => `<option value="${g.id}" ${g.id === activeGameId ? 'selected' : ''}>${g.title}</option>`).join('');
+    }
 
-      // Populate Court, Log, & Video Library Filter Dropdowns
-      const courtPlayerFilter = document.getElementById('courtFilterPlayer');
-      if (courtPlayerFilter) {
-        courtPlayerFilter.innerHTML = '<option value="ALL">All Players</option>' + roster.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+    function switchActiveGame(id) {
+      activeGameId = id;
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_GAME_ID, activeGameId);
+      populateDropdowns();
+      reRenderAllUI();
+      showToast(`Switched active game`);
+    }
+
+    function handleCreateNewGame(e) {
+      e.preventDefault();
+      const title = document.getElementById('newGameTitle').value.trim();
+      if (!title) return;
+
+      const newGame = {
+        id: 'game_' + Date.now(),
+        title: title,
+        date: new Date().toLocaleDateString(),
+        possessions: []
+      };
+
+      games.push(newGame);
+      activeGameId = newGame.id;
+      saveGamesToStorage();
+      populateGameDropdown();
+      renderGamesList();
+      reRenderAllUI();
+
+      document.getElementById('newGameTitle').value = '';
+      showToast("New Game File Created");
+    }
+
+    function renderGamesList() {
+      const container = document.getElementById('gamesListContainer');
+      container.innerHTML = games.map(g => `
+        <div class="flex items-center justify-between p-2.5 ${g.id === activeGameId ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}">
+          <div>
+            <span class="text-xs font-bold text-white block">${g.title}</span>
+            <span class="text-[10px] text-slate-500 font-mono">${(g.possessions || []).length} possessions logged</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            ${g.id !== activeGameId ? `
+              <button onclick="switchActiveGame('${g.id}'); renderGamesList();" class="text-xs bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-bold">Select</button>
+              <button onclick="deleteGame('${g.id}')" class="text-xs text-rose-400 hover:text-rose-300 px-1">Delete</button>
+            ` : '<span class="text-[10px] font-bold text-amber-400 bg-amber-950 px-2 py-0.5 rounded border border-amber-800">Active</span>'}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function deleteGame(id) {
+      if (games.length <= 1) {
+        showToast("Cannot delete the only game file!");
+        return;
+      }
+      games = games.filter(g => g.id !== id);
+      if (activeGameId === id) activeGameId = games[0].id;
+      saveGamesToStorage();
+      populateGameDropdown();
+      renderGamesList();
+      reRenderAllUI();
+    }
+
+    /* ROSTER MANAGER MODAL */
+    function openRosterModal() {
+      renderRosterList();
+      document.getElementById('rosterModal').classList.remove('hidden');
+    }
+    function closeRosterModal() {
+      document.getElementById('rosterModal').classList.add('hidden');
+    }
+
+    function toggleProfileInputMode(mode) {
+      const pctInputs = document.getElementById('profilePctInputs');
+      const countInputs = document.getElementById('profileCountInputs');
+      if (mode === 'pct') {
+        pctInputs.classList.remove('hidden');
+        countInputs.classList.add('hidden');
+      } else {
+        pctInputs.classList.add('hidden');
+        countInputs.classList.remove('hidden');
+      }
+    }
+
+    function handleAddPlayer(e) {
+      e.preventDefault();
+      const num = document.getElementById('newPlayerNum').value.trim();
+      const name = document.getElementById('newPlayerName').value.trim();
+      const pos = document.getElementById('newPlayerPos').value;
+
+      const mode = document.querySelector('input[name="profileMode"]:checked').value;
+
+      let rimPct = 58, midPct = 36, threePct = 34, ftPct = 69;
+
+      if (mode === 'pct') {
+        rimPct = parseFloat(document.getElementById('newPlayerRimPct').value) || 58;
+        midPct = parseFloat(document.getElementById('newPlayerMidPct').value) || 36;
+        threePct = parseFloat(document.getElementById('newPlayerThreePct').value) || 34;
+        ftPct = parseFloat(document.getElementById('newPlayerFtPct').value) || 69;
+      } else {
+        const rimM = parseFloat(document.getElementById('newPlayerRimM').value) || 0;
+        const rimA = parseFloat(document.getElementById('newPlayerRimA').value) || 1;
+        rimPct = Math.round((rimM / rimA) * 100);
+
+        const midM = parseFloat(document.getElementById('newPlayerMidM').value) || 0;
+        const midA = parseFloat(document.getElementById('newPlayerMidA').value) || 1;
+        midPct = Math.round((midM / midA) * 100);
+
+        const threeM = parseFloat(document.getElementById('newPlayerThreeM').value) || 0;
+        const threeA = parseFloat(document.getElementById('newPlayerThreeA').value) || 1;
+        threePct = Math.round((threeM / threeA) * 100);
+
+        const ftM = parseFloat(document.getElementById('newPlayerFtM').value) || 0;
+        const ftA = parseFloat(document.getElementById('newPlayerFtA').value) || 1;
+        ftPct = Math.round((ftM / ftA) * 100);
       }
 
-      const courtPlayFilter = document.getElementById('courtFilterPlay');
-      if (courtPlayFilter) {
-        courtPlayFilter.innerHTML = '<option value="ALL">All Plays</option>' + playbook.map(p => `<option value="${p.name || p.code}">${p.name || p.code}</option>`).join('');
-      }
+      roster.push({ id: 'p_' + Date.now(), num, name, pos, rimPct, midPct, threePct, ftPct });
+      saveRosterToStorage();
+      populateDropdowns();
+      renderRosterList();
 
-      const logPlayerFilter = document.getElementById('logFilterPlayer');
-      if (logPlayerFilter) {
-        logPlayerFilter.innerHTML = '<option value="ALL">All Players</option>' + roster.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-      }
+      document.getElementById('newPlayerNum').value = '';
+      document.getElementById('newPlayerName').value = '';
+      showToast("Player Profile Added");
+    }
 
-      const logPlayFilter = document.getElementById('logFilterPlay');
-      if (logPlayFilter) {
-        logPlayFilter.innerHTML = '<option value="ALL">All Plays</option>' + playbook.map(p => `<option value="${p.name || p.code}">${p.name || p.code}</option>`).join('');
-      }
+    function renderRosterList() {
+      document.getElementById('rosterListContainer').innerHTML = roster.map((p, i) => `
+        <div class="flex items-center justify-between p-2">
+          <div>
+            <span class="text-xs font-bold text-white">#${p.num} ${p.name} (${p.pos})</span>
+            <span class="text-[10px] text-slate-400 block">Rim ${p.rimPct}% | Mid ${p.midPct}% | 3PT ${p.threePct}% | FT ${p.ftPct}%</span>
+          </div>
+          <button onclick="deletePlayer(${i})" class="text-rose-400 hover:text-rose-300 text-xs px-2 py-0.5">Remove</button>
+        </div>
+      `).join('');
+    }
 
-      const videoLibPlayFilter = document.getElementById('videoLibFilterPlay');
-      if (videoLibPlayFilter) {
-        videoLibPlayFilter.innerHTML = '<option value="ALL">All Play Calls</option>' + playbook.map(p => `<option value="${p.name || p.code}">${p.name || p.code}</option>`).join('');
-      }
+    function deletePlayer(i) {
+      roster.splice(i, 1);
+      saveRosterToStorage();
+      populateDropdowns();
+      renderRosterList();
+    }
+
+    /* PLAYBOOK MANAGER MODAL */
+    function openPlaybookModal() {
+      renderPlaybookList();
+      document.getElementById('playbookModal').classList.remove('hidden');
+    }
+    function closePlaybookModal() {
+      document.getElementById('playbookModal').classList.add('hidden');
     }
 
     function handleAddPlay(e) {
@@ -1629,7 +2219,7 @@
         videoUrl = URL.createObjectURL(videoFileInput.files[0]);
       }
 
-      playbook.push({ id: 'p_' + Date.now(), name: name, code: name, set: setVal, videoUrl: videoUrl });
+      playbook.push({ id: 'pl_' + Date.now(), name: name, code: name, set: setVal, videoUrl: videoUrl });
       savePlaybookToStorage();
       populateDropdowns();
       renderPlaybookList();
@@ -1640,7 +2230,7 @@
       if (videoFileInput) videoFileInput.value = '';
       if (document.getElementById('newPlayVideoUrl')) document.getElementById('newPlayVideoUrl').value = '';
 
-      showToast("Play added to Playbook");
+      showToast("Play Added to Playbook");
     }
 
     function renderPlaybookList() {
@@ -1656,6 +2246,7 @@
         `;
       }).join('');
     }
+
     function deletePlay(i) {
       playbook.splice(i, 1);
       savePlaybookToStorage();
@@ -1663,7 +2254,120 @@
       renderPlaybookList();
     }
 
-    /* BACKUP / EXPORT & CSV UTILITIES */
+    /* DROPDOWNS & UI POPULATION */
+    function populateDropdowns() {
+      const pSelect = document.getElementById('formPlayer');
+      pSelect.innerHTML = roster.map(p => `<option value="${p.id}">#${p.num} - ${p.name} (${p.pos})</option>`).join('');
+
+      const plSelect = document.getElementById('formPlay');
+      plSelect.innerHTML = playbook.map(p => {
+        const pName = p.name || p.code;
+        const pSet = p.set || p.setName;
+        return `<option value="${p.id}">${pName}${pSet ? ` (${pSet})` : ''}</option>`;
+      }).join('');
+
+      // Court Filters
+      const courtPlayerFilter = document.getElementById('courtFilterPlayer');
+      if (courtPlayerFilter) {
+        courtPlayerFilter.innerHTML = '<option value="ALL">All Players</option>' + roster.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+      }
+
+      const courtPlayFilter = document.getElementById('courtFilterPlay');
+      if (courtPlayFilter) {
+        courtPlayFilter.innerHTML = '<option value="ALL">All Plays</option>' + playbook.map(p => `<option value="${p.name || p.code}">${p.name || p.code}</option>`).join('');
+      }
+
+      // Log Filters
+      const logPlayerFilter = document.getElementById('logFilterPlayer');
+      if (logPlayerFilter) {
+        logPlayerFilter.innerHTML = '<option value="ALL">All Players</option>' + roster.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+      }
+
+      const logPlayFilter = document.getElementById('logFilterPlay');
+      if (logPlayFilter) {
+        logPlayFilter.innerHTML = '<option value="ALL">All Plays</option>' + playbook.map(p => `<option value="${p.name || p.code}">${p.name || p.code}</option>`).join('');
+      }
+
+      // Video Library Filter
+      const videoLibPlayFilter = document.getElementById('videoLibFilterPlay');
+      if (videoLibPlayFilter) {
+        videoLibPlayFilter.innerHTML = '<option value="ALL">All Play Calls</option>' + playbook.map(p => `<option value="${p.name || p.code}">${p.name || p.code}</option>`).join('');
+      }
+    }
+
+    function reRenderAllUI() {
+      renderCourtOverlay();
+      renderPossessionLogTable();
+      renderAnalyticsDashboard();
+      renderVideoLibrary();
+    }
+
+    /* SYNERGY CSV & BACKUP IMPORT / EXPORT */
+    function exportCurrentGameCsv() {
+      const game = getActiveGame();
+      if (!game) return;
+      let csv = 'Possession,#,Player,PlayName,PlaySet,ExecutionStatus,Outcome,Location,ShotType,Contest,Points,xP,POE\n';
+      (game.possessions || []).forEach((p, i) => {
+        csv += `${i + 1},#${p.playerNum} ${p.playerName},"${p.playName || p.playCode}","${p.playSet || ''}","${p.executionStatus || 'Executed'}","${p.outcome}","${p.location}","${p.shotType || ''}",${p.contest},${p.pts},${p.xp},${p.poe}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${game.title.replace(/\s+/g, '_')}_export.csv`;
+      a.click();
+    }
+
+    function importSynergyCsv(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const lines = evt.target.result.split('\n').filter(l => l.trim().length > 0);
+          if (lines.length < 2) return;
+          const game = getActiveGame();
+          let count = 0;
+
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+            if (cols.length < 3) continue;
+
+            const playerName = cols[1] || 'Imported Player';
+            const playName = cols[2] || 'Synergy Set';
+            const outcome = cols[4] || 'Made FG';
+            const pts = parseFloat(cols[8] || cols[10]) || 2;
+
+            game.possessions.push({
+              id: Date.now() + i,
+              playerNum: '?',
+              playerName: playerName,
+              playCode: playName,
+              playName: playName,
+              playSet: 'Synergy',
+              executionStatus: 'Executed',
+              outcome: outcome,
+              x: 250,
+              y: 80,
+              location: 'Paint / Synergy',
+              shotType: 'Other',
+              contest: 2,
+              pts: pts,
+              xp: 1.10,
+              poe: pts - 1.10
+            });
+            count++;
+          }
+
+          saveGamesToStorage();
+          reRenderAllUI();
+          showToast(`Imported ${count} Synergy entries!`);
+        } catch (err) {
+          showToast("Failed to parse Synergy CSV");
+        }
+      };
+      reader.readAsText(file);
+    }
+
     function exportAllGamesBackup() {
       const payload = { games, roster, playbook };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1690,7 +2394,7 @@
           populateGameDropdown();
           populateDropdowns();
           reRenderAllUI();
-          showToast("Data imported successfully!");
+          showToast("Data backup imported successfully!");
         } catch (err) {
           showToast("Failed to parse JSON backup");
         }
@@ -1698,24 +2402,11 @@
       reader.readAsText(file);
     }
 
-    function exportCurrentGameCsv() {
-      const game = getActiveGame();
-      if (!game) return;
-      let csv = 'Possession,#,Player,PlayName,PlaySet,ExecutionStatus,Outcome,Location,ShotType,Contest,Points,xP,POE\n';
-      (game.possessions || []).forEach((p, i) => {
-        csv += `${i + 1},#${p.playerNum} ${p.playerName},"${p.playName || p.playCode}","${p.playSet || ''}","${p.executionStatus || 'Executed'}","${p.outcome}","${p.location}","${p.shotType || ''}",${p.contest},${p.pts},${p.xp},${p.poe}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `${game.title.replace(/\s+/g, '_')}_export.csv`;
-      a.click();
-    }
-
     function showToast(msg) {
       const container = document.getElementById('toastContainer');
+      if (!container) return;
       const div = document.createElement('div');
-      div.className = "bg-slate-900 border border-amber-500 text-amber-300 font-bold px-3 py-2 rounded-xl text-xs shadow-xl animate-bounce pointer-events-auto";
+      div.className = "bg-slate-900 border border-amber-500 text-amber-300 font-bold px-3.5 py-2 rounded-xl text-xs shadow-xl animate-bounce pointer-events-auto";
       div.innerText = msg;
       container.appendChild(div);
       setTimeout(() => div.remove(), 2500);
