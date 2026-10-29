@@ -1,12 +1,3 @@
-The issue was caused by a slight element ID casing mismatch in the tab-switching script:
-
-The script looked for `viewGamelog` (lowercase `l`), but the HTML section ID was named `viewGameLog` (capital `L`). When you clicked **Game Log**, **Roster**, or **Playbook**, JavaScript threw an `Uncaught TypeError` in the background and froze the view switching.
-
-I have updated `switchTab` with an explicit tab element map that cleanly handles the IDs and guarantees seamless switching between **Tracker**, **Analytics**, **Game Log**, **Roster**, and **Playbook**.
-
-Here is the complete fixed single-file code:
-
-```html
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -106,7 +97,7 @@ Here is the complete fixed single-file code:
         <div>
           <h1 class="font-bold text-lg leading-tight tracking-wide text-white">
             Track the Play. Measure the Look.
-            <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">v3.3 Multi-Tab Fix</span>
+            <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">v3.5 Video & Distance</span>
           </h1>
           <p class="text-xs text-slate-400">JUCO Basketball Analytics & Spatial Expected Points (xP)</p>
         </div>
@@ -139,6 +130,7 @@ Here is the complete fixed single-file code:
           <button id="tabTracker" onclick="switchTab('tracker')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Tracker</button>
           <button id="tabAnalytics" onclick="switchTab('analytics')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Analytics</button>
           <button id="tabGameLog" onclick="switchTab('gamelog')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Game Log</button>
+          <button id="tabVideo" onclick="switchTab('video')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Video Library</button>
           <button id="tabRoster" onclick="switchTab('roster')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Roster</button>
           <button id="tabPlaybook" onclick="switchTab('playbook')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Playbook</button>
         </div>
@@ -166,7 +158,7 @@ Here is the complete fixed single-file code:
               <i data-lucide="crosshair" class="w-4 h-4 text-orange-500"></i>
               <h2 class="font-bold text-sm text-slate-200">Interactive Hardwood Shot Court</h2>
             </div>
-            <span class="text-xs text-slate-400">Click court location to auto-populate shot coordinates</span>
+            <span class="text-xs text-slate-400">Click court location to measure distance & auto-populate xP</span>
           </div>
 
           <div class="relative w-full max-w-[500px] aspect-[500/470] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-inner">
@@ -179,6 +171,9 @@ Here is the complete fixed single-file code:
               <line x1="220" y1="40" x2="280" y2="40" stroke="#ffffff" stroke-width="4"/>
               <circle cx="250" cy="52" r="12" fill="none" stroke="#f97316" stroke-width="3"/>
               
+              <!-- Distance Measuring Line -->
+              <line id="distanceLine" x1="250" y1="52" x2="-50" y2="-50" stroke="#f97316" stroke-width="1.5" stroke-dasharray="4,4" class="hidden"/>
+
               <g id="shotPinsGroup"></g>
               <circle id="activePin" cx="-50" cy="-50" r="7" fill="#f97316" stroke="#ffffff" stroke-width="2" class="animate-pulse hidden"/>
             </svg>
@@ -189,7 +184,7 @@ Here is the complete fixed single-file code:
               <span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span><span>Made FG</span>
               <span class="inline-block w-3 h-3 rounded-full bg-rose-500 ml-2"></span><span>Missed FG</span>
             </div>
-            <span id="coordDisplay" class="font-mono text-slate-400">Location: (X: --, Y: --)</span>
+            <span id="coordDisplay" class="font-mono text-orange-400 font-bold">Location: (X: --, Y: --) • -- ft from rim</span>
           </div>
         </div>
 
@@ -201,7 +196,10 @@ Here is the complete fixed single-file code:
                 <i data-lucide="edit-3" class="w-4 h-4 text-orange-500"></i>
                 <span>Possession Logger</span>
               </h2>
-              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Manual Entry</span>
+              <button onclick="captureCurrentVideoTime()" type="button" class="text-xs px-2.5 py-1 rounded-lg bg-orange-600/20 text-orange-400 border border-orange-500/30 hover:bg-orange-600/30 transition flex items-center space-x-1">
+                <i data-lucide="video" class="w-3 h-3"></i>
+                <span>Capture Video Time</span>
+              </button>
             </div>
 
             <form id="loggerForm" onsubmit="handleLogPossession(event)" class="space-y-4 text-xs">
@@ -267,8 +265,19 @@ Here is the complete fixed single-file code:
                 </div>
               </div>
 
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">VIDEO TIMESTAMP</label>
+                  <input type="text" id="logTimestamp" placeholder="00:00" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-400 mb-1">DISTANCE FROM RIM</label>
+                  <input type="text" id="logDistance" readonly value="19.8 ft" class="w-full bg-slate-950/60 border border-slate-800 rounded-lg p-2 text-orange-400 font-mono font-bold">
+                </div>
+              </div>
+
               <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between text-slate-400">
-                <span id="formCoordsText">Selected Loc: (250, 100)</span>
+                <span id="formCoordsText">Loc: (250, 100) | Dist: 19.8 ft</span>
                 <span id="calculatedXpDisplay" class="font-bold text-orange-400">Calc xP: 0.95</span>
               </div>
 
@@ -469,13 +478,14 @@ Here is the complete fixed single-file code:
               <th class="p-2.5">#</th>
               <th class="p-2.5">PLAYER</th>
               <th class="p-2.5">PLAY CALL</th>
-              <th class="p-2.5">CLOCK PHASE</th>
+              <th class="p-2.5">TIME / PHASE</th>
+              <th class="p-2.5 text-center">DIST</th>
               <th class="p-2.5 text-center">EXEC</th>
               <th class="p-2.5">OUTCOME</th>
               <th class="p-2.5 text-center">PTS</th>
               <th class="p-2.5 text-center">xP</th>
               <th class="p-2.5 text-center">POE</th>
-              <th class="p-2.5 text-center">PPP</th>
+              <th class="p-2.5 text-center">CLIP</th>
               <th class="p-2.5 text-right">ACTION</th>
             </tr>
           </thead>
@@ -485,7 +495,61 @@ Here is the complete fixed single-file code:
       </div>
     </section>
 
-    <!-- ==================== TAB 4: ROSTER ==================== -->
+    <!-- ==================== TAB 4: VIDEO LIBRARY ==================== -->
+    <section id="viewVideo" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <h2 class="font-bold text-slate-100 flex items-center space-x-2">
+          <i data-lucide="video" class="w-4 h-4 text-orange-500"></i>
+          <span>Integrated Game Video Player</span>
+        </h2>
+        
+        <div class="flex items-center space-x-2 text-xs">
+          <input type="text" id="videoUrlInput" placeholder="Paste Video URL (.mp4 / webm)" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 w-64 focus:outline-none focus:border-orange-500">
+          <button onclick="loadVideoUrl()" class="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-3 py-1.5 rounded-lg transition">Load URL</button>
+          <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
+            Upload File
+            <input type="file" accept="video/*" class="hidden" onchange="handleLocalVideoUpload(event)">
+          </label>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Video Screen Container -->
+        <div class="lg:col-span-8 bg-black rounded-xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col items-center justify-center min-h-[340px]">
+          <video id="gameVideoPlayer" controls class="w-full h-auto max-h-[480px]">
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            Your browser does not support HTML5 video.
+          </video>
+        </div>
+
+        <!-- Video Control Bar & Play Sync list -->
+        <div class="lg:col-span-4 bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-200 text-xs mb-2">Video Controls & Playback Speed</h3>
+            <div class="grid grid-cols-3 gap-2 text-xs">
+              <button onclick="adjustPlaybackSpeed(0.5)" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg hover:border-orange-500/50">0.5x Slow</button>
+              <button onclick="adjustPlaybackSpeed(1.0)" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg hover:border-orange-500/50">1.0x Normal</button>
+              <button onclick="adjustPlaybackSpeed(2.0)" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg hover:border-orange-500/50">2.0x Fast</button>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between text-xs pt-3 border-t border-slate-800">
+              <button onclick="skipVideo(-5)" class="px-3 py-1.5 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg">-5s Jump</button>
+              <span id="videoCurrentTimeDisplay" class="font-mono text-orange-400 font-bold">00:00</span>
+              <button onclick="skipVideo(5)" class="px-3 py-1.5 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg">+5s Jump</button>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-800">
+            <button onclick="captureCurrentVideoTime()" class="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-orange-900/40 transition flex items-center justify-center space-x-1.5">
+              <i data-lucide="bookmark" class="w-4 h-4"></i>
+              <span>Capture Timestamp to Logger</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: ROSTER ==================== -->
     <section id="viewRoster" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <h2 class="font-bold text-slate-100 flex items-center space-x-2">
@@ -501,7 +565,7 @@ Here is the complete fixed single-file code:
       </div>
     </section>
 
-    <!-- ==================== TAB 5: PLAYBOOK ==================== -->
+    <!-- ==================== TAB 6: PLAYBOOK ==================== -->
     <section id="viewPlaybook" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <h2 class="font-bold text-slate-100 flex items-center space-x-2">
@@ -583,6 +647,7 @@ Here is the complete fixed single-file code:
       activeTab: 'tracker',
       activeBaseline: 'JUCO',
       selectedCoords: { x: 250, y: 100 },
+      selectedDistanceFt: 19.8,
       games: [
         {
           id: 'game_1',
@@ -612,14 +677,18 @@ Here is the complete fixed single-file code:
       ]
     };
 
-    // Calculate xP
+    // Calculate xP and precise distance from rim (Basket at X:250, Y:52)
+    function calculateDistanceFt(x, y) {
+      const dx = x - 250;
+      const dy = y - 52;
+      const distPx = Math.sqrt(dx * dx + dy * dy);
+      return parseFloat((distPx / 10).toFixed(1)); // 10px per foot scale
+    }
+
     function calculateExpectedPoints(x, y, shotType, contest, outcome) {
       if (outcome === 'Turnover') return 0.0;
       
-      const dx = x - 250;
-      const dy = y - 52;
-      const distFt = Math.sqrt(dx * dx + dy * dy) / 10;
-      
+      const distFt = calculateDistanceFt(x, y);
       const is3Pt = (y > 140 && distFt > 20.75) || (y <= 140 && (x < 50 || x > 450));
       let baseVal = is3Pt ? 1.05 : (distFt < 5 ? 1.18 : 0.82);
 
@@ -665,6 +734,7 @@ Here is the complete fixed single-file code:
       lucide.createIcons();
       populateDropdowns();
       renderAll();
+      setupVideoListener();
     });
 
     function getActiveGame() {
@@ -689,13 +759,14 @@ Here is the complete fixed single-file code:
       filterPlay.innerHTML = `<option value="ALL">All Play Calls</option>` + state.playbook.map(p => `<option value="${p.code}">${p.code}</option>`).join('');
     }
 
-    // FIXED TAB SWITCHING ENGINE
+    // TAB SWITCHING ENGINE
     function switchTab(tabId) {
       state.activeTab = tabId;
       const tabMap = {
         tracker: { el: 'viewTracker', btn: 'tabTracker' },
         analytics: { el: 'viewAnalytics', btn: 'tabAnalytics' },
         gamelog: { el: 'viewGameLog', btn: 'tabGameLog' },
+        video: { el: 'viewVideo', btn: 'tabVideo' },
         roster: { el: 'viewRoster', btn: 'tabRoster' },
         playbook: { el: 'viewPlaybook', btn: 'tabPlaybook' }
       };
@@ -740,14 +811,21 @@ Here is the complete fixed single-file code:
       const y = Math.round(((e.clientY - rect.top) / rect.height) * 470);
 
       state.selectedCoords = { x, y };
+      state.selectedDistanceFt = calculateDistanceFt(x, y);
 
       const activePin = document.getElementById('activePin');
       activePin.setAttribute('cx', x);
       activePin.setAttribute('cy', y);
       activePin.classList.remove('hidden');
 
-      document.getElementById('coordDisplay').innerText = `Location: (X: ${x}, Y: ${y})`;
-      document.getElementById('formCoordsText').innerText = `Selected Loc: (${x}, ${y})`;
+      const distLine = document.getElementById('distanceLine');
+      distLine.setAttribute('x2', x);
+      distLine.setAttribute('y2', y);
+      distLine.classList.remove('hidden');
+
+      document.getElementById('coordDisplay').innerText = `Location: (X: ${x}, Y: ${y}) • ${state.selectedDistanceFt} ft from rim`;
+      document.getElementById('formCoordsText').innerText = `Loc: (${x}, ${y}) | Dist: ${state.selectedDistanceFt} ft`;
+      document.getElementById('logDistance').value = `${state.selectedDistanceFt} ft`;
 
       updateCalculatedXp();
     }
@@ -770,6 +848,7 @@ Here is the complete fixed single-file code:
       const shotType = document.getElementById('logShotType').value;
       const contest = document.getElementById('logContest').value;
       const clockPhase = document.getElementById('logClockPhase').value;
+      const timestamp = document.getElementById('logTimestamp').value || '00:00';
 
       let pts = 0;
       if (outcome === 'Make 3Pts') pts = 3;
@@ -789,6 +868,8 @@ Here is the complete fixed single-file code:
         shotType,
         contest,
         clockPhase,
+        timestamp,
+        distanceFt: state.selectedDistanceFt,
         x: state.selectedCoords.x,
         y: state.selectedCoords.y,
         pts,
@@ -819,7 +900,7 @@ Here is the complete fixed single-file code:
       group.innerHTML = game.possessions.map(p => {
         const isMake = p.outcome.includes('Make') || p.outcome.includes('Made');
         const color = isMake ? '#10b981' : '#f43f5e';
-        return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} - ${p.outcome}</title></circle>`;
+        return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} - ${p.outcome} (${p.distanceFt || '--'} ft)</title></circle>`;
       }).join('');
     }
 
@@ -963,13 +1044,19 @@ Here is the complete fixed single-file code:
             <td class="p-2.5 font-mono text-slate-500">${idx + 1}</td>
             <td class="p-2.5 font-semibold text-white">#${p.playerNum} ${p.playerName}</td>
             <td class="p-2.5 text-slate-300">${p.playCode}</td>
-            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">${p.clockPhase || '22-10s'}</span></td>
+            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">${p.timestamp || '00:00'} (${p.clockPhase || '22-10s'})</span></td>
+            <td class="p-2.5 text-center font-mono text-orange-400">${p.distanceFt || '--'} ft</td>
             <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${p.executionStatus === 'Executed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">${p.executionStatus}</span></td>
             <td class="p-2.5">${p.outcome}</td>
             <td class="p-2.5 text-center font-bold text-emerald-400">${p.pts}</td>
             <td class="p-2.5 text-center font-mono text-slate-400">${p.xp.toFixed(2)}</td>
             <td class="p-2.5 text-center font-mono ${p.poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${p.poe >= 0 ? '+' : ''}${p.poe.toFixed(2)}</td>
-            <td class="p-2.5 text-center font-mono text-orange-400">${p.pts.toFixed(1)}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="playClipAtTimestamp('${p.timestamp}')" class="px-2 py-1 rounded bg-orange-600/20 text-orange-400 border border-orange-500/30 hover:bg-orange-600/40 transition text-[10px] flex items-center justify-center space-x-1 mx-auto">
+                <i data-lucide="play" class="w-3 h-3"></i>
+                <span>Clip</span>
+              </button>
+            </td>
             <td class="p-2.5 text-right">
               <button onclick="deletePossession(${p.id})" class="text-slate-500 hover:text-rose-400 transition p-1">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -977,7 +1064,7 @@ Here is the complete fixed single-file code:
             </td>
           </tr>
         `;
-      }).join('') || `<tr><td colspan="11" class="p-6 text-center text-slate-500">No game possessions logged yet</td></tr>`;
+      }).join('') || `<tr><td colspan="12" class="p-6 text-center text-slate-500">No game possessions logged yet</td></tr>`;
     }
 
     function deletePossession(id) {
@@ -985,6 +1072,71 @@ Here is the complete fixed single-file code:
       game.possessions = game.possessions.filter(p => p.id !== id);
       renderAll();
       showToast("Possession deleted");
+    }
+
+    // VIDEO ENGINE CONTROLS
+    function setupVideoListener() {
+      const vid = document.getElementById('gameVideoPlayer');
+      vid.addEventListener('timeupdate', () => {
+        const curSec = Math.floor(vid.currentTime);
+        const mins = Math.floor(curSec / 60).toString().padStart(2, '0');
+        const secs = (curSec % 60).toString().padStart(2, '0');
+        document.getElementById('videoCurrentTimeDisplay').innerText = `${mins}:${secs}`;
+      });
+    }
+
+    function captureCurrentVideoTime() {
+      const vid = document.getElementById('gameVideoPlayer');
+      const curSec = Math.floor(vid.currentTime || 0);
+      const mins = Math.floor(curSec / 60).toString().padStart(2, '0');
+      const secs = (curSec % 60).toString().padStart(2, '0');
+      const timeStr = `${mins}:${secs}`;
+      
+      document.getElementById('logTimestamp').value = timeStr;
+      showToast(`Captured Video Timestamp: ${timeStr}`);
+    }
+
+    function playClipAtTimestamp(timeStr) {
+      switchTab('video');
+      const vid = document.getElementById('gameVideoPlayer');
+      if (!timeStr || !timeStr.includes(':')) {
+        vid.play();
+        return;
+      }
+      const parts = timeStr.split(':');
+      const seconds = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+      vid.currentTime = Math.max(0, seconds - 2); // Start 2s before play
+      vid.play();
+      showToast(`Jumping to video play clip at ${timeStr}`);
+    }
+
+    function adjustPlaybackSpeed(speed) {
+      const vid = document.getElementById('gameVideoPlayer');
+      vid.playbackRate = speed;
+      showToast(`Playback speed set to ${speed}x`);
+    }
+
+    function skipVideo(seconds) {
+      const vid = document.getElementById('gameVideoPlayer');
+      vid.currentTime = Math.max(0, vid.currentTime + seconds);
+    }
+
+    function loadVideoUrl() {
+      const url = document.getElementById('videoUrlInput').value;
+      if (!url) return;
+      const vid = document.getElementById('gameVideoPlayer');
+      vid.src = url;
+      vid.play();
+      showToast("Loaded new video stream");
+    }
+
+    function handleLocalVideoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const vid = document.getElementById('gameVideoPlayer');
+      vid.src = URL.createObjectURL(file);
+      vid.play();
+      showToast(`Loaded local video file: ${file.name}`);
     }
 
     function renderRoster() {
@@ -1067,128 +1219,3 @@ Here is the complete fixed single-file code:
       const reader = new FileReader();
       reader.onload = function(event) {
         parseSynergyCsvContent(event.target.result);
-      };
-      reader.readAsText(file);
-    }
-
-    function parseSynergyCsvContent(csvText) {
-      const lines = csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      if (lines.length < 2) {
-        showToast("Invalid CSV file format");
-        return;
-      }
-
-      const game = getActiveGame();
-      let importedCount = 0;
-
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
-        if (cols.length < 3) continue;
-
-        const resultStr = cols[1] || cols[0] || '';
-        const descStr = cols[2] || cols[1] || '';
-        const playerStr = cols[3] || 'Unknown Player';
-        const durationStr = cols[5] || '00:00:15';
-
-        const clockPhase = parseDurationToClockPhase(durationStr);
-
-        let pts = 0;
-        if (resultStr.includes('Make 3') || descStr.includes('Make 3')) pts = 3;
-        else if (resultStr.includes('Make 2') || descStr.includes('Make 2')) pts = 2;
-
-        const coords = parseSynergyLocationToCoords(descStr);
-        const xp = calculateExpectedPoints(coords.x, coords.y, 'Jump Shot', 'Slight', resultStr);
-
-        game.possessions.push({
-          id: Date.now() + i,
-          playerNum: playerStr.split(' ')[0] || `${i}`,
-          playerName: playerStr,
-          playCode: descStr.split('>')[1]?.trim() || 'Synergy Action',
-          executionStatus: 'Executed',
-          outcome: resultStr || 'Made 2Pts',
-          shotType: 'Jump Shot',
-          contest: 'Slight',
-          clockPhase,
-          x: coords.x,
-          y: coords.y,
-          pts,
-          xp,
-          poe: parseFloat((pts - xp).toFixed(2)),
-          ppp: pts
-        });
-        importedCount++;
-      }
-
-      closeSynergyModal();
-      renderAll();
-      showToast(`Imported ${importedCount} Synergy possessions!`);
-    }
-
-    function loadDemoSynergyBatch() {
-      const game = getActiveGame();
-      const demoBatch = [
-        { num: '32', name: 'Isaiah Valenzuela', play: 'P&R Ball Handler', desc: 'Dribble Off Pick > To Basket > Make 2 Pts', outcome: 'Make 2 Pts', pts: 2, phase: 'First 8s', x: 250, y: 70 },
-        { num: '20', name: 'Christian Warren', play: 'Spot-Up', desc: 'Spot-Up > No Dribble > Miss 3 Pts', outcome: 'Miss 3 Pts', pts: 0, phase: '22-10s', x: 80, y: 160 },
-        { num: '1', name: 'Zack Moritz', play: 'P&R Ball Handler', desc: 'High P&R > Go Away > Miss 2 Pts', outcome: 'Miss 2 Pts', pts: 0, phase: '<= 10s', x: 220, y: 110 },
-        { num: '10', name: 'Jack Rivera', play: 'Off Screen', desc: 'Flare > Guarded > Long/3pt > Make 3 Pts', outcome: 'Make 3 Pts', pts: 3, phase: 'First 8s', x: 420, y: 150 }
-      ];
-
-      demoBatch.forEach((d, idx) => {
-        const xp = calculateExpectedPoints(d.x, d.y, 'Jump Shot', 'Slight', d.outcome);
-        game.possessions.push({
-          id: Date.now() + idx,
-          playerNum: d.num,
-          playerName: d.name,
-          playCode: d.play,
-          executionStatus: 'Executed',
-          outcome: d.outcome,
-          shotType: 'Jump Shot',
-          contest: 'Slight',
-          clockPhase: d.phase,
-          x: d.x,
-          y: d.y,
-          pts: d.pts,
-          xp,
-          poe: parseFloat((d.pts - xp).toFixed(2)),
-          ppp: d.pts
-        });
-      });
-
-      closeSynergyModal();
-      renderAll();
-      showToast("Loaded Demo Synergy Batch!");
-    }
-
-    function exportGameCsv() {
-      const game = getActiveGame();
-      if (game.possessions.length === 0) {
-        showToast("No possessions to export");
-        return;
-      }
-
-      let csv = "PlayerNum,PlayerName,PlayCode,ClockPhase,Execution,Outcome,PTS,xP,POE\n";
-      game.possessions.forEach(p => {
-        csv += `"${p.playerNum}","${p.playerName}","${p.playCode}","${p.clockPhase}","${p.executionStatus}","${p.outcome}",${p.pts},${p.xp},${p.poe}\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', `${game.name.replace(/\s+/g, '_')}_Analytics.csv`);
-      a.click();
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toastMsg').innerText = msg;
-      toast.classList.remove('hidden');
-      setTimeout(() => {
-        toast.classList.add('hidden');
-      }, 3000);
-    }
-  </script>
-</body>
-</html>
-
-```
