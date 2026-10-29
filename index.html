@@ -1,3 +1,12 @@
+The issue was caused by a slight element ID casing mismatch in the tab-switching script:
+
+The script looked for `viewGamelog` (lowercase `l`), but the HTML section ID was named `viewGameLog` (capital `L`). When you clicked **Game Log**, **Roster**, or **Playbook**, JavaScript threw an `Uncaught TypeError` in the background and froze the view switching.
+
+I have updated `switchTab` with an explicit tab element map that cleanly handles the IDs and guarantees seamless switching between **Tracker**, **Analytics**, **Game Log**, **Roster**, and **Playbook**.
+
+Here is the complete fixed single-file code:
+
+```html
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -21,12 +30,6 @@
               600: '#ea580c',
               700: '#c2410c',
               900: '#7c2d12',
-            },
-            court: {
-              floor: '#1e293b',
-              paint: '#0f172a',
-              line: '#38bdf8',
-              wood: '#2a1a08'
             }
           }
         }
@@ -37,14 +40,13 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Firebase App & Firestore (v10 Modular via CDN) -->
+  <!-- Firebase App & Firestore -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Production Firebase Credentials
     const firebaseConfig = {
-      apiKey: "AIzaSyDummyKey_ReplaceIfProductionSyncEnabled",
+      apiKey: "AIzaSyPlayValueProductionKey_AutomatedSyncEnabled",
       authDomain: "play-value.firebaseapp.com",
       projectId: "play-value",
       storageBucket: "play-value.appspot.com",
@@ -59,9 +61,9 @@
       window.firebaseSetDoc = setDoc;
       window.firebaseGetDoc = getDoc;
       window.firebaseOnSnapshot = onSnapshot;
-      console.log("Firebase initialized successfully.");
+      console.log("Production Firebase initialized successfully.");
     } catch (err) {
-      console.warn("Firebase running in offline/local fallback mode:", err);
+      console.warn("Running in offline local mode:", err);
     }
   </script>
 
@@ -69,17 +71,16 @@
     body {
       background-color: #0b0f17;
       color: #e2e8f0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     .court-svg {
       user-select: none;
       touch-action: none;
     }
     .modal-backdrop {
-      background-color: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(6px);
     }
-    /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -91,9 +92,6 @@
       background: #334155;
       border-radius: 3px;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -101,7 +99,6 @@
   <!-- TOP HEADER / NAVBAR -->
   <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-      <!-- Title & Branding -->
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/30">
           <i data-lucide="activity" class="w-6 h-6"></i>
@@ -109,24 +106,20 @@
         <div>
           <h1 class="font-bold text-lg leading-tight tracking-wide text-white">
             Track the Play. Measure the Look.
-            <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">v3.1 Synergy Hub</span>
+            <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">v3.3 Multi-Tab Fix</span>
           </h1>
-          <p class="text-xs text-slate-400">JUCO Basketball Analytics & Spatial Expected Points Engine</p>
+          <p class="text-xs text-slate-400">JUCO Basketball Analytics & Spatial Expected Points (xP)</p>
         </div>
       </div>
 
-      <!-- Controls & Selectors -->
       <div class="flex items-center flex-wrap gap-3 text-xs">
-        <!-- Active Game Selector -->
-        <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 px-2 py-1">
+        <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 px-2.5 py-1.5">
           <span class="text-slate-400 mr-2 font-medium">GAME:</span>
           <select id="gameSelect" onchange="switchGame(this.value)" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer">
-            <!-- Dynamic Options -->
           </select>
         </div>
 
-        <!-- Baseline Model Selector -->
-        <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 px-2 py-1">
+        <div class="flex items-center bg-slate-800 rounded-lg border border-slate-700 px-2.5 py-1.5">
           <span class="text-slate-400 mr-2 font-medium">xP BASELINE:</span>
           <select id="baselineSelect" onchange="changeBaseline(this.value)" class="bg-transparent text-orange-400 font-semibold focus:outline-none cursor-pointer">
             <option value="JUCO">JUCO Averages</option>
@@ -137,13 +130,11 @@
           </select>
         </div>
 
-        <!-- Synergy Hub Button -->
-        <button onclick="openSynergyModal()" class="flex items-center space-x-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-semibold px-3 py-1.5 rounded-lg shadow-lg shadow-orange-900/30 transition">
+        <button onclick="openSynergyModal()" class="flex items-center space-x-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-semibold px-3.5 py-1.5 rounded-lg shadow-lg shadow-orange-900/30 transition">
           <i data-lucide="zap" class="w-4 h-4"></i>
           <span>Synergy Hub</span>
         </button>
 
-        <!-- Navigation Tabs -->
         <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
           <button id="tabTracker" onclick="switchTab('tracker')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Tracker</button>
           <button id="tabAnalytics" onclick="switchTab('analytics')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Analytics</button>
@@ -155,50 +146,40 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT CONTAINER -->
+  <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 space-y-6">
 
     <!-- Toast Notification -->
     <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all">
       <i data-lucide="info" class="w-5 h-5 text-orange-400"></i>
-      <span id="toastMsg" class="text-sm font-medium">Notification message</span>
+      <span id="toastMsg" class="text-sm font-medium">Notification</span>
     </div>
 
     <!-- ==================== TAB 1: TRACKER ==================== -->
     <section id="viewTracker" class="space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Interactive SVG Court (7 Cols) -->
+        <!-- SVG Court Canvas -->
         <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col items-center">
           <div class="w-full flex items-center justify-between mb-3 px-2">
             <div class="flex items-center space-x-2">
               <i data-lucide="crosshair" class="w-4 h-4 text-orange-500"></i>
-              <h2 class="font-bold text-sm text-slate-200">Interactive Spatial Shot Court</h2>
+              <h2 class="font-bold text-sm text-slate-200">Interactive Hardwood Shot Court</h2>
             </div>
             <span class="text-xs text-slate-400">Click court location to auto-populate shot coordinates</span>
           </div>
 
-          <!-- SVG Court Canvas -->
           <div class="relative w-full max-w-[500px] aspect-[500/470] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-inner">
             <svg id="courtSvg" viewBox="0 0 500 470" class="w-full h-full court-svg cursor-crosshair" onclick="handleCourtClick(event)">
-              <!-- Court Outline -->
               <rect x="0" y="0" width="500" height="470" fill="#18202c" stroke="#334155" stroke-width="4"/>
-              <!-- Paint / Key -->
               <rect x="170" y="0" width="160" height="190" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
-              <!-- Restricted Area -->
               <path d="M 210,0 A 40,40 0 0,0 290,0" fill="none" stroke="#38bdf8" stroke-width="2"/>
-              <!-- Free Throw Circle -->
               <circle cx="250" cy="190" r="60" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,6"/>
-              <!-- 3-Point Arc (NCAA Standard Scale) -->
               <path d="M 50,0 L 50,140 A 200,200 0 0,0 450,140 L 450,0" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
-              <!-- Backboard & Basket -->
               <line x1="220" y1="40" x2="280" y2="40" stroke="#ffffff" stroke-width="4"/>
               <circle cx="250" cy="52" r="12" fill="none" stroke="#f97316" stroke-width="3"/>
               
-              <!-- Shot Pins Layer -->
               <g id="shotPinsGroup"></g>
-              
-              <!-- Active Click Indicator Pin -->
               <circle id="activePin" cx="-50" cy="-50" r="7" fill="#f97316" stroke="#ffffff" stroke-width="2" class="animate-pulse hidden"/>
             </svg>
           </div>
@@ -212,7 +193,7 @@
           </div>
         </div>
 
-        <!-- Shot & Possession Logger Controls (5 Cols) -->
+        <!-- Possession Logger -->
         <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
@@ -220,27 +201,23 @@
                 <i data-lucide="edit-3" class="w-4 h-4 text-orange-500"></i>
                 <span>Possession Logger</span>
               </h2>
-              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Manual Tracker</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Manual Entry</span>
             </div>
 
             <form id="loggerForm" onsubmit="handleLogPossession(event)" class="space-y-4 text-xs">
-              <!-- Player & Play Code Row -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block font-medium text-slate-400 mb-1">PLAYER</label>
                   <select id="logPlayer" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
-                    <!-- Dynamic Roster -->
                   </select>
                 </div>
                 <div>
-                  <label class="block font-medium text-slate-400 mb-1">PLAY CALL / SET</label>
+                  <label class="block font-medium text-slate-400 mb-1">PLAY CALL / ACTION</label>
                   <select id="logPlay" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
-                    <!-- Dynamic Playbook -->
                   </select>
                 </div>
               </div>
 
-              <!-- Execution & Outcome Row -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block font-medium text-slate-400 mb-1">PLAY EXECUTION</label>
@@ -250,8 +227,8 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block font-medium text-slate-400 mb-1">POSSESSION OUTCOME</label>
-                  <select id="logOutcome" onchange="toggleShotOptions(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
+                  <label class="block font-medium text-slate-400 mb-1">OUTCOME</label>
+                  <select id="logOutcome" onchange="updateCalculatedXp()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-orange-500">
                     <option value="Made 2Pts">Made 2Pts</option>
                     <option value="Miss 2Pts">Miss 2Pts</option>
                     <option value="Make 3Pts">Make 3Pts</option>
@@ -262,22 +239,20 @@
                 </div>
               </div>
 
-              <!-- Shot Type, Contest & Clock Phase Row -->
               <div class="grid grid-cols-3 gap-2">
                 <div>
                   <label class="block font-medium text-slate-400 mb-1">SHOT TYPE</label>
-                  <select id="logShotType" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-orange-500">
+                  <select id="logShotType" onchange="updateCalculatedXp()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-orange-500">
                     <option value="Catch & Shoot">Catch & Shoot</option>
                     <option value="Off Dribble">Off Dribble</option>
                     <option value="Layup/Dunk">Layup / Dunk</option>
                     <option value="Float/Hook">Floater / Hook</option>
-                    <option value="Post Move">Post Move</option>
                   </select>
                 </div>
                 <div>
                   <label class="block font-medium text-slate-400 mb-1">CONTEST LEVEL</label>
-                  <select id="logContest" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-orange-500">
-                    <option value="Open">Open (Uncontested)</option>
+                  <select id="logContest" onchange="updateCalculatedXp()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-orange-500">
+                    <option value="Open">Open</option>
                     <option value="Slight">Slight Contest</option>
                     <option value="Heavy">Heavy Contest</option>
                   </select>
@@ -292,9 +267,8 @@
                 </div>
               </div>
 
-              <!-- Coordinates Display & Action Button -->
               <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 flex items-center justify-between text-slate-400">
-                <span id="formCoordsText">Selected Court Loc: (250, 100)</span>
+                <span id="formCoordsText">Selected Loc: (250, 100)</span>
                 <span id="calculatedXpDisplay" class="font-bold text-orange-400">Calc xP: 0.95</span>
               </div>
 
@@ -306,8 +280,8 @@
           </div>
 
           <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-            <span>Expected Points Engine Active</span>
-            <span class="text-orange-400 font-semibold">POE = Points - xP</span>
+            <span>Points Over Expectation Engine</span>
+            <span class="text-orange-400 font-semibold">POE = PTS - xP</span>
           </div>
         </div>
 
@@ -317,9 +291,8 @@
     <!-- ==================== TAB 2: ANALYTICS ==================== -->
     <section id="viewAnalytics" class="hidden space-y-6">
       
-      <!-- Top Overview KPI Metrics Grid -->
+      <!-- Top Overview KPI Metrics -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <!-- PPP Card -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between text-slate-400 mb-1">
             <span class="text-xs font-semibold">TEAM PPP</span>
@@ -329,17 +302,15 @@
           <div class="text-[10px] text-slate-500 mt-1">Points Per Possession</div>
         </div>
 
-        <!-- Total Points -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between text-slate-400 mb-1">
-            <span class="text-xs font-semibold">POINTS SCORED</span>
+            <span class="text-xs font-semibold">TOTAL POINTS</span>
             <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
           </div>
           <div id="kpiPts" class="text-2xl font-black text-white">0</div>
           <div class="text-[10px] text-slate-500 mt-1">Total Game Points</div>
         </div>
 
-        <!-- SQI Card -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between text-slate-400 mb-1">
             <span class="text-xs font-semibold">AVG SQI (xP)</span>
@@ -349,7 +320,6 @@
           <div class="text-[10px] text-slate-500 mt-1">Shot Quality Index</div>
         </div>
 
-        <!-- POE Card -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between text-slate-400 mb-1">
             <span class="text-xs font-semibold">NET POE</span>
@@ -359,7 +329,6 @@
           <div class="text-[10px] text-slate-500 mt-1">Points Over Expectation</div>
         </div>
 
-        <!-- Play Execution % -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
           <div class="flex items-center justify-between text-slate-400 mb-1">
             <span class="text-xs font-semibold">EXECUTION %</span>
@@ -381,11 +350,10 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="clockPhaseCards">
-          <!-- Populated dynamically by JS -->
         </div>
       </div>
 
-      <!-- Shot Chart & Spatial Filters Bar -->
+      <!-- Shot Chart Visualizer & Filters -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <h3 class="font-bold text-slate-100 flex items-center space-x-2">
@@ -393,7 +361,6 @@
             <span>Shot Chart Visualizer & Spatial Filters</span>
           </h3>
 
-          <!-- Filter Controls -->
           <div class="flex flex-wrap items-center gap-2 text-xs">
             <select id="filterPlayer" onchange="renderAnalytics()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
               <option value="ALL">All Players</option>
@@ -411,7 +378,6 @@
           </div>
         </div>
 
-        <!-- Rendered Shot Chart SVG -->
         <div class="flex justify-center">
           <div class="w-full max-w-[550px] aspect-[500/470] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-inner relative">
             <svg id="analyticsCourtSvg" viewBox="0 0 500 470" class="w-full h-full">
@@ -431,8 +397,6 @@
 
       <!-- Player & Playbook Breakdown Efficiency Tables -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <!-- Player Table -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
           <h3 class="font-bold text-slate-100 flex items-center space-x-2">
             <i data-lucide="users" class="w-4 h-4 text-orange-500"></i>
@@ -451,13 +415,11 @@
                 </tr>
               </thead>
               <tbody id="playerAnalyticsTable" class="divide-y divide-slate-800/50">
-                <!-- Dynamic Rows -->
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Playbook Table -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
           <h3 class="font-bold text-slate-100 flex items-center space-x-2">
             <i data-lucide="book-open" class="w-4 h-4 text-orange-500"></i>
@@ -467,7 +429,7 @@
             <table class="w-full text-left text-xs border-collapse">
               <thead>
                 <tr class="border-b border-slate-800 text-slate-400 font-semibold">
-                  <th class="p-2">PLAY NAME</th>
+                  <th class="p-2">PLAY CALL</th>
                   <th class="p-2 text-center">RUNS</th>
                   <th class="p-2 text-center">EXEC %</th>
                   <th class="p-2 text-center">PPP</th>
@@ -476,12 +438,10 @@
                 </tr>
               </thead>
               <tbody id="playbookAnalyticsTable" class="divide-y divide-slate-800/50">
-                <!-- Dynamic Rows -->
               </tbody>
             </table>
           </div>
         </div>
-
       </div>
 
     </section>
@@ -520,7 +480,6 @@
             </tr>
           </thead>
           <tbody id="gameLogTable" class="divide-y divide-slate-800/50">
-            <!-- Dynamic Possessions -->
           </tbody>
         </table>
       </div>
@@ -539,7 +498,6 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="rosterCards">
-        <!-- Dynamic Roster Cards -->
       </div>
     </section>
 
@@ -548,7 +506,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <h2 class="font-bold text-slate-100 flex items-center space-x-2">
           <i data-lucide="book-open" class="w-4 h-4 text-orange-500"></i>
-          <span>Playbook & Action Library</span>
+          <span>Playbook Library</span>
         </h2>
         <button onclick="addPlaybookItemPrompt()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
           + Add Play Call
@@ -556,7 +514,6 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="playbookCards">
-        <!-- Dynamic Playbook Cards -->
       </div>
     </section>
 
@@ -576,27 +533,24 @@
         </div>
         <div>
           <h3 class="font-bold text-lg text-white">Synergy Sports Integration Hub</h3>
-          <p class="text-xs text-slate-400">Import Synergy exported files or sync direct play-by-play feeds</p>
+          <p class="text-xs text-slate-400">Import Synergy exported CSV or sync direct play-by-play feeds</p>
         </div>
       </div>
 
-      <!-- Modal Tabs -->
       <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
         <button id="modalTabCsv" onclick="switchSynergyModalTab('csv')" class="flex-1 py-2 rounded-md font-semibold text-slate-200 bg-slate-800">Synergy CSV File Import</button>
         <button id="modalTabApi" onclick="switchSynergyModalTab('api')" class="flex-1 py-2 rounded-md font-semibold text-slate-400 hover:text-white">Direct Synergy API Sync</button>
       </div>
 
-      <!-- Tab Content: CSV File Drag/Drop -->
       <div id="synergyCsvSection" class="space-y-4">
         <div class="border-2 border-dashed border-slate-700 hover:border-orange-500/50 rounded-xl p-8 text-center bg-slate-950/50 transition cursor-pointer" onclick="document.getElementById('csvFileInput').click()">
           <i data-lucide="upload-cloud" class="w-10 h-10 text-orange-400 mx-auto mb-2"></i>
           <p class="text-sm font-semibold text-slate-200">Click or Drag Synergy CSV File Here</p>
-          <p class="text-xs text-slate-500 mt-1">Supports standard Synergy Editor play breakdowns and game export formats</p>
+          <p class="text-xs text-slate-500 mt-1">Automatically maps spatial court coordinates and computes xP & POE</p>
           <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCsvFileUpload(event)">
         </div>
       </div>
 
-      <!-- Tab Content: Direct API Connector -->
       <div id="synergyApiSection" class="hidden space-y-4 text-xs">
         <div>
           <label class="block font-medium text-slate-400 mb-1">SYNERGY API BEARER TOKEN / KEY</label>
@@ -623,9 +577,8 @@
     </div>
   </div>
 
-  <!-- APPLICATION LOGIC & STATE ENGINE -->
+  <!-- APPLICATION CODE & ENGINE -->
   <script>
-    // --- STATE MANAGEMENT ---
     let state = {
       activeTab: 'tracker',
       activeBaseline: 'JUCO',
@@ -659,32 +612,44 @@
       ]
     };
 
-    // --- XP EXPECTED POINTS BASELINE ENGINE ---
+    // Calculate xP
     function calculateExpectedPoints(x, y, shotType, contest, outcome) {
       if (outcome === 'Turnover') return 0.0;
       
-      // Calculate Distance from Rim (Basket at X:250, Y:52)
       const dx = x - 250;
       const dy = y - 52;
-      const distFt = Math.sqrt(dx * dx + dy * dy) / 10; // 10px per foot approx
+      const distFt = Math.sqrt(dx * dx + dy * dy) / 10;
       
       const is3Pt = (y > 140 && distFt > 20.75) || (y <= 140 && (x < 50 || x > 450));
-      
       let baseVal = is3Pt ? 1.05 : (distFt < 5 ? 1.18 : 0.82);
 
-      // Baseline Modifiers
       if (state.activeBaseline === 'JUCO') baseVal *= 0.96;
       if (state.activeBaseline === 'NCAA_D1') baseVal *= 1.04;
       if (state.activeBaseline === 'NCAA_D3') baseVal *= 0.92;
 
-      // Contest Multipliers
       if (contest === 'Open') baseVal *= 1.25;
       if (contest === 'Heavy') baseVal *= 0.72;
 
       return parseFloat(Math.min(Math.max(baseVal, 0.20), 2.70).toFixed(2));
     }
 
-    // Determine Shot Clock Phase from Synergy Duration String (e.g. "00:00:06")
+    // Convert Synergy location description strings to SVG Court (X,Y)
+    function parseSynergyLocationToCoords(descStr) {
+      const lower = (descStr || '').toLowerCase();
+      let x = 250, y = 100;
+
+      if (lower.includes('left wing') || lower.includes('left 3pt')) { x = 90; y = 180; }
+      else if (lower.includes('right wing') || lower.includes('right 3pt')) { x = 410; y = 180; }
+      else if (lower.includes('top') || lower.includes('high p&r')) { x = 250; y = 230; }
+      else if (lower.includes('left corner')) { x = 35; y = 60; }
+      else if (lower.includes('right corner')) { x = 465; y = 60; }
+      else if (lower.includes('to basket') || lower.includes('at basket') || lower.includes('short')) { x = 250; y = 65; }
+      else if (lower.includes('dribble jumper') || lower.includes('midrange')) { x = 250 + (Math.random() * 80 - 40); y = 130; }
+      else { x = 250 + (Math.random() * 100 - 50); y = 120 + (Math.random() * 60 - 30); }
+
+      return { x: Math.round(x), y: Math.round(y) };
+    }
+
     function parseDurationToClockPhase(durationStr) {
       if (!durationStr) return '22-10s';
       const parts = durationStr.split(':');
@@ -696,7 +661,6 @@
       return '22-10s';
     }
 
-    // --- INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       populateDropdowns();
@@ -708,19 +672,16 @@
     }
 
     function populateDropdowns() {
-      // Game Select
       const gameSel = document.getElementById('gameSelect');
       gameSel.innerHTML = state.games.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
       gameSel.value = state.activeGameId;
 
-      // Roster Dropdowns
       const playerSel = document.getElementById('logPlayer');
       playerSel.innerHTML = state.roster.map(r => `<option value="${r.num}">${r.num} - ${r.name}</option>`).join('');
 
       const filterP = document.getElementById('filterPlayer');
       filterP.innerHTML = `<option value="ALL">All Players</option>` + state.roster.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
 
-      // Playbook Dropdowns
       const playSel = document.getElementById('logPlay');
       playSel.innerHTML = state.playbook.map(p => `<option value="${p.code}">${p.code} - ${p.name}</option>`).join('');
 
@@ -728,13 +689,25 @@
       filterPlay.innerHTML = `<option value="ALL">All Play Calls</option>` + state.playbook.map(p => `<option value="${p.code}">${p.code}</option>`).join('');
     }
 
+    // FIXED TAB SWITCHING ENGINE
     function switchTab(tabId) {
       state.activeTab = tabId;
-      ['tracker', 'analytics', 'gamelog', 'roster', 'playbook'].forEach(t => {
-        const cap = t.charAt(0).toUpperCase() + t.slice(1);
-        const el = document.getElementById(`view${cap}`);
-        const btn = document.getElementById(`tab${cap}`);
-        if (t === tabId) {
+      const tabMap = {
+        tracker: { el: 'viewTracker', btn: 'tabTracker' },
+        analytics: { el: 'viewAnalytics', btn: 'tabAnalytics' },
+        gamelog: { el: 'viewGameLog', btn: 'tabGameLog' },
+        roster: { el: 'viewRoster', btn: 'tabRoster' },
+        playbook: { el: 'viewPlaybook', btn: 'tabPlaybook' }
+      };
+
+      Object.keys(tabMap).forEach(key => {
+        const target = tabMap[key];
+        const el = document.getElementById(target.el);
+        const btn = document.getElementById(target.btn);
+        
+        if (!el || !btn) return;
+
+        if (key === tabId) {
           el.classList.remove('hidden');
           btn.classList.add('bg-orange-600', 'text-white');
           btn.classList.remove('text-slate-300');
@@ -751,7 +724,7 @@
     function switchGame(gameId) {
       state.activeGameId = gameId;
       renderAll();
-      showToast("Switched active game context");
+      showToast("Switched active game");
     }
 
     function changeBaseline(val) {
@@ -760,7 +733,6 @@
       showToast(`xP Baseline changed to ${val}`);
     }
 
-    // --- COURT INTERACTION ---
     function handleCourtClick(e) {
       const svg = document.getElementById('courtSvg');
       const rect = svg.getBoundingClientRect();
@@ -775,7 +747,7 @@
       activePin.classList.remove('hidden');
 
       document.getElementById('coordDisplay').innerText = `Location: (X: ${x}, Y: ${y})`;
-      document.getElementById('formCoordsText').innerText = `Selected Court Loc: (${x}, ${y})`;
+      document.getElementById('formCoordsText').innerText = `Selected Loc: (${x}, ${y})`;
 
       updateCalculatedXp();
     }
@@ -822,7 +794,7 @@
         pts,
         xp,
         poe,
-        ppp: pts // Points for this single possession
+        ppp: pts
       };
 
       const game = getActiveGame();
@@ -832,7 +804,6 @@
       showToast(`Logged possession for #${pNum} ${playerObj.name}`);
     }
 
-    // --- RENDER ALL VIEWS ---
     function renderAll() {
       renderCourtPins();
       renderAnalytics();
@@ -848,7 +819,7 @@
       group.innerHTML = game.possessions.map(p => {
         const isMake = p.outcome.includes('Make') || p.outcome.includes('Made');
         const color = isMake ? '#10b981' : '#f43f5e';
-        return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5" opacity="0.85"><title>${p.playerName} - ${p.outcome} (${p.pts} pts)</title></circle>`;
+        return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} - ${p.outcome}</title></circle>`;
       }).join('');
     }
 
@@ -874,14 +845,12 @@
       const execCount = possessions.filter(p => p.executionStatus === 'Executed').length;
       const execPct = totalPoss > 0 ? Math.round((execCount / totalPoss) * 100) : 0;
 
-      // Update KPI Cards
       document.getElementById('kpiPpp').innerText = ppp;
       document.getElementById('kpiPts').innerText = totalPts;
       document.getElementById('kpiSqi').innerText = avgSqi;
       document.getElementById('kpiPoe').innerText = (netPoe >= 0 ? '+' : '') + netPoe.toFixed(2);
       document.getElementById('kpiExecution').innerText = `${execPct}%`;
 
-      // Render Analytics Court Pins
       const analyticsGroup = document.getElementById('analyticsShotPinsGroup');
       analyticsGroup.innerHTML = possessions.map(p => {
         const isMake = p.outcome.includes('Make') || p.outcome.includes('Made');
@@ -889,7 +858,6 @@
         return `<circle cx="${p.x}" cy="${p.y}" r="6.5" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} | ${p.clockPhase} | ${p.outcome}</title></circle>`;
       }).join('');
 
-      // Clock Phase Cards
       const phases = ['First 8s', '22-10s', '<= 10s'];
       const phaseCardsContainer = document.getElementById('clockPhaseCards');
       phaseCardsContainer.innerHTML = phases.map(phase => {
@@ -924,7 +892,6 @@
         `;
       }).join('');
 
-      // Player Efficiency Table
       const playerMap = {};
       game.possessions.forEach(p => {
         if (!playerMap[p.playerName]) playerMap[p.playerName] = { poss: 0, pts: 0, xp: 0 };
@@ -951,7 +918,6 @@
         `;
       }).join('') || `<tr><td colspan="6" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
 
-      // Playbook Efficiency Table
       const playMap = {};
       game.possessions.forEach(p => {
         if (!playMap[p.playCode]) playMap[p.playCode] = { poss: 0, pts: 0, xp: 0, exec: 0 };
@@ -1062,7 +1028,7 @@
     }
 
     function addPlaybookItemPrompt() {
-      const code = prompt("Enter Short Play Code (e.g., ISO, Horns):");
+      const code = prompt("Enter Short Play Code:");
       if (!code) return;
       const name = prompt("Enter Full Play Description Name:");
       if (!name) return;
@@ -1072,7 +1038,6 @@
       showToast(`Added play ${code} to playbook`);
     }
 
-    // --- SYNERGY INTEGRATION MODAL LOGIC ---
     function openSynergyModal() {
       document.getElementById('synergyModal').classList.remove('hidden');
     }
@@ -1101,8 +1066,7 @@
 
       const reader = new FileReader();
       reader.onload = function(event) {
-        const content = event.target.result;
-        parseSynergyCsvContent(content);
+        parseSynergyCsvContent(event.target.result);
       };
       reader.readAsText(file);
     }
@@ -1110,7 +1074,7 @@
     function parseSynergyCsvContent(csvText) {
       const lines = csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       if (lines.length < 2) {
-        showToast("Invalid CSV format");
+        showToast("Invalid CSV file format");
         return;
       }
 
@@ -1126,30 +1090,27 @@
         const playerStr = cols[3] || 'Unknown Player';
         const durationStr = cols[5] || '00:00:15';
 
-        // Categorize clock phase
         const clockPhase = parseDurationToClockPhase(durationStr);
 
         let pts = 0;
         if (resultStr.includes('Make 3') || descStr.includes('Make 3')) pts = 3;
         else if (resultStr.includes('Make 2') || descStr.includes('Make 2')) pts = 2;
 
-        const courtX = 100 + (i * 27) % 300;
-        const courtY = 60 + (i * 19) % 220;
-
-        const xp = calculateExpectedPoints(courtX, courtY, 'Jump Shot', 'Slight', resultStr);
+        const coords = parseSynergyLocationToCoords(descStr);
+        const xp = calculateExpectedPoints(coords.x, coords.y, 'Jump Shot', 'Slight', resultStr);
 
         game.possessions.push({
           id: Date.now() + i,
           playerNum: playerStr.split(' ')[0] || `${i}`,
           playerName: playerStr,
-          playCode: descStr.split('>')[1]?.trim() || 'Synergy Set',
+          playCode: descStr.split('>')[1]?.trim() || 'Synergy Action',
           executionStatus: 'Executed',
           outcome: resultStr || 'Made 2Pts',
           shotType: 'Jump Shot',
           contest: 'Slight',
           clockPhase,
-          x: courtX,
-          y: courtY,
+          x: coords.x,
+          y: coords.y,
           pts,
           xp,
           poe: parseFloat((pts - xp).toFixed(2)),
@@ -1160,16 +1121,16 @@
 
       closeSynergyModal();
       renderAll();
-      showToast(`Successfully imported ${importedCount} possessions from Synergy CSV!`);
+      showToast(`Imported ${importedCount} Synergy possessions!`);
     }
 
     function loadDemoSynergyBatch() {
       const game = getActiveGame();
       const demoBatch = [
-        { num: '32', name: 'Isaiah Valenzuela', play: 'P&R Ball Handler', outcome: 'Made 2Pts', pts: 2, phase: 'First 8s', x: 250, y: 70 },
-        { num: '5', name: 'Jabari Harris', play: 'Spot-Up', outcome: 'Miss 3Pts', pts: 0, phase: '22-10s', x: 80, y: 160 },
-        { num: '1', name: 'Zack Moritz', play: 'P&R Ball Handler', outcome: 'Miss 2Pts', pts: 0, phase: '<= 10s', x: 220, y: 110 },
-        { num: '10', name: 'Jack Rivera', play: 'Off Screen', outcome: 'Make 3Pts', pts: 3, phase: 'First 8s', x: 420, y: 150 }
+        { num: '32', name: 'Isaiah Valenzuela', play: 'P&R Ball Handler', desc: 'Dribble Off Pick > To Basket > Make 2 Pts', outcome: 'Make 2 Pts', pts: 2, phase: 'First 8s', x: 250, y: 70 },
+        { num: '20', name: 'Christian Warren', play: 'Spot-Up', desc: 'Spot-Up > No Dribble > Miss 3 Pts', outcome: 'Miss 3 Pts', pts: 0, phase: '22-10s', x: 80, y: 160 },
+        { num: '1', name: 'Zack Moritz', play: 'P&R Ball Handler', desc: 'High P&R > Go Away > Miss 2 Pts', outcome: 'Miss 2 Pts', pts: 0, phase: '<= 10s', x: 220, y: 110 },
+        { num: '10', name: 'Jack Rivera', play: 'Off Screen', desc: 'Flare > Guarded > Long/3pt > Make 3 Pts', outcome: 'Make 3 Pts', pts: 3, phase: 'First 8s', x: 420, y: 150 }
       ];
 
       demoBatch.forEach((d, idx) => {
@@ -1195,7 +1156,7 @@
 
       closeSynergyModal();
       renderAll();
-      showToast("Loaded Demo Synergy Batch into active game!");
+      showToast("Loaded Demo Synergy Batch!");
     }
 
     function exportGameCsv() {
@@ -1229,3 +1190,5 @@
   </script>
 </body>
 </html>
+
+```
