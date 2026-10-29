@@ -22,6 +22,9 @@
   .cl.green{border-color:rgba(16,185,129,.4);color:#34d399}
   .cl.amber{border-color:rgba(245,158,11,.4);color:#fbbf24}
   .cl.red{border-color:rgba(244,63,94,.4);color:#fb7185}
+  .ex.green{border-color:rgba(16,185,129,.4);color:#34d399}
+  .ex.red{border-color:rgba(244,63,94,.4);color:#fb7185}
+  .ex.sel{box-shadow:0 0 0 2px currentColor;background:rgba(255,255,255,.06)}
   .cl.sel{box-shadow:0 0 0 2px currentColor;background:rgba(255,255,255,.06)}
   th{padding-bottom:.5rem}
   ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#080d1a}::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
@@ -164,7 +167,11 @@
             </div>
           </div>
         </div>
-        <label class="flex items-center space-x-2 text-slate-300 font-semibold"><input type="checkbox" id="logExecuted" checked class="accent-amber-500"><span>Set was run as called</span></label>
+        <div><label class="lbl">EXECUTION</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" class="opt ex green" data-v="1">Executed</button>
+            <button type="button" class="opt ex red" data-v="0">Broken</button>
+          </div></div>
         <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase">Log Possession &amp; Calculate xP</button>
       </form>
     </div>
@@ -310,8 +317,14 @@ const defaults = () => ({
 
 let state = defaults();
 try { const s = localStorage.getItem(STORE_KEY); if (s) state = Object.assign(defaults(), JSON.parse(s)); } catch(e) {}
+// Required play calls so every possession has a category and team totals reconcile
+[{code:'Putback', name:'Putback (Offensive Rebound)', cat:'Putback'},
+ {code:'Misc', name:'Miscellaneous (Broken Play / Backcourt Steal)', cat:'Misc'}].forEach(r => {
+  const e = state.playbook.find(p => p.code === r.code);
+  if (e) e.locked = true; else state.playbook.push({...r, locked:true});
+});
 // UI-only state (not persisted)
-const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', logQ:'', logField:'all', sortKey:'idx', sortDir:1};
+const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', executed:true, logQ:'', logField:'all', sortKey:'idx', sortDir:1};
 
 function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {} }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -395,9 +408,11 @@ function buildButtons() {
   document.getElementById('contestGrid').innerHTML = CONTESTS.map(c => `<button type="button" class="opt cl ${c[2]}" data-v="${c[0]}">${c[1]}</button>`).join('');
   document.querySelectorAll('.st').forEach(b => b.onclick = () => { ui.shotType = b.dataset.v; markSelected(); updateCalculatedXp(); });
   document.querySelectorAll('.cl').forEach(b => b.onclick = () => { ui.contest = b.dataset.v; markSelected(); updateCalculatedXp(); });
+  document.querySelectorAll('.ex').forEach(b => b.onclick = () => { ui.executed = b.dataset.v === '1'; markSelected(); });
   markSelected();
 }
 function markSelected() {
+  document.querySelectorAll('.ex').forEach(b => b.classList.toggle('sel', (b.dataset.v === '1') === ui.executed));
   document.querySelectorAll('.st').forEach(b => b.classList.toggle('sel', b.dataset.v === ui.shotType));
   document.querySelectorAll('.cl').forEach(b => b.classList.toggle('sel', b.dataset.v === ui.contest));
 }
@@ -491,8 +506,9 @@ function handleLogPossession(e) {
     shotType: ui.shotType, contest: ui.contest,
     clockPhase: document.getElementById('logClockPhase').value,
     timestamp: document.getElementById('logTimestamp').value || '00:00',
-    x: ui.x, y: ui.y, ftm, fta, executed: document.getElementById('logExecuted').checked
+    x: ui.x, y: ui.y, ftm, fta, executed: ui.executed
   });
+  ui.executed = true; markSelected(); // reset to the default for the next possession
   save(); renderAll();
   showToast(`Logged possession for #${num} ${player.name}`);
 }
@@ -543,11 +559,11 @@ function renderAnalytics(poss) {
   const xp = poss.reduce((a, p) => a + p.xp, 0);
   const exec = poss.filter(p => p.executed !== false).length;
   const kpis = [
-    ['TEAM PPP', n ? (pts / n).toFixed(2) : '0.00', 'Points / Poss', 'text-white'],
+    ['TEAM PPP', n ? (pts / n).toFixed(2) : '0.00', `${n} possessions`, 'text-white'],
     ['PTS SCORED', pts, 'Total Points', 'text-emerald-400'],
     ['AVG SQI (xP)', n ? (xp / n).toFixed(2) : '0.00', 'Shot Quality Index', 'text-sky-400'],
     ['NET POE', fmtSigned(pts - xp), 'Points Over Exp', 'text-amber-400'],
-    ['EXECUTION %', pct(exec, n), 'Sets Run as Called', 'text-indigo-400']
+    ['EXECUTION %', pct(exec, n), 'Executed vs Broken', 'text-indigo-400']
   ];
   document.getElementById('kpiRow').innerHTML = kpis.map(k => `<div class="card !p-3"><div class="text-[10px] font-bold text-slate-400 tracking-wider">${k[0]}</div><div class="text-xl font-black ${k[3]} mt-1">${k[1]}</div><div class="text-[9px] text-slate-500 mt-0.5">${k[2]}</div></div>`).join('');
 
@@ -572,6 +588,7 @@ function renderAnalytics(poss) {
   document.getElementById('playbookAnalyticsTable').innerHTML = Object.entries(pb).map(([code, s]) =>
     `<tr class="text-slate-200"><td class="p-2 font-bold">${esc(code)}</td><td class="text-center font-mono">${s.runs}</td><td class="text-center font-mono text-amber-400 font-bold">${(s.pts / s.runs).toFixed(2)}</td><td class="text-center font-mono ${s.pts - s.xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(s.pts - s.xp)}</td></tr>`).join('')
     || `<tr><td colspan="4" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
+  if (n) document.getElementById('playbookAnalyticsTable').insertAdjacentHTML('beforeend', `<tr class="text-slate-200 border-t-2 border-slate-700 font-bold"><td class="p-2">Total</td><td class="text-center font-mono">${n}</td><td class="text-center font-mono text-amber-400">${(pts / n).toFixed(2)}</td><td class="text-center font-mono ${pts - xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(pts - xp)}</td></tr>`);
 }
 
 const LOG_COLS = [['idx','#'],['player','PLAYER'],['play','PLAY CALL'],['time','TIME/PHASE'],['dist','DIST'],['outcome','OUTCOME'],['pts','PTS'],['xp','xP'],['poe','POE']];
@@ -594,7 +611,7 @@ function renderGameLog(all) {
     <tr class="text-slate-200">
       <td class="p-2 text-slate-500 font-mono">${p.idx}</td>
       <td class="p-2 font-bold">#${esc(p.playerNum)} ${esc(p.playerName)}</td>
-      <td class="p-2">${esc(p.playCode)}</td>
+      <td class="p-2">${esc(p.playCode)}${p.executed === false ? ' <span class="text-[10px] font-bold text-rose-400 px-1 rounded bg-rose-500/10 border border-rose-500/30">Broken</span>' : ''}</td>
       <td class="p-2">${esc(p.timestamp)} (${esc(p.clockPhase)})</td>
       <td class="p-2 text-center font-mono text-amber-400">${p.fga ? p.distFt + ' ft' : '-'}</td>
       <td class="p-2">${esc(outcomeLabel(p))}</td>
@@ -680,7 +697,7 @@ function renderPlaybook() {
   document.getElementById('playbookCards').innerHTML = state.playbook.map((p, i) => `
     <div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 flex items-center justify-between">
       <div><div class="font-bold text-slate-100 text-xs">${esc(p.name)}</div><div class="text-[10px] text-slate-400 mt-0.5">Code: <span class="text-amber-400 font-mono font-bold">${esc(p.code)}</span> | Cat: ${esc(p.cat || 'Set')}</div></div>
-      <button onclick="removePlaybookItem(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+      ${p.locked ? '<span class="text-[10px] font-bold text-amber-400/80 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">Required</span>' : `<button onclick="removePlaybookItem(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`}
     </div>`).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No play calls in playbook</div>`;
 }
 function addPlaybookItemPrompt() {
@@ -692,6 +709,7 @@ function addPlaybookItemPrompt() {
 }
 function removePlaybookItem(i) {
   const p = state.playbook[i]; if (!p) return;
+  if (p.locked) { showToast(p.code + ' is required for possession totals'); return; }
   state.playbook.splice(i, 1); save(); populateDropdowns(); renderAll(); showToast(`Removed ${p.code}`);
 }
 
