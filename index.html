@@ -99,7 +99,7 @@
         <div>
           <div class="flex items-center space-x-2">
             <h1 class="font-black text-slate-100 text-sm tracking-wide">Track the Play. Measure the Look.</h1>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">v3.0</span>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">v3.5</span>
           </div>
           <div class="flex items-center space-x-2 text-[11px] text-slate-400 font-medium mt-0.5">
             <span>ACTIVE GAME:</span>
@@ -370,10 +370,10 @@
       </div>
 
       <!-- Player & Playbook Breakdown Tables -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Player Table -->
+      <div class="grid grid-cols-1 gap-4">
+        <!-- Player Table with Shooting Percentages -->
         <div class="bg-[#0d1424] border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-3">
-          <h3 class="font-bold text-xs text-slate-200">Player Efficiency</h3>
+          <h3 class="font-bold text-xs text-slate-200">Player Shooting & Efficiency Breakdown</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-[11px]">
               <thead>
@@ -381,6 +381,10 @@
                   <th class="pb-2">PLAYER</th>
                   <th class="pb-2 text-center">POSS</th>
                   <th class="pb-2 text-center">PTS</th>
+                  <th class="pb-2 text-center">FG (M/A)</th>
+                  <th class="pb-2 text-center">FG%</th>
+                  <th class="pb-2 text-center">3P (M/A)</th>
+                  <th class="pb-2 text-center">3P%</th>
                   <th class="pb-2 text-center">PPP</th>
                   <th class="pb-2 text-center">POE</th>
                 </tr>
@@ -471,9 +475,13 @@
     <!-- ==================== TAB 5: ROSTER ==================== -->
     <section id="viewRoster" class="hidden bg-[#0d1424] border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-        <h2 class="font-bold text-sm text-slate-100">Team Roster</h2>
-        <button onclick="addRosterPlayerPrompt()" class="px-3 py-1 bg-amber-500 text-slate-950 text-xs font-bold rounded-lg">
-          + Add Player
+        <div>
+          <h2 class="font-bold text-sm text-slate-100">Team Roster & Live Shooting Stats</h2>
+          <p class="text-[11px] text-slate-400">Manage active players and inspect real-time shooting splits</p>
+        </div>
+        <button onclick="addRosterPlayerPrompt()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-900/30 transition flex items-center space-x-1">
+          <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+          <span>+ Add Player</span>
         </button>
       </div>
       <div id="rosterCards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -482,9 +490,13 @@
     <!-- ==================== TAB 6: PLAYBOOK ==================== -->
     <section id="viewPlaybook" class="hidden bg-[#0d1424] border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-        <h2 class="font-bold text-sm text-slate-100">Playbook Library</h2>
-        <button onclick="addPlaybookItemPrompt()" class="px-3 py-1 bg-amber-500 text-slate-950 text-xs font-bold rounded-lg">
-          + Add Play Call
+        <div>
+          <h2 class="font-bold text-sm text-slate-100">Playbook Library</h2>
+          <p class="text-[11px] text-slate-400">Define set plays, offensive actions, and tactical codes</p>
+        </div>
+        <button onclick="addPlaybookItemPrompt()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-900/30 transition flex items-center space-x-1">
+          <i data-lucide="book-plus" class="w-3.5 h-3.5"></i>
+          <span>+ Add Play Call</span>
         </button>
       </div>
       <div id="playbookCards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -746,7 +758,7 @@
     function renderCourtPins() {
       const group = document.getElementById('shotPinsGroup');
       group.innerHTML = getActiveGame().possessions.map(p => {
-        const isMake = p.outcome.includes('Made');
+        const isMake = p.outcome.includes('Made') || p.outcome.includes('Make');
         const color = isMake ? '#10b981' : '#f43f5e';
         return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} - ${p.outcome}</title></circle>`;
       }).join('');
@@ -775,6 +787,68 @@
           </div>
         `;
       }).join('');
+
+      // PLAYER SHOOTING STATS COMPUTATION
+      const playerStatsMap = {};
+      state.roster.forEach(r => {
+        playerStatsMap[r.name] = {
+          num: r.num,
+          poss: 0,
+          pts: 0,
+          fgm: 0,
+          fga: 0,
+          fg3m: 0,
+          fg3a: 0,
+          xp: 0
+        };
+      });
+
+      game.possessions.forEach(p => {
+        if (!playerStatsMap[p.playerName]) {
+          playerStatsMap[p.playerName] = { num: p.playerNum, poss: 0, pts: 0, fgm: 0, fga: 0, fg3m: 0, fg3a: 0, xp: 0 };
+        }
+        const pStats = playerStatsMap[p.playerName];
+        pStats.poss++;
+        pStats.pts += p.pts;
+        pStats.xp += p.xp;
+
+        if (p.outcome.includes('2Pts')) {
+          pStats.fga++;
+          if (p.outcome.includes('Made') || p.outcome.includes('Make')) pStats.fgm++;
+        } else if (p.outcome.includes('3Pts')) {
+          pStats.fga++;
+          pStats.fg3a++;
+          if (p.outcome.includes('Made') || p.outcome.includes('Make')) {
+            pStats.fgm++;
+            pStats.fg3m++;
+          }
+        }
+      });
+
+      const pTable = document.getElementById('playerAnalyticsTable');
+      pTable.innerHTML = Object.keys(playerStatsMap).map(pName => {
+        const s = playerStatsMap[pName];
+        if (s.poss === 0) return ''; // Only show active contributors
+
+        const fgPct = s.fga > 0 ? Math.round((s.fgm / s.fga) * 100) : 0;
+        const fg3Pct = s.fg3a > 0 ? Math.round((s.fg3m / s.fg3a) * 100) : 0;
+        const ppp = (s.pts / s.poss).toFixed(2);
+        const poe = (s.pts - s.xp).toFixed(2);
+
+        return `
+          <tr class="hover:bg-slate-800/30 text-slate-200">
+            <td class="p-2 font-bold">#${s.num} ${pName}</td>
+            <td class="p-2 text-center font-mono">${s.poss}</td>
+            <td class="p-2 text-center font-bold text-emerald-400">${s.pts}</td>
+            <td class="p-2 text-center font-mono text-slate-300">${s.fgm}/${s.fga}</td>
+            <td class="p-2 text-center font-mono text-amber-400 font-bold">${fgPct}%</td>
+            <td class="p-2 text-center font-mono text-slate-300">${s.fg3m}/${s.fg3a}</td>
+            <td class="p-2 text-center font-mono text-amber-400 font-bold">${fg3Pct}%</td>
+            <td class="p-2 text-center font-mono text-amber-400 font-bold">${ppp}</td>
+            <td class="p-2 text-center font-mono ${poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${poe >= 0 ? '+' : ''}${poe}</td>
+          </tr>
+        `;
+      }).join('') || `<tr><td colspan="9" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
     }
 
     function renderGameLog() {
@@ -799,6 +873,147 @@
           </td>
         </tr>
       `).join('') || `<tr><td colspan="11" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
+    }
+
+    // ROSTER MANAGEMENT FUNCTIONS WITH LIVE STAT SUMMARY CARDS
+    function renderRoster() {
+      const container = document.getElementById('rosterCards');
+      if (!container) return;
+
+      const game = getActiveGame();
+
+      container.innerHTML = state.roster.map(r => {
+        const playerPoss = game.possessions.filter(p => p.playerName === r.name);
+        let pts = 0, fgm = 0, fga = 0, fg3m = 0, fg3a = 0;
+
+        playerPoss.forEach(p => {
+          pts += p.pts;
+          if (p.outcome.includes('2Pts')) {
+            fga++;
+            if (p.outcome.includes('Made') || p.outcome.includes('Make')) fgm++;
+          } else if (p.outcome.includes('3Pts')) {
+            fga++;
+            fg3a++;
+            if (p.outcome.includes('Made') || p.outcome.includes('Make')) {
+              fgm++;
+              fg3m++;
+            }
+          }
+        });
+
+        const fgPct = fga > 0 ? Math.round((fgm / fga) * 100) : 0;
+        const fg3Pct = fg3a > 0 ? Math.round((fg3m / fg3a) * 100) : 0;
+
+        return `
+          <div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-xs border border-amber-500/30">
+                  #${r.num}
+                </div>
+                <div>
+                  <div class="font-bold text-slate-100 text-xs">${r.name}</div>
+                  <div class="text-[10px] text-slate-400">Pos: <span class="text-slate-200 font-semibold">${r.pos || 'G'}</span></div>
+                </div>
+              </div>
+              <button onclick="removeRosterPlayer('${r.num}')" class="text-slate-500 hover:text-rose-400 transition p-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Live Player Stats Bar -->
+            <div class="grid grid-cols-4 gap-1 pt-1 border-t border-slate-800/60 text-center text-[10px]">
+              <div class="bg-[#0d1424] p-1.5 rounded-lg border border-slate-800/50">
+                <div class="text-slate-500 font-bold">PTS</div>
+                <div class="font-black text-emerald-400 text-xs">${pts}</div>
+              </div>
+              <div class="bg-[#0d1424] p-1.5 rounded-lg border border-slate-800/50">
+                <div class="text-slate-500 font-bold">FG</div>
+                <div class="font-bold text-slate-200">${fgm}/${fga} <span class="text-amber-400 font-black">(${fgPct}%)</span></div>
+              </div>
+              <div class="bg-[#0d1424] p-1.5 rounded-lg border border-slate-800/50">
+                <div class="text-slate-500 font-bold">3PT</div>
+                <div class="font-bold text-slate-200">${fg3m}/${fg3a} <span class="text-amber-400 font-black">(${fg3Pct}%)</span></div>
+              </div>
+              <div class="bg-[#0d1424] p-1.5 rounded-lg border border-slate-800/50">
+                <div class="text-slate-500 font-bold">POSS</div>
+                <div class="font-bold text-slate-300">${playerPoss.length}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No roster players added yet</div>`;
+    }
+
+    function addRosterPlayerPrompt() {
+      const num = prompt("Enter Player Jersey Number (e.g. 11):");
+      if (!num) return;
+      const name = prompt("Enter Player Full Name:");
+      if (!name) return;
+      const pos = prompt("Enter Position (G, F, C):") || "G";
+
+      if (state.roster.some(r => r.num === num.trim())) {
+        showToast(`Jersey #${num} is already taken!`);
+        return;
+      }
+
+      state.roster.push({ num: num.trim(), name: name.trim(), pos: pos.trim().toUpperCase() });
+      populateDropdowns();
+      renderRoster();
+      lucide.createIcons();
+      showToast(`Added #${num} ${name} to roster`);
+    }
+
+    function removeRosterPlayer(num) {
+      state.roster = state.roster.filter(r => r.num !== num);
+      populateDropdowns();
+      renderRoster();
+      lucide.createIcons();
+      showToast(`Removed #${num} from roster`);
+    }
+
+    // PLAYBOOK MANAGEMENT FUNCTIONS
+    function renderPlaybook() {
+      const container = document.getElementById('playbookCards');
+      if (!container) return;
+      container.innerHTML = state.playbook.map(p => `
+        <div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-100 text-xs">${p.name}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">Code: <span class="text-amber-400 font-mono font-bold">${p.code}</span> | Cat: ${p.cat || 'Set'}</div>
+          </div>
+          <button onclick="removePlaybookItem('${p.code}')" class="text-slate-500 hover:text-rose-400 transition p-1">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      `).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No play calls in playbook</div>`;
+    }
+
+    function addPlaybookItemPrompt() {
+      const code = prompt("Enter Short Play Code (e.g. Horns, DHO):");
+      if (!code) return;
+      const name = prompt("Enter Full Play Name (e.g. Horns Double Stagger):");
+      if (!name) return;
+      const cat = prompt("Enter Category (P&R, Motion, ISO, Set):") || "Set";
+
+      if (state.playbook.some(p => p.code.toLowerCase() === code.trim().toLowerCase())) {
+        showToast(`Play code ${code} already exists!`);
+        return;
+      }
+
+      state.playbook.push({ code: code.trim(), name: name.trim(), cat: cat.trim() });
+      populateDropdowns();
+      renderPlaybook();
+      lucide.createIcons();
+      showToast(`Added ${code} to playbook`);
+    }
+
+    function removePlaybookItem(code) {
+      state.playbook = state.playbook.filter(p => p.code !== code);
+      populateDropdowns();
+      renderPlaybook();
+      lucide.createIcons();
+      showToast(`Removed play call ${code}`);
     }
 
     function playClipAtTimestamp(timeStr) {
@@ -836,7 +1051,6 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(evt) {
-        const lines = evt.target.result.split('\n');
         closeSynergyModal();
         showToast(`Parsed Synergy CSV file successfully!`);
       };
