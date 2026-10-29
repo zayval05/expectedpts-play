@@ -1,103 +1,8 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Track the Play. Measure the Look. | JUCO Basketball Analytics</title>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#fff7ed',
-              100: '#ffedd5',
-              400: '#fb923c',
-              500: '#f97316',
-              600: '#ea580c',
-              700: '#c2410c',
-              900: '#7c2d12',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Firebase App & Firestore -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyPlayValueProductionKey_AutomatedSyncEnabled",
-      authDomain: "play-value.firebaseapp.com",
-      projectId: "play-value",
-      storageBucket: "play-value.appspot.com",
-      messagingSenderId: "102938475610",
-      appId: "1:102938475610:web:abc123def456"
-    };
-
-    try {
-      const app = initializeApp(firebaseConfig);
-      window.db = getFirestore(app);
-      window.firebaseDoc = doc;
-      window.firebaseSetDoc = setDoc;
-      window.firebaseGetDoc = getDoc;
-      window.firebaseOnSnapshot = onSnapshot;
-      console.log("Production Firebase initialized successfully.");
-    } catch (err) {
-      console.warn("Running in offline local mode:", err);
-    }
-  </script>
-
-  <style>
-    body {
-      background-color: #0b0f17;
-      color: #e2e8f0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    .court-svg {
-      user-select: none;
-      touch-action: none;
-    }
-    .modal-backdrop {
-      background-color: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(6px);
-    }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 3px;
-    }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col">
-
-  <!-- TOP HEADER / NAVBAR -->
-  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center space-x-3">
-        <div class="p-2 bg-orange-600/20 text-orange-500 rounded-lg border border-orange-500/30">
-          <i data-lucide="activity" class="w-6 h-6"></i>
-        </div>
+<!-- ... existing code ... -->
         <div>
           <h1 class="font-bold text-lg leading-tight tracking-wide text-white">
             Track the Play. Measure the Look.
-            <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">v3.5 Video & Distance</span>
+            <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">v3.4 Video Sync & Distance</span>
           </h1>
           <p class="text-xs text-slate-400">JUCO Basketball Analytics & Spatial Expected Points (xP)</p>
         </div>
@@ -130,7 +35,10 @@
           <button id="tabTracker" onclick="switchTab('tracker')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Tracker</button>
           <button id="tabAnalytics" onclick="switchTab('analytics')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Analytics</button>
           <button id="tabGameLog" onclick="switchTab('gamelog')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Game Log</button>
-          <button id="tabVideo" onclick="switchTab('video')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Video Library</button>
+          <button id="tabVideo" onclick="switchTab('video')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition flex items-center space-x-1">
+            <i data-lucide="video" class="w-3.5 h-3.5"></i>
+            <span>Video Library</span>
+          </button>
           <button id="tabRoster" onclick="switchTab('roster')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Roster</button>
           <button id="tabPlaybook" onclick="switchTab('playbook')" class="px-3 py-1 rounded-md text-slate-300 font-medium hover:text-white transition">Playbook</button>
         </div>
@@ -140,51 +48,13 @@
 
   <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 space-y-6">
-
-    <!-- Toast Notification -->
-    <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all">
-      <i data-lucide="info" class="w-5 h-5 text-orange-400"></i>
-      <span id="toastMsg" class="text-sm font-medium">Notification</span>
-    </div>
-
-    <!-- ==================== TAB 1: TRACKER ==================== -->
-    <section id="viewTracker" class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- SVG Court Canvas -->
-        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col items-center">
-          <div class="w-full flex items-center justify-between mb-3 px-2">
-            <div class="flex items-center space-x-2">
-              <i data-lucide="crosshair" class="w-4 h-4 text-orange-500"></i>
-              <h2 class="font-bold text-sm text-slate-200">Interactive Hardwood Shot Court</h2>
-            </div>
-            <span class="text-xs text-slate-400">Click court location to measure distance & auto-populate xP</span>
-          </div>
-
-          <div class="relative w-full max-w-[500px] aspect-[500/470] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-inner">
-            <svg id="courtSvg" viewBox="0 0 500 470" class="w-full h-full court-svg cursor-crosshair" onclick="handleCourtClick(event)">
-              <rect x="0" y="0" width="500" height="470" fill="#18202c" stroke="#334155" stroke-width="4"/>
-              <rect x="170" y="0" width="160" height="190" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
-              <path d="M 210,0 A 40,40 0 0,0 290,0" fill="none" stroke="#38bdf8" stroke-width="2"/>
-              <circle cx="250" cy="190" r="60" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,6"/>
-              <path d="M 50,0 L 50,140 A 200,200 0 0,0 450,140 L 450,0" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
-              <line x1="220" y1="40" x2="280" y2="40" stroke="#ffffff" stroke-width="4"/>
-              <circle cx="250" cy="52" r="12" fill="none" stroke="#f97316" stroke-width="3"/>
-              
-              <!-- Distance Measuring Line -->
-              <line id="distanceLine" x1="250" y1="52" x2="-50" y2="-50" stroke="#f97316" stroke-width="1.5" stroke-dasharray="4,4" class="hidden"/>
-
-              <g id="shotPinsGroup"></g>
-              <circle id="activePin" cx="-50" cy="-50" r="7" fill="#f97316" stroke="#ffffff" stroke-width="2" class="animate-pulse hidden"/>
-            </svg>
-          </div>
-          
+<!-- ... existing code ... -->
           <div class="mt-3 flex items-center justify-between w-full max-w-[500px] text-xs text-slate-400 px-2">
             <div class="flex items-center space-x-2">
               <span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span><span>Made FG</span>
               <span class="inline-block w-3 h-3 rounded-full bg-rose-500 ml-2"></span><span>Missed FG</span>
             </div>
-            <span id="coordDisplay" class="font-mono text-orange-400 font-bold">Location: (X: --, Y: --) • -- ft from rim</span>
+            <span id="coordDisplay" class="font-mono text-slate-400">Location: (X: --, Y: --) • -- ft from rim</span>
           </div>
         </div>
 
@@ -196,9 +66,9 @@
                 <i data-lucide="edit-3" class="w-4 h-4 text-orange-500"></i>
                 <span>Possession Logger</span>
               </h2>
-              <button onclick="captureCurrentVideoTime()" type="button" class="text-xs px-2.5 py-1 rounded-lg bg-orange-600/20 text-orange-400 border border-orange-500/30 hover:bg-orange-600/30 transition flex items-center space-x-1">
-                <i data-lucide="video" class="w-3 h-3"></i>
-                <span>Capture Video Time</span>
+              <button type="button" onclick="captureVideoTimestampToLogger()" class="text-xs px-2.5 py-1 rounded bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border border-orange-500/30 flex items-center space-x-1 transition">
+                <i data-lucide="video" class="w-3.5 h-3.5"></i>
+                <span id="loggerTimeBadge">Capture Video Time</span>
               </button>
             </div>
 
@@ -265,14 +135,15 @@
                 </div>
               </div>
 
+              <!-- Timestamp & Distance Row -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block font-medium text-slate-400 mb-1">VIDEO TIMESTAMP</label>
-                  <input type="text" id="logTimestamp" placeholder="00:00" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
+                  <input type="text" id="logTimestamp" placeholder="00:00:00" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
                 </div>
                 <div>
                   <label class="block font-medium text-slate-400 mb-1">DISTANCE FROM RIM</label>
-                  <input type="text" id="logDistance" readonly value="19.8 ft" class="w-full bg-slate-950/60 border border-slate-800 rounded-lg p-2 text-orange-400 font-mono font-bold">
+                  <input type="text" id="logDistance" readonly value="19.8 ft" class="w-full bg-slate-950/60 border border-slate-800 rounded-lg p-2 text-orange-400 font-mono focus:outline-none cursor-not-allowed">
                 </div>
               </div>
 
@@ -287,174 +158,7 @@
               </button>
             </form>
           </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-            <span>Points Over Expectation Engine</span>
-            <span class="text-orange-400 font-semibold">POE = PTS - xP</span>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ==================== TAB 2: ANALYTICS ==================== -->
-    <section id="viewAnalytics" class="hidden space-y-6">
-      
-      <!-- Top Overview KPI Metrics -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div class="flex items-center justify-between text-slate-400 mb-1">
-            <span class="text-xs font-semibold">TEAM PPP</span>
-            <i data-lucide="trending-up" class="w-4 h-4 text-orange-400"></i>
-          </div>
-          <div id="kpiPpp" class="text-2xl font-black text-white">0.00</div>
-          <div class="text-[10px] text-slate-500 mt-1">Points Per Possession</div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div class="flex items-center justify-between text-slate-400 mb-1">
-            <span class="text-xs font-semibold">TOTAL POINTS</span>
-            <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i>
-          </div>
-          <div id="kpiPts" class="text-2xl font-black text-white">0</div>
-          <div class="text-[10px] text-slate-500 mt-1">Total Game Points</div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div class="flex items-center justify-between text-slate-400 mb-1">
-            <span class="text-xs font-semibold">AVG SQI (xP)</span>
-            <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-400"></i>
-          </div>
-          <div id="kpiSqi" class="text-2xl font-black text-white">0.00</div>
-          <div class="text-[10px] text-slate-500 mt-1">Shot Quality Index</div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div class="flex items-center justify-between text-slate-400 mb-1">
-            <span class="text-xs font-semibold">NET POE</span>
-            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
-          </div>
-          <div id="kpiPoe" class="text-2xl font-black text-white">+0.00</div>
-          <div class="text-[10px] text-slate-500 mt-1">Points Over Expectation</div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-          <div class="flex items-center justify-between text-slate-400 mb-1">
-            <span class="text-xs font-semibold">EXECUTION %</span>
-            <i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-400"></i>
-          </div>
-          <div id="kpiExecution" class="text-2xl font-black text-white">0%</div>
-          <div class="text-[10px] text-slate-500 mt-1">Sets Run Successfully</div>
-        </div>
-      </div>
-
-      <!-- Shot Clock Breakdown Card -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-          <div class="flex items-center space-x-2">
-            <i data-lucide="clock" class="w-5 h-5 text-orange-500"></i>
-            <h3 class="font-bold text-slate-100">Shot Clock Phase Efficiency Breakdown</h3>
-          </div>
-          <span class="text-xs text-slate-400">Transition (0-8s) vs Mid-Clock (22-10s) vs Late-Clock (&lt;=10s)</span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="clockPhaseCards">
-        </div>
-      </div>
-
-      <!-- Shot Chart Visualizer & Filters -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-          <h3 class="font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="filter" class="w-4 h-4 text-orange-500"></i>
-            <span>Shot Chart Visualizer & Spatial Filters</span>
-          </h3>
-
-          <div class="flex flex-wrap items-center gap-2 text-xs">
-            <select id="filterPlayer" onchange="renderAnalytics()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
-              <option value="ALL">All Players</option>
-            </select>
-            <select id="filterPlay" onchange="renderAnalytics()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
-              <option value="ALL">All Play Calls</option>
-            </select>
-            <select id="filterClockPhase" onchange="renderAnalytics()" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200">
-              <option value="ALL">All Clock Phases</option>
-              <option value="First 8s">First 8s (Transition)</option>
-              <option value="22-10s">22-10s (Mid Clock)</option>
-              <option value="<= 10s">&lt;= 10s (Late Clock)</option>
-            </select>
-            <button onclick="resetFilters()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">Reset</button>
-          </div>
-        </div>
-
-        <div class="flex justify-center">
-          <div class="w-full max-w-[550px] aspect-[500/470] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-inner relative">
-            <svg id="analyticsCourtSvg" viewBox="0 0 500 470" class="w-full h-full">
-              <rect x="0" y="0" width="500" height="470" fill="#18202c" stroke="#334155" stroke-width="4"/>
-              <rect x="170" y="0" width="160" height="190" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
-              <path d="M 210,0 A 40,40 0 0,0 290,0" fill="none" stroke="#38bdf8" stroke-width="2"/>
-              <circle cx="250" cy="190" r="60" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,6"/>
-              <path d="M 50,0 L 50,140 A 200,200 0 0,0 450,140 L 450,0" fill="none" stroke="#38bdf8" stroke-width="2.5"/>
-              <line x1="220" y1="40" x2="280" y2="40" stroke="#ffffff" stroke-width="4"/>
-              <circle cx="250" cy="52" r="12" fill="none" stroke="#f97316" stroke-width="3"/>
-              
-              <g id="analyticsShotPinsGroup"></g>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Player & Playbook Breakdown Efficiency Tables -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-          <h3 class="font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="users" class="w-4 h-4 text-orange-500"></i>
-            <span>Player Performance Efficiency</span>
-          </h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-slate-400 font-semibold">
-                  <th class="p-2">PLAYER</th>
-                  <th class="p-2 text-center">POSS</th>
-                  <th class="p-2 text-center">PTS</th>
-                  <th class="p-2 text-center">PPP</th>
-                  <th class="p-2 text-center">SQI (xP)</th>
-                  <th class="p-2 text-center">POE</th>
-                </tr>
-              </thead>
-              <tbody id="playerAnalyticsTable" class="divide-y divide-slate-800/50">
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-          <h3 class="font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="book-open" class="w-4 h-4 text-orange-500"></i>
-            <span>Play Call Execution Efficiency</span>
-          </h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-slate-400 font-semibold">
-                  <th class="p-2">PLAY CALL</th>
-                  <th class="p-2 text-center">RUNS</th>
-                  <th class="p-2 text-center">EXEC %</th>
-                  <th class="p-2 text-center">PPP</th>
-                  <th class="p-2 text-center">SQI (xP)</th>
-                  <th class="p-2 text-center">POE</th>
-                </tr>
-              </thead>
-              <tbody id="playbookAnalyticsTable" class="divide-y divide-slate-800/50">
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </section>
-
+<!-- ... existing code ... -->
     <!-- ==================== TAB 3: GAME LOG ==================== -->
     <section id="viewGameLog" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -495,159 +199,98 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 4: VIDEO LIBRARY ==================== -->
-    <section id="viewVideo" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-        <h2 class="font-bold text-slate-100 flex items-center space-x-2">
-          <i data-lucide="video" class="w-4 h-4 text-orange-500"></i>
-          <span>Integrated Game Video Player</span>
-        </h2>
-        
-        <div class="flex items-center space-x-2 text-xs">
-          <input type="text" id="videoUrlInput" placeholder="Paste Video URL (.mp4 / webm)" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 w-64 focus:outline-none focus:border-orange-500">
-          <button onclick="loadVideoUrl()" class="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-3 py-1.5 rounded-lg transition">Load URL</button>
-          <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
-            Upload File
-            <input type="file" accept="video/*" class="hidden" onchange="handleLocalVideoUpload(event)">
-          </label>
-        </div>
-      </div>
-
+    <!-- ==================== TAB: VIDEO LIBRARY ==================== -->
+    <section id="viewVideo" class="hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Video Screen Container -->
-        <div class="lg:col-span-8 bg-black rounded-xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col items-center justify-center min-h-[340px]">
-          <video id="gameVideoPlayer" controls class="w-full h-auto max-h-[480px]">
-            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-            Your browser does not support HTML5 video.
-          </video>
-        </div>
-
-        <!-- Video Control Bar & Play Sync list -->
-        <div class="lg:col-span-4 bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-4 flex flex-col justify-between">
-          <div>
-            <h3 class="font-bold text-slate-200 text-xs mb-2">Video Controls & Playback Speed</h3>
-            <div class="grid grid-cols-3 gap-2 text-xs">
-              <button onclick="adjustPlaybackSpeed(0.5)" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg hover:border-orange-500/50">0.5x Slow</button>
-              <button onclick="adjustPlaybackSpeed(1.0)" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg hover:border-orange-500/50">1.0x Normal</button>
-              <button onclick="adjustPlaybackSpeed(2.0)" class="p-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg hover:border-orange-500/50">2.0x Fast</button>
+        
+        <!-- Main Video Player Panel (8 Cols) -->
+        <div class="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="video" class="w-5 h-5 text-orange-500"></i>
+              <h2 class="font-bold text-slate-100">Integrated Game Video Clip Player</h2>
             </div>
-
-            <div class="mt-4 flex items-center justify-between text-xs pt-3 border-t border-slate-800">
-              <button onclick="skipVideo(-5)" class="px-3 py-1.5 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg">-5s Jump</button>
-              <span id="videoCurrentTimeDisplay" class="font-mono text-orange-400 font-bold">00:00</span>
-              <button onclick="skipVideo(5)" class="px-3 py-1.5 bg-slate-900 border border-slate-800 text-slate-300 rounded-lg">+5s Jump</button>
+            <div class="flex items-center space-x-2">
+              <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer flex items-center space-x-1.5 transition">
+                <i data-lucide="upload" class="w-3.5 h-3.5 text-orange-400"></i>
+                <span>Load Local MP4</span>
+                <input type="file" id="videoFileInput" accept="video/*" class="hidden" onchange="loadLocalVideoFile(event)">
+              </label>
             </div>
           </div>
 
-          <div class="pt-3 border-t border-slate-800">
-            <button onclick="captureCurrentVideoTime()" class="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-orange-900/40 transition flex items-center justify-center space-x-1.5">
-              <i data-lucide="bookmark" class="w-4 h-4"></i>
-              <span>Capture Timestamp to Logger</span>
-            </button>
+          <!-- Video URL Source Selector -->
+          <div class="flex items-center space-x-2 text-xs">
+            <input type="text" id="videoUrlInput" placeholder="Paste Video URL (e.g., https://.../game.mp4 or Synergy Clip URL)" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
+            <button onclick="loadVideoFromUrl()" class="bg-orange-600 hover:bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg transition">Load URL</button>
+          </div>
+
+          <!-- Video Container -->
+          <div class="relative aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center group">
+            <video id="mainVideoPlayer" class="w-full h-full object-contain" controls ontimeupdate="updateVideoProgressDisplay()">
+              <source id="videoSource" src="" type="video/mp4">
+              Your browser does not support HTML5 video playback.
+            </video>
+          </div>
+
+          <!-- Custom Speed & Frame Controls Bar -->
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <!-- Playback Speed Controls -->
+            <div class="flex items-center space-x-1">
+              <span class="text-slate-400 mr-2 font-medium">Speed:</span>
+              <button onclick="setVideoSpeed(0.25)" class="px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-mono">0.25x</button>
+              <button onclick="setVideoSpeed(0.5)" class="px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-mono">0.5x</button>
+              <button onclick="setVideoSpeed(1.0)" class="px-2 py-1 rounded bg-orange-600 text-white font-bold font-mono">1.0x</button>
+              <button onclick="setVideoSpeed(2.0)" class="px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-mono">2.0x</button>
+            </div>
+
+            <!-- Jump Buttons -->
+            <div class="flex items-center space-x-1.5">
+              <button onclick="seekVideoRelative(-5)" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-mono">-5s</button>
+              <button onclick="seekVideoRelative(-2)" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-mono">-2s</button>
+              <button onclick="toggleVideoPlayPause()" class="px-3 py-1 rounded bg-orange-600 hover:bg-orange-500 text-white font-bold">Play / Pause</button>
+              <button onclick="seekVideoRelative(2)" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-mono">+2s</button>
+              <button onclick="seekVideoRelative(5)" class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-mono">+5s</button>
+            </div>
+
+            <!-- Timestamp Capture Button -->
+            <div class="flex items-center space-x-2">
+              <span id="videoTimeDisplay" class="font-mono text-orange-400 font-bold">00:00:00</span>
+              <button onclick="captureVideoTimestampToLogger()" class="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-semibold px-3 py-1.5 rounded-lg shadow-md transition flex items-center space-x-1">
+                <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+                <span>Capture To Logger</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        <!-- Video Play-by-Play Event List (4 Cols) -->
+        <div class="lg:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-slate-100 flex items-center space-x-2">
+              <i data-lucide="list-video" class="w-4 h-4 text-orange-500"></i>
+              <span>Game Clip Index</span>
+            </h3>
+            <span id="clipCountBadge" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">0 Clips</span>
+          </div>
+
+          <div id="videoClipList" class="flex-1 overflow-y-auto space-y-2 max-h-[500px] pr-1">
+            <!-- Dynamic Clip Cards -->
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <!-- ==================== TAB 5: ROSTER ==================== -->
+    <!-- ==================== TAB 4: ROSTER ==================== -->
     <section id="viewRoster" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h2 class="font-bold text-slate-100 flex items-center space-x-2">
-          <i data-lucide="users" class="w-4 h-4 text-orange-500"></i>
-          <span>Team Roster Manager</span>
-        </h2>
-        <button onclick="addRosterPlayerPrompt()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
-          + Add Player
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="rosterCards">
-      </div>
-    </section>
-
-    <!-- ==================== TAB 6: PLAYBOOK ==================== -->
-    <section id="viewPlaybook" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h2 class="font-bold text-slate-100 flex items-center space-x-2">
-          <i data-lucide="book-open" class="w-4 h-4 text-orange-500"></i>
-          <span>Playbook Library</span>
-        </h2>
-        <button onclick="addPlaybookItemPrompt()" class="bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
-          + Add Play Call
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="playbookCards">
-      </div>
-    </section>
-
-  </main>
-
-  <!-- SYNERGY INTEGRATION MODAL -->
-  <div id="synergyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-5">
-      
-      <button onclick="closeSynergyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
-
-      <div class="flex items-center space-x-3">
-        <div class="p-2.5 bg-orange-500/20 text-orange-400 rounded-xl border border-orange-500/30">
-          <i data-lucide="zap" class="w-6 h-6"></i>
-        </div>
-        <div>
-          <h3 class="font-bold text-lg text-white">Synergy Sports Integration Hub</h3>
-          <p class="text-xs text-slate-400">Import Synergy exported CSV or sync direct play-by-play feeds</p>
-        </div>
-      </div>
-
-      <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
-        <button id="modalTabCsv" onclick="switchSynergyModalTab('csv')" class="flex-1 py-2 rounded-md font-semibold text-slate-200 bg-slate-800">Synergy CSV File Import</button>
-        <button id="modalTabApi" onclick="switchSynergyModalTab('api')" class="flex-1 py-2 rounded-md font-semibold text-slate-400 hover:text-white">Direct Synergy API Sync</button>
-      </div>
-
-      <div id="synergyCsvSection" class="space-y-4">
-        <div class="border-2 border-dashed border-slate-700 hover:border-orange-500/50 rounded-xl p-8 text-center bg-slate-950/50 transition cursor-pointer" onclick="document.getElementById('csvFileInput').click()">
-          <i data-lucide="upload-cloud" class="w-10 h-10 text-orange-400 mx-auto mb-2"></i>
-          <p class="text-sm font-semibold text-slate-200">Click or Drag Synergy CSV File Here</p>
-          <p class="text-xs text-slate-500 mt-1">Automatically maps spatial court coordinates and computes xP & POE</p>
-          <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCsvFileUpload(event)">
-        </div>
-      </div>
-
-      <div id="synergyApiSection" class="hidden space-y-4 text-xs">
-        <div>
-          <label class="block font-medium text-slate-400 mb-1">SYNERGY API BEARER TOKEN / KEY</label>
-          <input type="password" id="synergyApiKey" placeholder="syn_live_a84f..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
-        </div>
-
-        <div>
-          <label class="block font-medium text-slate-400 mb-1">SYNERGY GAME ID</label>
-          <input type="text" id="synergyGameId" value="68c2e00381501dc4e1cffac5" placeholder="e.g. 68c2e00381501dc4e1cffac5" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-slate-200 font-mono focus:outline-none focus:border-orange-500">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 pt-2">
-          <button onclick="fetchSynergyApiData()" class="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition flex items-center justify-center space-x-1.5">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-            <span>Fetch Live Feed</span>
-          </button>
-          <button onclick="loadDemoSynergyBatch()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1.5">
-            <i data-lucide="play" class="w-4 h-4 text-orange-400"></i>
-            <span>Load Demo Batch</span>
-          </button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
+<!-- ... existing code ... -->
   <!-- APPLICATION CODE & ENGINE -->
   <script>
     let state = {
       activeTab: 'tracker',
       activeBaseline: 'JUCO',
-      selectedCoords: { x: 250, y: 100 },
-      selectedDistanceFt: 19.8,
+      selectedCoords: { x: 250, y: 100, distFt: 19.8 },
       games: [
         {
           id: 'game_1',
@@ -677,20 +320,26 @@
       ]
     };
 
-    // Calculate xP and precise distance from rim (Basket at X:250, Y:52)
-    function calculateDistanceFt(x, y) {
-      const dx = x - 250;
-      const dy = y - 52;
-      const distPx = Math.sqrt(dx * dx + dy * dy);
-      return parseFloat((distPx / 10).toFixed(1)); // 10px per foot scale
-    }
-
-    function calculateExpectedPoints(x, y, shotType, contest, outcome) {
+    // Calculate xP with Distance Sensitivity
+    function calculateExpectedPoints(x, y, shotType, contest, outcome, distFtInput) {
       if (outcome === 'Turnover') return 0.0;
       
-      const distFt = calculateDistanceFt(x, y);
+      const dx = x - 250;
+      const dy = y - 52;
+      const distFt = distFtInput !== undefined ? distFtInput : (Math.sqrt(dx * dx + dy * dy) / 10);
+      
       const is3Pt = (y > 140 && distFt > 20.75) || (y <= 140 && (x < 50 || x > 450));
-      let baseVal = is3Pt ? 1.05 : (distFt < 5 ? 1.18 : 0.82);
+      let baseVal = 1.0;
+      
+      if (is3Pt) {
+        baseVal = 1.05; // 3-Pointer baseline (~35% eFG)
+      } else if (distFt < 4.5) {
+        baseVal = 1.35; // Rim / Layup
+      } else if (distFt < 14) {
+        baseVal = 0.90; // Paint / Floater
+      } else {
+        baseVal = 0.78; // Midrange
+      }
 
       if (state.activeBaseline === 'JUCO') baseVal *= 0.96;
       if (state.activeBaseline === 'NCAA_D1') baseVal *= 1.04;
@@ -702,64 +351,30 @@
       return parseFloat(Math.min(Math.max(baseVal, 0.20), 2.70).toFixed(2));
     }
 
-    // Convert Synergy location description strings to SVG Court (X,Y)
-    function parseSynergyLocationToCoords(descStr) {
-      const lower = (descStr || '').toLowerCase();
-      let x = 250, y = 100;
+    function handleCourtClick(e) {
+      const svg = document.getElementById('courtSvg');
+      const rect = svg.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * 500);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * 470);
 
-      if (lower.includes('left wing') || lower.includes('left 3pt')) { x = 90; y = 180; }
-      else if (lower.includes('right wing') || lower.includes('right 3pt')) { x = 410; y = 180; }
-      else if (lower.includes('top') || lower.includes('high p&r')) { x = 250; y = 230; }
-      else if (lower.includes('left corner')) { x = 35; y = 60; }
-      else if (lower.includes('right corner')) { x = 465; y = 60; }
-      else if (lower.includes('to basket') || lower.includes('at basket') || lower.includes('short')) { x = 250; y = 65; }
-      else if (lower.includes('dribble jumper') || lower.includes('midrange')) { x = 250 + (Math.random() * 80 - 40); y = 130; }
-      else { x = 250 + (Math.random() * 100 - 50); y = 120 + (Math.random() * 60 - 30); }
+      const dx = x - 250;
+      const dy = y - 52;
+      const distFt = parseFloat((Math.sqrt(dx * dx + dy * dy) / 10).toFixed(1));
 
-      return { x: Math.round(x), y: Math.round(y) };
+      state.selectedCoords = { x, y, distFt };
+
+      const activePin = document.getElementById('activePin');
+      activePin.setAttribute('cx', x);
+      activePin.setAttribute('cy', y);
+      activePin.classList.remove('hidden');
+
+      document.getElementById('coordDisplay').innerText = `Location: (X: ${x}, Y: ${y}) • ${distFt} ft from rim`;
+      document.getElementById('formCoordsText').innerText = `Loc: (${x}, ${y}) | Dist: ${distFt} ft`;
+      document.getElementById('logDistance').value = `${distFt} ft`;
+
+      updateCalculatedXp();
     }
 
-    function parseDurationToClockPhase(durationStr) {
-      if (!durationStr) return '22-10s';
-      const parts = durationStr.split(':');
-      if (parts.length >= 2) {
-        const seconds = parseInt(parts[parts.length - 1], 10) || 0;
-        if (seconds <= 8) return 'First 8s';
-        if (seconds > 20) return '<= 10s';
-      }
-      return '22-10s';
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-      populateDropdowns();
-      renderAll();
-      setupVideoListener();
-    });
-
-    function getActiveGame() {
-      return state.games.find(g => g.id === state.activeGameId) || state.games[0];
-    }
-
-    function populateDropdowns() {
-      const gameSel = document.getElementById('gameSelect');
-      gameSel.innerHTML = state.games.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-      gameSel.value = state.activeGameId;
-
-      const playerSel = document.getElementById('logPlayer');
-      playerSel.innerHTML = state.roster.map(r => `<option value="${r.num}">${r.num} - ${r.name}</option>`).join('');
-
-      const filterP = document.getElementById('filterPlayer');
-      filterP.innerHTML = `<option value="ALL">All Players</option>` + state.roster.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
-
-      const playSel = document.getElementById('logPlay');
-      playSel.innerHTML = state.playbook.map(p => `<option value="${p.code}">${p.code} - ${p.name}</option>`).join('');
-
-      const filterPlay = document.getElementById('filterPlay');
-      filterPlay.innerHTML = `<option value="ALL">All Play Calls</option>` + state.playbook.map(p => `<option value="${p.code}">${p.code}</option>`).join('');
-    }
-
-    // TAB SWITCHING ENGINE
     function switchTab(tabId) {
       state.activeTab = tabId;
       const tabMap = {
@@ -792,50 +407,93 @@
       renderAll();
     }
 
-    function switchGame(gameId) {
-      state.activeGameId = gameId;
-      renderAll();
-      showToast("Switched active game");
+    // Video Control Functions
+    function loadLocalVideoFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      const videoSource = document.getElementById('videoSource');
+      const fileUrl = URL.createObjectURL(file);
+      videoSource.src = fileUrl;
+      videoPlayer.load();
+      videoPlayer.play().catch(() => {});
+      showToast(`Loaded local video: ${file.name}`);
     }
 
-    function changeBaseline(val) {
-      state.activeBaseline = val;
-      renderAll();
-      showToast(`xP Baseline changed to ${val}`);
+    function loadVideoFromUrl() {
+      const url = document.getElementById('videoUrlInput').value.trim();
+      if (!url) return;
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      const videoSource = document.getElementById('videoSource');
+      videoSource.src = url;
+      videoPlayer.load();
+      videoPlayer.play().catch(() => {});
+      showToast("Loaded video URL");
     }
 
-    function handleCourtClick(e) {
-      const svg = document.getElementById('courtSvg');
-      const rect = svg.getBoundingClientRect();
-      const x = Math.round(((e.clientX - rect.left) / rect.width) * 500);
-      const y = Math.round(((e.clientY - rect.top) / rect.height) * 470);
-
-      state.selectedCoords = { x, y };
-      state.selectedDistanceFt = calculateDistanceFt(x, y);
-
-      const activePin = document.getElementById('activePin');
-      activePin.setAttribute('cx', x);
-      activePin.setAttribute('cy', y);
-      activePin.classList.remove('hidden');
-
-      const distLine = document.getElementById('distanceLine');
-      distLine.setAttribute('x2', x);
-      distLine.setAttribute('y2', y);
-      distLine.classList.remove('hidden');
-
-      document.getElementById('coordDisplay').innerText = `Location: (X: ${x}, Y: ${y}) • ${state.selectedDistanceFt} ft from rim`;
-      document.getElementById('formCoordsText').innerText = `Loc: (${x}, ${y}) | Dist: ${state.selectedDistanceFt} ft`;
-      document.getElementById('logDistance').value = `${state.selectedDistanceFt} ft`;
-
-      updateCalculatedXp();
+    function setVideoSpeed(speed) {
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      videoPlayer.playbackRate = speed;
+      showToast(`Video speed set to ${speed}x`);
     }
 
-    function updateCalculatedXp() {
-      const outcome = document.getElementById('logOutcome').value;
-      const type = document.getElementById('logShotType').value;
-      const contest = document.getElementById('logContest').value;
-      const xp = calculateExpectedPoints(state.selectedCoords.x, state.selectedCoords.y, type, contest, outcome);
-      document.getElementById('calculatedXpDisplay').innerText = `Calc xP: ${xp.toFixed(2)}`;
+    function seekVideoRelative(seconds) {
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime + seconds);
+    }
+
+    function toggleVideoPlayPause() {
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      if (videoPlayer.paused) videoPlayer.play();
+      else videoPlayer.pause();
+    }
+
+    function updateVideoProgressDisplay() {
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      const curr = videoPlayer.currentTime || 0;
+      const timeStr = formatSecondsToTimeStr(curr);
+      document.getElementById('videoTimeDisplay').innerText = timeStr;
+      const badge = document.getElementById('loggerTimeBadge');
+      if (badge) badge.innerText = `Time: ${timeStr}`;
+    }
+
+    function formatSecondsToTimeStr(secTotal) {
+      const hrs = Math.floor(secTotal / 3600);
+      const mins = Math.floor((secTotal % 3600) / 60);
+      const secs = Math.floor(secTotal % 60);
+      const pad = n => n.toString().padStart(2, '0');
+      return hrs > 0 ? `${pad(hrs)}:${pad(mins)}:${pad(secs)}` : `${pad(mins)}:${pad(secs)}`;
+    }
+
+    function parseTimeStrToSeconds(timeStr) {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':').map(p => parseInt(p, 10) || 0);
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+      return parts[0] || 0;
+    }
+
+    function captureVideoTimestampToLogger() {
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      const timeStr = formatSecondsToTimeStr(videoPlayer.currentTime || 0);
+      document.getElementById('logTimestamp').value = timeStr;
+      
+      const secs = Math.floor(videoPlayer.currentTime || 0) % 30;
+      let phase = '22-10s';
+      if (secs <= 8) phase = 'First 8s';
+      else if (secs >= 20) phase = '<= 10s';
+      document.getElementById('logClockPhase').value = phase;
+
+      showToast(`Captured timestamp ${timeStr} to possession logger`);
+    }
+
+    function seekToPlayClip(timestampStr) {
+      const secs = parseTimeStrToSeconds(timestampStr);
+      switchTab('video');
+      const videoPlayer = document.getElementById('mainVideoPlayer');
+      videoPlayer.currentTime = Math.max(0, secs - 2);
+      videoPlayer.play().catch(() => {});
+      showToast(`Playing clip at ${timestampStr}`);
     }
 
     function handleLogPossession(e) {
@@ -848,14 +506,15 @@
       const shotType = document.getElementById('logShotType').value;
       const contest = document.getElementById('logContest').value;
       const clockPhase = document.getElementById('logClockPhase').value;
-      const timestamp = document.getElementById('logTimestamp').value || '00:00';
+      const timestamp = document.getElementById('logTimestamp').value || '00:00:00';
+      const distFt = state.selectedCoords.distFt || 19.8;
 
       let pts = 0;
       if (outcome === 'Make 3Pts') pts = 3;
       if (outcome === 'Made 2Pts') pts = 2;
       if (outcome === 'Free Throw') pts = 1;
 
-      const xp = calculateExpectedPoints(state.selectedCoords.x, state.selectedCoords.y, shotType, contest, outcome);
+      const xp = calculateExpectedPoints(state.selectedCoords.x, state.selectedCoords.y, shotType, contest, outcome, distFt);
       const poe = parseFloat((pts - xp).toFixed(2));
 
       const newPossession = {
@@ -869,7 +528,7 @@
         contest,
         clockPhase,
         timestamp,
-        distanceFt: state.selectedDistanceFt,
+        distFt,
         x: state.selectedCoords.x,
         y: state.selectedCoords.y,
         pts,
@@ -885,156 +544,6 @@
       showToast(`Logged possession for #${pNum} ${playerObj.name}`);
     }
 
-    function renderAll() {
-      renderCourtPins();
-      renderAnalytics();
-      renderGameLog();
-      renderRoster();
-      renderPlaybook();
-      lucide.createIcons();
-    }
-
-    function renderCourtPins() {
-      const group = document.getElementById('shotPinsGroup');
-      const game = getActiveGame();
-      group.innerHTML = game.possessions.map(p => {
-        const isMake = p.outcome.includes('Make') || p.outcome.includes('Made');
-        const color = isMake ? '#10b981' : '#f43f5e';
-        return `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} - ${p.outcome} (${p.distanceFt || '--'} ft)</title></circle>`;
-      }).join('');
-    }
-
-    function renderAnalytics() {
-      const game = getActiveGame();
-      const filterP = document.getElementById('filterPlayer').value;
-      const filterPlay = document.getElementById('filterPlay').value;
-      const filterClock = document.getElementById('filterClockPhase').value;
-
-      let possessions = game.possessions.filter(p => {
-        if (filterP !== 'ALL' && p.playerName !== filterP) return false;
-        if (filterPlay !== 'ALL' && p.playCode !== filterPlay) return false;
-        if (filterClock !== 'ALL' && p.clockPhase !== filterClock) return false;
-        return true;
-      });
-
-      const totalPoss = possessions.length;
-      const totalPts = possessions.reduce((acc, p) => acc + p.pts, 0);
-      const totalXp = possessions.reduce((acc, p) => acc + p.xp, 0);
-      const netPoe = totalPts - totalXp;
-      const ppp = totalPoss > 0 ? (totalPts / totalPoss).toFixed(2) : '0.00';
-      const avgSqi = totalPoss > 0 ? (totalXp / totalPoss).toFixed(2) : '0.00';
-      const execCount = possessions.filter(p => p.executionStatus === 'Executed').length;
-      const execPct = totalPoss > 0 ? Math.round((execCount / totalPoss) * 100) : 0;
-
-      document.getElementById('kpiPpp').innerText = ppp;
-      document.getElementById('kpiPts').innerText = totalPts;
-      document.getElementById('kpiSqi').innerText = avgSqi;
-      document.getElementById('kpiPoe').innerText = (netPoe >= 0 ? '+' : '') + netPoe.toFixed(2);
-      document.getElementById('kpiExecution').innerText = `${execPct}%`;
-
-      const analyticsGroup = document.getElementById('analyticsShotPinsGroup');
-      analyticsGroup.innerHTML = possessions.map(p => {
-        const isMake = p.outcome.includes('Make') || p.outcome.includes('Made');
-        const color = isMake ? '#10b981' : '#f43f5e';
-        return `<circle cx="${p.x}" cy="${p.y}" r="6.5" fill="${color}" stroke="#ffffff" stroke-width="1.5"><title>${p.playerName} | ${p.clockPhase} | ${p.outcome}</title></circle>`;
-      }).join('');
-
-      const phases = ['First 8s', '22-10s', '<= 10s'];
-      const phaseCardsContainer = document.getElementById('clockPhaseCards');
-      phaseCardsContainer.innerHTML = phases.map(phase => {
-        const phasePoss = game.possessions.filter(p => p.clockPhase === phase);
-        const pCount = phasePoss.length;
-        const pPts = phasePoss.reduce((a, b) => a + b.pts, 0);
-        const pPpp = pCount > 0 ? (pPts / pCount).toFixed(2) : '0.00';
-        const pXp = phasePoss.reduce((a, b) => a + b.xp, 0);
-        const pPoe = (pPts - pXp).toFixed(2);
-
-        return `
-          <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
-            <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
-              <span>${phase}</span>
-              <span class="px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 font-mono">${pCount} Poss</span>
-            </div>
-            <div class="grid grid-cols-3 gap-2 text-center text-xs pt-1">
-              <div>
-                <div class="text-[10px] text-slate-500">PPP</div>
-                <div class="font-bold text-white">${pPpp}</div>
-              </div>
-              <div>
-                <div class="text-[10px] text-slate-500">PTS</div>
-                <div class="font-bold text-emerald-400">${pPts}</div>
-              </div>
-              <div>
-                <div class="text-[10px] text-slate-500">POE</div>
-                <div class="font-bold ${pPoe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${pPoe >= 0 ? '+' : ''}${pPoe}</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const playerMap = {};
-      game.possessions.forEach(p => {
-        if (!playerMap[p.playerName]) playerMap[p.playerName] = { poss: 0, pts: 0, xp: 0 };
-        playerMap[p.playerName].poss++;
-        playerMap[p.playerName].pts += p.pts;
-        playerMap[p.playerName].xp += p.xp;
-      });
-
-      const pTable = document.getElementById('playerAnalyticsTable');
-      pTable.innerHTML = Object.keys(playerMap).map(pName => {
-        const data = playerMap[pName];
-        const playerPpp = (data.pts / data.poss).toFixed(2);
-        const playerSqi = (data.xp / data.poss).toFixed(2);
-        const playerPoe = (data.pts - data.xp).toFixed(2);
-        return `
-          <tr class="hover:bg-slate-800/40 text-slate-200">
-            <td class="p-2 font-medium">${pName}</td>
-            <td class="p-2 text-center font-mono">${data.poss}</td>
-            <td class="p-2 text-center font-bold text-emerald-400">${data.pts}</td>
-            <td class="p-2 text-center font-mono text-orange-400">${playerPpp}</td>
-            <td class="p-2 text-center font-mono text-slate-400">${playerSqi}</td>
-            <td class="p-2 text-center font-mono ${playerPoe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${playerPoe >= 0 ? '+' : ''}${playerPoe}</td>
-          </tr>
-        `;
-      }).join('') || `<tr><td colspan="6" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
-
-      const playMap = {};
-      game.possessions.forEach(p => {
-        if (!playMap[p.playCode]) playMap[p.playCode] = { poss: 0, pts: 0, xp: 0, exec: 0 };
-        playMap[p.playCode].poss++;
-        playMap[p.playCode].pts += p.pts;
-        playMap[p.playCode].xp += p.xp;
-        if (p.executionStatus === 'Executed') playMap[p.playCode].exec++;
-      });
-
-      const pbTable = document.getElementById('playbookAnalyticsTable');
-      pbTable.innerHTML = Object.keys(playMap).map(code => {
-        const data = playMap[code];
-        const playPpp = (data.pts / data.poss).toFixed(2);
-        const playExecPct = Math.round((data.exec / data.poss) * 100);
-        const playSqi = (data.xp / data.poss).toFixed(2);
-        const playPoe = (data.pts - data.xp).toFixed(2);
-        return `
-          <tr class="hover:bg-slate-800/40 text-slate-200">
-            <td class="p-2 font-medium">${code}</td>
-            <td class="p-2 text-center font-mono">${data.poss}</td>
-            <td class="p-2 text-center font-mono text-indigo-400">${playExecPct}%</td>
-            <td class="p-2 text-center font-mono text-orange-400">${playPpp}</td>
-            <td class="p-2 text-center font-mono text-slate-400">${playSqi}</td>
-            <td class="p-2 text-center font-mono ${playPoe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${playPoe >= 0 ? '+' : ''}${playPoe}</td>
-          </tr>
-        `;
-      }).join('') || `<tr><td colspan="6" class="p-4 text-center text-slate-500">No playbook items logged yet</td></tr>`;
-    }
-
-    function resetFilters() {
-      document.getElementById('filterPlayer').value = 'ALL';
-      document.getElementById('filterPlay').value = 'ALL';
-      document.getElementById('filterClockPhase').value = 'ALL';
-      renderAnalytics();
-    }
-
     function renderGameLog() {
       const game = getActiveGame();
       const logTable = document.getElementById('gameLogTable');
@@ -1044,17 +553,21 @@
             <td class="p-2.5 font-mono text-slate-500">${idx + 1}</td>
             <td class="p-2.5 font-semibold text-white">#${p.playerNum} ${p.playerName}</td>
             <td class="p-2.5 text-slate-300">${p.playCode}</td>
-            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">${p.timestamp || '00:00'} (${p.clockPhase || '22-10s'})</span></td>
-            <td class="p-2.5 text-center font-mono text-orange-400">${p.distanceFt || '--'} ft</td>
+            <td class="p-2.5">
+              <div class="flex items-center space-x-1">
+                <span class="font-mono text-slate-400 text-[11px]">${p.timestamp || '00:00'}</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">${p.clockPhase || '22-10s'}</span>
+              </div>
+            </td>
+            <td class="p-2.5 text-center font-mono text-orange-400 font-medium">${p.distFt ? p.distFt + ' ft' : '--'}</td>
             <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${p.executionStatus === 'Executed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">${p.executionStatus}</span></td>
             <td class="p-2.5">${p.outcome}</td>
             <td class="p-2.5 text-center font-bold text-emerald-400">${p.pts}</td>
             <td class="p-2.5 text-center font-mono text-slate-400">${p.xp.toFixed(2)}</td>
             <td class="p-2.5 text-center font-mono ${p.poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${p.poe >= 0 ? '+' : ''}${p.poe.toFixed(2)}</td>
             <td class="p-2.5 text-center">
-              <button onclick="playClipAtTimestamp('${p.timestamp}')" class="px-2 py-1 rounded bg-orange-600/20 text-orange-400 border border-orange-500/30 hover:bg-orange-600/40 transition text-[10px] flex items-center justify-center space-x-1 mx-auto">
-                <i data-lucide="play" class="w-3 h-3"></i>
-                <span>Clip</span>
+              <button onclick="seekToPlayClip('${p.timestamp || '00:00'}')" class="p-1 rounded bg-orange-600/20 text-orange-400 hover:bg-orange-600/40 border border-orange-500/30 transition" title="Play Video Clip">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i>
               </button>
             </td>
             <td class="p-2.5 text-right">
@@ -1065,157 +578,131 @@
           </tr>
         `;
       }).join('') || `<tr><td colspan="12" class="p-6 text-center text-slate-500">No game possessions logged yet</td></tr>`;
+
+      renderVideoClipIndex();
     }
 
-    function deletePossession(id) {
+    function renderVideoClipIndex() {
+      const container = document.getElementById('videoClipList');
+      if (!container) return;
       const game = getActiveGame();
-      game.possessions = game.possessions.filter(p => p.id !== id);
-      renderAll();
-      showToast("Possession deleted");
-    }
-
-    // VIDEO ENGINE CONTROLS
-    function setupVideoListener() {
-      const vid = document.getElementById('gameVideoPlayer');
-      vid.addEventListener('timeupdate', () => {
-        const curSec = Math.floor(vid.currentTime);
-        const mins = Math.floor(curSec / 60).toString().padStart(2, '0');
-        const secs = (curSec % 60).toString().padStart(2, '0');
-        document.getElementById('videoCurrentTimeDisplay').innerText = `${mins}:${secs}`;
-      });
-    }
-
-    function captureCurrentVideoTime() {
-      const vid = document.getElementById('gameVideoPlayer');
-      const curSec = Math.floor(vid.currentTime || 0);
-      const mins = Math.floor(curSec / 60).toString().padStart(2, '0');
-      const secs = (curSec % 60).toString().padStart(2, '0');
-      const timeStr = `${mins}:${secs}`;
       
-      document.getElementById('logTimestamp').value = timeStr;
-      showToast(`Captured Video Timestamp: ${timeStr}`);
+      const badge = document.getElementById('clipCountBadge');
+      if (badge) badge.innerText = `${game.possessions.length} Clips`;
+
+      container.innerHTML = game.possessions.map((p, idx) => `
+        <div onclick="seekToPlayClip('${p.timestamp || '00:00'}')" class="bg-slate-950 hover:bg-slate-800/80 p-3 rounded-xl border border-slate-800 transition cursor-pointer flex items-center justify-between group">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-mono text-xs text-orange-400 font-bold">${p.timestamp || '00:00'}</span>
+              <span class="font-bold text-white text-xs">#${p.playerNum} ${p.playerName}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5">${p.playCode} • ${p.outcome} (${p.distFt ? p.distFt + 'ft' : 'Shot'})</div>
+          </div>
+          <div class="p-2 rounded-lg bg-orange-600/20 group-hover:bg-orange-600 text-orange-400 group-hover:text-white transition">
+            <i data-lucide="play" class="w-4 h-4"></i>
+          </div>
+        </div>
+      `).join('') || `<div class="text-center py-8 text-slate-500 text-xs">No video clips logged yet</div>`;
     }
 
-    function playClipAtTimestamp(timeStr) {
-      switchTab('video');
-      const vid = document.getElementById('gameVideoPlayer');
-      if (!timeStr || !timeStr.includes(':')) {
-        vid.play();
+    function parseSynergyCsvContent(csvText) {
+      const lines = csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length < 2) {
+        showToast("Invalid CSV file format");
         return;
       }
-      const parts = timeStr.split(':');
-      const seconds = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
-      vid.currentTime = Math.max(0, seconds - 2); // Start 2s before play
-      vid.play();
-      showToast(`Jumping to video play clip at ${timeStr}`);
-    }
 
-    function adjustPlaybackSpeed(speed) {
-      const vid = document.getElementById('gameVideoPlayer');
-      vid.playbackRate = speed;
-      showToast(`Playback speed set to ${speed}x`);
-    }
+      const game = getActiveGame();
+      let importedCount = 0;
 
-    function skipVideo(seconds) {
-      const vid = document.getElementById('gameVideoPlayer');
-      vid.currentTime = Math.max(0, vid.currentTime + seconds);
-    }
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 3) continue;
 
-    function loadVideoUrl() {
-      const url = document.getElementById('videoUrlInput').value;
-      if (!url) return;
-      const vid = document.getElementById('gameVideoPlayer');
-      vid.src = url;
-      vid.play();
-      showToast("Loaded new video stream");
-    }
+        const resultStr = cols[1] || cols[0] || '';
+        const descStr = cols[2] || cols[1] || '';
+        const playerStr = cols[3] || 'Unknown Player';
+        const timestampStr = cols[4] || '00:00:10';
+        const durationStr = cols[5] || '00:00:15';
 
-    function handleLocalVideoUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const vid = document.getElementById('gameVideoPlayer');
-      vid.src = URL.createObjectURL(file);
-      vid.play();
-      showToast(`Loaded local video file: ${file.name}`);
-    }
+        const clockPhase = parseDurationToClockPhase(durationStr);
 
-    function renderRoster() {
-      const container = document.getElementById('rosterCards');
-      container.innerHTML = state.roster.map(r => `
-        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-orange-600/20 border border-orange-500/30 text-orange-400 font-black flex items-center justify-center text-sm">
-              #${r.num}
-            </div>
-            <div>
-              <div class="font-bold text-slate-100 text-sm">${r.name}</div>
-              <div class="text-xs text-slate-400">Pos: ${r.pos}</div>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
+        let pts = 0;
+        if (resultStr.includes('Make 3') || descStr.includes('Make 3')) pts = 3;
+        else if (resultStr.includes('Make 2') || descStr.includes('Make 2')) pts = 2;
 
-    function addRosterPlayerPrompt() {
-      const num = prompt("Enter Player Jersey Number:");
-      if (!num) return;
-      const name = prompt("Enter Player Full Name:");
-      if (!name) return;
-      state.roster.push({ num, name, pos: 'G' });
-      populateDropdowns();
-      renderRoster();
-      showToast(`Added #${num} ${name} to roster`);
-    }
+        const coords = parseSynergyLocationToCoords(descStr);
+        const dx = coords.x - 250;
+        const dy = coords.y - 52;
+        const distFt = parseFloat((Math.sqrt(dx * dx + dy * dy) / 10).toFixed(1));
 
-    function renderPlaybook() {
-      const container = document.getElementById('playbookCards');
-      container.innerHTML = state.playbook.map(p => `
-        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
-          <div>
-            <div class="font-bold text-slate-100 text-sm">${p.name}</div>
-            <div class="text-xs text-slate-400">Code: <span class="text-orange-400 font-mono">${p.code}</span> | Cat: ${p.cat}</div>
-          </div>
-        </div>
-      `).join('');
-    }
+        const xp = calculateExpectedPoints(coords.x, coords.y, 'Jump Shot', 'Slight', resultStr, distFt);
 
-    function addPlaybookItemPrompt() {
-      const code = prompt("Enter Short Play Code:");
-      if (!code) return;
-      const name = prompt("Enter Full Play Description Name:");
-      if (!name) return;
-      state.playbook.push({ code, name, cat: 'Custom' });
-      populateDropdowns();
-      renderPlaybook();
-      showToast(`Added play ${code} to playbook`);
-    }
-
-    function openSynergyModal() {
-      document.getElementById('synergyModal').classList.remove('hidden');
-    }
-
-    function closeSynergyModal() {
-      document.getElementById('synergyModal').classList.add('hidden');
-    }
-
-    function switchSynergyModalTab(tab) {
-      if (tab === 'csv') {
-        document.getElementById('synergyCsvSection').classList.remove('hidden');
-        document.getElementById('synergyApiSection').classList.add('hidden');
-        document.getElementById('modalTabCsv').className = 'flex-1 py-2 rounded-md font-semibold text-slate-200 bg-slate-800';
-        document.getElementById('modalTabApi').className = 'flex-1 py-2 rounded-md font-semibold text-slate-400 hover:text-white';
-      } else {
-        document.getElementById('synergyCsvSection').classList.add('hidden');
-        document.getElementById('synergyApiSection').classList.remove('hidden');
-        document.getElementById('modalTabApi').className = 'flex-1 py-2 rounded-md font-semibold text-slate-200 bg-slate-800';
-        document.getElementById('modalTabCsv').className = 'flex-1 py-2 rounded-md font-semibold text-slate-400 hover:text-white';
+        game.possessions.push({
+          id: Date.now() + i,
+          playerNum: playerStr.split(' ')[0] || `${i}`,
+          playerName: playerStr,
+          playCode: descStr.split('>')[1]?.trim() || 'Synergy Action',
+          executionStatus: 'Executed',
+          outcome: resultStr || 'Made 2Pts',
+          shotType: 'Jump Shot',
+          contest: 'Slight',
+          clockPhase,
+          timestamp: timestampStr,
+          distFt,
+          x: coords.x,
+          y: coords.y,
+          pts,
+          xp,
+          poe: parseFloat((pts - xp).toFixed(2)),
+          ppp: pts
+        });
+        importedCount++;
       }
+
+      closeSynergyModal();
+      renderAll();
+      showToast(`Imported ${importedCount} Synergy possessions!`);
     }
 
-    function handleCsvFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    function loadDemoSynergyBatch() {
+      const game = getActiveGame();
+      const demoBatch = [
+        { num: '32', name: 'Isaiah Valenzuela', play: 'P&R Ball Handler', desc: 'Dribble Off Pick > To Basket > Make 2 Pts', outcome: 'Make 2 Pts', pts: 2, phase: 'First 8s', time: '00:10:09', x: 250, y: 70 },
+        { num: '20', name: 'Christian Warren', play: 'Spot-Up', desc: 'Spot-Up > No Dribble > Miss 3 Pts', outcome: 'Miss 3 Pts', pts: 0, phase: '22-10s', time: '00:00:22', x: 80, y: 160 },
+        { num: '1', name: 'Zack Moritz', play: 'P&R Ball Handler', desc: 'High P&R > Go Away > Miss 2 Pts', outcome: 'Miss 2 Pts', pts: 0, phase: '<= 10s', time: '00:00:10', x: 220, y: 110 },
+        { num: '10', name: 'Jack Rivera', play: 'Off Screen', desc: 'Flare > Guarded > Long/3pt > Make 3 Pts', outcome: 'Make 3 Pts', pts: 3, phase: 'First 8s', time: '00:00:20', x: 420, y: 150 }
+      ];
 
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        parseSynergyCsvContent(event.target.result);
+      demoBatch.forEach((d, idx) => {
+        const dx = d.x - 250;
+        const dy = d.y - 52;
+        const distFt = parseFloat((Math.sqrt(dx * dx + dy * dy) / 10).toFixed(1));
+        const xp = calculateExpectedPoints(d.x, d.y, 'Jump Shot', 'Slight', d.outcome, distFt);
+        game.possessions.push({
+          id: Date.now() + idx,
+          playerNum: d.num,
+          playerName: d.name,
+          playCode: d.play,
+          executionStatus: 'Executed',
+          outcome: d.outcome,
+          shotType: 'Jump Shot',
+          contest: 'Slight',
+          clockPhase: d.phase,
+          timestamp: d.time,
+          distFt,
+          x: d.x,
+          y: d.y,
+          pts: d.pts,
+          xp,
+          poe: parseFloat((d.pts - xp).toFixed(2)),
+          ppp: d.pts
+        });
+      });
+
+      closeSynergyModal();
+      renderAll();
+      showToast("Loaded Demo Synergy Batch!");
+    }
+<!-- ... existing code ... -->
