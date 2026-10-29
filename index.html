@@ -82,6 +82,16 @@
         <span class="font-bold text-slate-200"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span>INTERACTIVE SHOT LOCATION</span>
         <span class="text-slate-400 text-[11px] font-semibold">Click court to place shot</span>
       </div>
+      <div class="w-full max-w-[480px] grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+        <select id="fPlay" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
+        <select id="fShot" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
+        <select id="fPlayer" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
+        <select id="fOut" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
+      </div>
+      <div class="w-full max-w-[480px] flex items-center justify-between text-[11px] text-slate-400 mb-2 px-1">
+        <span id="chartSummary"></span>
+        <button onclick="clearChartFilter()" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-400 font-bold">Clear</button>
+      </div>
       <div class="relative w-full max-w-[480px] aspect-[500/470] bg-[#1a1008] rounded-xl border-4 border-[#2d1c0e] overflow-hidden">
         <svg id="courtSvg" viewBox="0 0 500 470" class="w-full h-full court-svg cursor-crosshair" onclick="handleCourtClick(event)">
           <rect width="500" height="470" fill="#22150c"/>
@@ -181,8 +191,15 @@
       <h2 class="font-bold text-sm text-slate-100">Game Possession Log</h2>
       <button onclick="exportGameCsv()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700">Export CSV</button>
     </div>
+    <div class="flex flex-wrap gap-2 items-center text-xs">
+      <select id="logField" class="field !w-auto !p-1.5 !text-[11px]" onchange="setLogSearch()">
+        <option value="all">Search: All</option><option value="player">Player</option><option value="play">Play call</option><option value="time">Time / phase</option><option value="outcome">Outcome</option>
+      </select>
+      <input id="logQ" type="search" placeholder="Search..." oninput="setLogSearch()" class="field !w-auto flex-1 min-w-[140px] !p-1.5 !text-[11px]">
+      <span id="logCount" class="text-[11px] text-slate-400"></span>
+    </div>
     <div class="overflow-x-auto"><table class="w-full text-left text-xs">
-      <thead><tr class="border-b border-slate-800 text-slate-400 font-semibold bg-[#080d1a]"><th class="p-2">#</th><th class="p-2">PLAYER</th><th class="p-2">PLAY CALL</th><th class="p-2">TIME/PHASE</th><th class="p-2 text-center">DIST</th><th class="p-2">OUTCOME</th><th class="p-2 text-center">PTS</th><th class="p-2 text-center">xP</th><th class="p-2 text-center">POE</th><th class="p-2 text-center">CLIP</th><th class="p-2 text-right"></th></tr></thead>
+      <thead><tr id="logHead" class="border-b border-slate-800 text-slate-400 font-semibold bg-[#080d1a]"></tr></thead>
       <tbody id="gameLogTable" class="divide-y divide-slate-800/40"></tbody>
     </table></div>
   </section>
@@ -252,7 +269,7 @@ const defaults = () => ({
 let state = defaults();
 try { const s = localStorage.getItem(STORE_KEY); if (s) state = Object.assign(defaults(), JSON.parse(s)); } catch(e) {}
 // UI-only state (not persisted)
-const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open'};
+const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', logQ:'', logField:'all', sortKey:'idx', sortDir:1};
 
 function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {} }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -316,7 +333,20 @@ function markSelected() {
   document.querySelectorAll('.cl').forEach(b => b.classList.toggle('sel', b.dataset.v === ui.contest));
 }
 
+function fillFilter(id, label, pairs, key) {
+  const el = document.getElementById(id);
+  if (!pairs.some(p => p[0] === ui[key])) ui[key] = '';
+  el.innerHTML = `<option value="">${label}</option>` + pairs.map(p => `<option value="${esc(p[0])}">${esc(p[1])}</option>`).join('');
+  el.value = ui[key];
+}
 function populateDropdowns() {
+  fillFilter('fPlay', 'All plays', state.playbook.map(p => [p.code, p.code]), 'fPlay');
+  fillFilter('fShot', 'All shot types', SHOT_TYPES.map(t => [t, t]), 'fShot');
+  fillFilter('fPlayer', 'All players', state.roster.map(r => [r.num, '#' + r.num + ' ' + r.name]), 'fPlayer');
+  fillFilter('fOut', 'All outcomes', [['Made','Made'],['Miss','Missed'],['Made3','Made 3PT'],['Miss3','Missed 3PT'],['Made2','Made 2PT'],['Miss2','Missed 2PT']], 'fOut');
+  populateMain();
+}
+function populateMain() {
   const gs = document.getElementById('gameSelect');
   gs.innerHTML = state.games.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
   gs.value = state.activeGameId;
@@ -403,9 +433,29 @@ function renderAll() {
   lucide.createIcons();
 }
 
-function renderCourtPins(poss) {
-  document.getElementById('shotPinsGroup').innerHTML = poss.filter(p => p.fga).map(p =>
-    `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${p.fgm ? '#10b981' : '#f43f5e'}" stroke="#fff" stroke-width="1.5"><title>${esc(p.playerName)} - ${esc(outcomeLabel(p))}</title></circle>`).join('');
+function outcomeMatch(p) {
+  const o = ui.fOut; if (!o) return true;
+  if (!p.fga) return false;
+  const resOk = o.startsWith('Made') ? p.fgm : !p.fgm;
+  const ptOk = o.endsWith('3') ? p.is3 : o.endsWith('2') ? !p.is3 : true;
+  return resOk && ptOk;
+}
+function chartFilter(p) {
+  return (!ui.fPlay || p.playCode === ui.fPlay) && (!ui.fShot || (p.shotType === ui.fShot && p.result !== 'TO')) && (!ui.fPlayer || p.playerNum === ui.fPlayer) && outcomeMatch(p);
+}
+function setChartFilter() {
+  ui.fPlay = document.getElementById('fPlay').value; ui.fShot = document.getElementById('fShot').value; ui.fPlayer = document.getElementById('fPlayer').value; ui.fOut = document.getElementById('fOut').value;
+  renderAll();
+}
+function clearChartFilter() { ui.fPlay = ui.fShot = ui.fPlayer = ui.fOut = ''; populateDropdowns(); renderAll(); }
+function renderCourtPins(all) {
+  const poss = all.filter(chartFilter), shots = poss.filter(p => p.fga);
+  document.getElementById('shotPinsGroup').innerHTML = shots.map(p =>
+    `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${p.fgm ? '#10b981' : '#f43f5e'}" stroke="#fff" stroke-width="1.5"><title>${esc(p.playerName)} | ${esc(p.playCode)} | ${esc(p.shotType)} | ${esc(outcomeLabel(p))}</title></circle>`).join('');
+  const made = shots.filter(p => p.fgm).length, pts = poss.reduce((a, p) => a + p.pts, 0);
+  document.getElementById('chartSummary').innerText = poss.length
+    ? `${shots.length} FGA · ${made} made (${pct(made, shots.length)}) · ${poss.length ? (pts / poss.length).toFixed(2) : '0.00'} PPP on ${poss.length} poss`
+    : 'No possessions match these filters';
 }
 
 const fmtSigned = n => (n >= 0 ? '+' : '') + n.toFixed(2);
@@ -448,10 +498,25 @@ function renderAnalytics(poss) {
     || `<tr><td colspan="4" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
 }
 
-function renderGameLog(poss) {
-  document.getElementById('gameLogTable').innerHTML = poss.map((p, i) => `
+const LOG_COLS = [['idx','#'],['player','PLAYER'],['play','PLAY CALL'],['time','TIME/PHASE'],['dist','DIST'],['outcome','OUTCOME'],['pts','PTS'],['xp','xP'],['poe','POE']];
+function sortLog(k) { if (ui.sortKey === k) ui.sortDir *= -1; else { ui.sortKey = k; ui.sortDir = 1; } renderAll(); }
+function setLogSearch() { ui.logQ = document.getElementById('logQ').value; ui.logField = document.getElementById('logField').value; renderAll(); }
+function renderGameLog(all) {
+  document.getElementById('logHead').innerHTML = LOG_COLS.map(c =>
+    `<th class="p-2 cursor-pointer select-none hover:text-white ${['dist','pts','xp','poe'].includes(c[0]) ? 'text-center' : ''}" onclick="sortLog('${c[0]}')">${c[1]}${ui.sortKey === c[0] ? (ui.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '<th class="p-2 text-center">CLIP</th><th class="p-2"></th>';
+  const q = ui.logQ.trim().toLowerCase();
+  let rows = all.map((p, i) => ({...p, idx:i + 1}));
+  if (q) rows = rows.filter(p => {
+    const f = {player:`${p.playerNum} ${p.playerName}`, play:p.playCode, time:`${p.timestamp} ${p.clockPhase}`, outcome:outcomeLabel(p)};
+    return (ui.logField === 'all' ? Object.values(f).join(' ') : f[ui.logField]).toLowerCase().includes(q);
+  });
+  const key = {idx:p => p.idx, player:p => p.playerName.toLowerCase(), play:p => p.playCode.toLowerCase(), time:p => parseTs(p.timestamp) ?? -1,
+    outcome:p => outcomeLabel(p), dist:p => p.result === 'TO' ? -1 : p.distFt, pts:p => p.pts, xp:p => p.xp, poe:p => p.poe}[ui.sortKey];
+  rows.sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : a.idx - b.idx) * ui.sortDir; });
+  document.getElementById('logCount').innerText = `Showing ${rows.length} of ${all.length}`;
+  document.getElementById('gameLogTable').innerHTML = rows.map(p => `
     <tr class="text-slate-200">
-      <td class="p-2 text-slate-500 font-mono">${i + 1}</td>
+      <td class="p-2 text-slate-500 font-mono">${p.idx}</td>
       <td class="p-2 font-bold">#${esc(p.playerNum)} ${esc(p.playerName)}</td>
       <td class="p-2">${esc(p.playCode)}</td>
       <td class="p-2">${esc(p.timestamp)} (${esc(p.clockPhase)})</td>
@@ -462,7 +527,7 @@ function renderGameLog(poss) {
       <td class="p-2 text-center font-mono ${p.poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(p.poe)}</td>
       <td class="p-2 text-center"><button onclick="playClipAtTimestamp(${p.id})" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold text-[10px]">Clip</button></td>
       <td class="p-2 text-right"><button onclick="deletePossession(${p.id})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></td>
-    </tr>`).join('') || `<tr><td colspan="11" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="11" class="p-4 text-center text-slate-500">${all.length ? 'No possessions match your search' : 'No possessions logged yet'}</td></tr>`;
 }
 
 function renderRoster(poss) {
