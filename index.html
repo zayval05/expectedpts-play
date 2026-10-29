@@ -51,6 +51,7 @@
         <option value="NCAA_D1">NCAA D1 Standard</option>
         <option value="NCAA_D2">NCAA D2 Standard</option>
         <option value="NCAA_D3">NCAA D3 Standard</option>
+        <option value="ROSTER">Active Roster Stats</option>
       </select>
       <button onclick="showToast('Sign-in not implemented yet')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-200 text-xs font-bold">Sign In</button>
     </div>
@@ -82,33 +83,39 @@
         <span class="font-bold text-slate-200"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span>INTERACTIVE SHOT LOCATION</span>
         <span class="text-slate-400 text-[11px] font-semibold">Click court to place shot</span>
       </div>
-      <div class="w-full max-w-[480px] grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+      <div class="w-full max-w-[480px] grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
         <select id="fPlay" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
         <select id="fShot" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
         <select id="fPlayer" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
         <select id="fOut" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
+        <select id="fLoc" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
       </div>
       <div class="w-full max-w-[480px] flex items-center justify-between text-[11px] text-slate-400 mb-2 px-1">
         <span id="chartSummary"></span>
         <button onclick="clearChartFilter()" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-400 font-bold">Clear</button>
       </div>
-      <div class="relative w-full max-w-[480px] aspect-[500/470] bg-[#1a1008] rounded-xl border-4 border-[#2d1c0e] overflow-hidden">
-        <svg id="courtSvg" viewBox="0 0 500 470" class="w-full h-full court-svg cursor-crosshair" onclick="handleCourtClick(event)">
-          <rect width="500" height="470" fill="#22150c"/>
-          <path d="M0,30H500M0,60H500M0,90H500M0,120H500M0,150H500M0,180H500M0,210H500M0,240H500M0,270H500M0,300H500M0,330H500M0,360H500M0,390H500M0,420H500M0,450H500" stroke="#160d07" stroke-width="1.5"/>
-          <rect x="10" y="10" width="480" height="450" fill="none" stroke="#fff" stroke-width="3"/>
-          <rect x="170" y="10" width="160" height="180" fill="#180e07" stroke="#fff" stroke-width="2.5"/>
-          <path d="M 210,10 A 40,40 0 0,0 290,10" fill="none" stroke="#fff" stroke-width="2"/>
-          <circle cx="250" cy="190" r="60" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="6,6"/>
-          <!-- 3pt line: radius 22.15 ft (221.5px) centered on the rim; corners 21.65 ft (216px) -->
-          <path d="M 34,10 L 34,99 A 221.5,221.5 0 0,0 466,99 L 466,10" fill="none" stroke="#fff" stroke-width="3"/>
-          <path d="M 210,460 A 40,40 0 0,1 290,460" fill="none" stroke="#fff" stroke-width="2.5"/>
-          <line x1="220" y1="38" x2="280" y2="38" stroke="#fff" stroke-width="4"/>
-          <circle cx="250" cy="50" r="14" fill="none" stroke="#f97316" stroke-width="3.5"/>
-          <line id="distanceLine" x1="250" y1="50" x2="250" y2="50" stroke="#f97316" stroke-width="2" stroke-dasharray="4,4" class="hidden"/>
-          <g id="shotPinsGroup"></g>
-          <circle id="activePin" cx="-50" cy="-50" r="8" fill="#f97316" stroke="#fff" stroke-width="2.5" class="animate-pulse hidden"/>
-        </svg>
+      <div class="relative w-full max-w-[480px] aspect-[520/490] bg-[#1a1008] rounded-xl border-4 border-[#2d1c0e] overflow-hidden">
+        <svg id="courtSvg" viewBox="-10 0 520 490" class="w-full h-full court-svg cursor-crosshair" onclick="handleCourtClick(event)">
+            <!-- Scale: 10px = 1ft. Baseline y=10, centerline of court x=250, rim center (250,62.5) = 5.25 ft from baseline -->
+            <rect x="-10" y="0" width="520" height="490" fill="#22150c"/>
+            <path d="M-10,30H510M-10,60H510M-10,90H510M-10,120H510M-10,150H510M-10,180H510M-10,210H510M-10,240H510M-10,270H510M-10,300H510M-10,330H510M-10,360H510M-10,390H510M-10,420H510M-10,450H510M-10,480H510" stroke="#160d07" stroke-width="1.5"/>
+            <rect x="0" y="10" width="500" height="470" fill="none" stroke="#fff" stroke-width="3"/>
+            <!-- Lane: 12 ft wide, free throw line 19 ft from baseline -->
+            <rect x="190" y="10" width="120" height="190" fill="#180e07" stroke="#fff" stroke-width="2.5"/>
+            <path d="M 190,200 A 60,60 0 0,0 310,200" fill="none" stroke="#fff" stroke-width="2"/>
+            <path d="M 190,200 A 60,60 0 0,1 310,200" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="6,6"/>
+            <!-- Restricted area: 4 ft radius from rim center -->
+            <path d="M 210,10 L 210,62.5 A 40,40 0 0,0 290,62.5 L 290,10" fill="none" stroke="#fff" stroke-width="2"/>
+            <!-- NCAA men 3pt: arc 22.146 ft (265.75 in) from rim center; corners 21 ft 8 in -->
+            <path d="M 33.33,10 L 33.33,108.31 A 221.46,221.46 0 0,0 466.67,108.31 L 466.67,10" fill="none" stroke="#fff" stroke-width="3"/>
+            <path d="M 190,480 A 60,60 0 0,1 310,480" fill="none" stroke="#fff" stroke-width="2.5"/>
+            <line x1="220" y1="50" x2="280" y2="50" stroke="#fff" stroke-width="4"/>
+            <line x1="250" y1="50" x2="250" y2="55" stroke="#f97316" stroke-width="2"/>
+            <circle cx="250" cy="62.5" r="7.5" fill="none" stroke="#f97316" stroke-width="3"/>
+            <line id="distanceLine" x1="250" y1="62.5" x2="250" y2="62.5" stroke="#f97316" stroke-width="2" stroke-dasharray="4,4" class="hidden"/>
+            <g id="shotPinsGroup"></g>
+            <circle id="activePin" cx="-50" cy="-50" r="8" fill="#f97316" stroke="#fff" stroke-width="2.5" class="animate-pulse hidden"/>
+          </svg>
       </div>
       <div class="mt-3 w-full max-w-[480px] bg-[#080d1a] border border-slate-800 rounded-xl p-2.5 grid grid-cols-3 text-center text-xs">
         <div><div class="text-[10px] font-bold text-slate-500 tracking-wider">LOCATION</div><div id="readoutLocation" class="font-bold text-amber-400 mt-0.5">Select Point</div></div>
@@ -123,7 +130,7 @@
         <div class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs">Est xP: <span id="estXpVal">--</span></div>
       </div>
       <form id="loggerForm" onsubmit="handleLogPossession(event)" class="space-y-4 text-xs">
-        <div><label class="lbl">PLAYER</label><select id="logPlayer" class="field"></select></div>
+        <div><label class="lbl">PLAYER</label><select id="logPlayer" class="field" onchange="updateCalculatedXp()"></select></div>
         <div><label class="lbl">PLAY CALL / SET</label><select id="logPlay" class="field"></select></div>
         <div>
           <label class="lbl">OUTCOME <span class="text-slate-500 font-medium">(2 vs 3 comes from the shot location)</span></label>
@@ -133,6 +140,10 @@
             <option value="FT">Shooting Foul Drawn (FTs)</option>
             <option value="TO">Turnover</option>
           </select>
+        </div>
+        <div id="ftBox" class="grid grid-cols-2 gap-3" style="display:none">
+          <div><label class="lbl">FT MADE</label><input id="ftMade" type="number" min="0" value="1" class="field" oninput="updateCalculatedXp()"></div>
+          <div><label class="lbl">FT ATTEMPTS</label><input id="ftAtt" type="number" min="1" value="2" class="field" oninput="updateCalculatedXp()"></div>
         </div>
         <div><label class="lbl">SHOT TYPE</label><div class="grid grid-cols-3 gap-2" id="shotTypeGrid"></div></div>
         <div><label class="lbl">CONTEST LEVEL</label><div class="grid grid-cols-3 gap-2" id="contestGrid"></div></div>
@@ -172,7 +183,7 @@
     <div class="card space-y-3">
       <h3 class="font-bold text-xs text-slate-200">Player Shooting &amp; Efficiency Breakdown</h3>
       <div class="overflow-x-auto"><table class="w-full text-left text-[11px]">
-        <thead><tr class="border-b border-slate-800 text-slate-400 font-semibold"><th>PLAYER</th><th class="text-center">POSS</th><th class="text-center">PTS</th><th class="text-center">FG</th><th class="text-center">FG%</th><th class="text-center">3P</th><th class="text-center">3P%</th><th class="text-center">PPP</th><th class="text-center">POE</th></tr></thead>
+        <thead><tr class="border-b border-slate-800 text-slate-400 font-semibold"><th>PLAYER</th><th class="text-center">POSS</th><th class="text-center">PTS</th><th class="text-center">FG</th><th class="text-center">FG%</th><th class="text-center">3P</th><th class="text-center">3P%</th><th class="text-center">FT</th><th class="text-center">FT%</th><th class="text-center">PPP</th><th class="text-center">POE</th></tr></thead>
         <tbody id="playerAnalyticsTable" class="divide-y divide-slate-800/40"></tbody>
       </table></div>
     </div>
@@ -235,6 +246,33 @@
   </section>
 </main>
 
+<!-- ROSTER STATS MODAL -->
+<div id="statsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
+  <div class="bg-[#0d1424] border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4 relative">
+    <button onclick="closeStatsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div><h3 class="font-bold text-base text-white">Shooting Stats</h3><p id="statsTitle" class="text-xs text-amber-400 font-bold"></p></div>
+    <p class="text-[11px] text-slate-400">Used when the baseline is set to "Active Roster Stats". Enter makes and attempts, or type a percentage to fill in makes from the attempts.</p>
+    <div class="grid grid-cols-3 gap-2 text-xs">
+      <div><label class="lbl">FG MADE</label><input id="sFgm" type="number" min="0" class="field" oninput="syncPct()"></div>
+      <div><label class="lbl">FG ATT</label><input id="sFga" type="number" min="0" class="field" oninput="syncPct()"></div>
+      <div><label class="lbl">FG %</label><input id="sFgp" type="number" min="0" max="100" step="0.1" class="field" oninput="pctToMakes('fg')"></div>
+      <div><label class="lbl">3P MADE</label><input id="s3m" type="number" min="0" class="field" oninput="syncPct()"></div>
+      <div><label class="lbl">3P ATT</label><input id="s3a" type="number" min="0" class="field" oninput="syncPct()"></div>
+      <div><label class="lbl">3P %</label><input id="s3p" type="number" min="0" max="100" step="0.1" class="field" oninput="pctToMakes('3p')"></div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-xs">
+      <div><label class="lbl">FT MADE</label><input id="sFtm" type="number" min="0" class="field" oninput="syncPct()"></div>
+      <div><label class="lbl">FT ATT</label><input id="sFta" type="number" min="0" class="field" oninput="syncPct()"></div>
+      <div><label class="lbl">FT %</label><input id="sFtp" type="number" min="0" max="100" step="0.1" class="field" oninput="pctToMakes('ft')"></div>
+    </div>
+    <div id="stats2p" class="text-[11px] text-slate-400"></div>
+    <div class="flex gap-2">
+      <button onclick="clearStats()" class="flex-1 py-2 bg-slate-800 text-slate-200 text-xs font-bold rounded-xl border border-slate-700">Clear</button>
+      <button onclick="saveStats()" class="flex-1 py-2 bg-amber-500 text-slate-950 text-xs font-bold rounded-xl">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- SYNERGY MODAL -->
 <div id="synergyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
   <div class="bg-[#0d1424] border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4 relative">
@@ -255,9 +293,13 @@ const STORE_KEY = 'playvalue_v36';
 const SHOT_TYPES = ['Catch & Shoot','Off Dribble','Layup','Dunk','Post Shot','Other'];
 const SHOT_MULT = {'Catch & Shoot':1.04,'Off Dribble':0.94,'Layup':1.0,'Dunk':1.12,'Post Shot':0.97,'Other':0.95};
 const CONTESTS = [['Open','3 - Open','green',1.25],['Slight','2 - Slight','amber',1.0],['Heavy','1 - Heavy','red',0.72]];
+const PRIOR_ATT = 20; // attempts of league-average prior blended into each player's %
 const BASELINE_MULT = {JUCO:0.96, NCAA_D1:1.04, NCAA_D2:1.0, NCAA_D3:0.98};
-// Geometry: 10px = 1ft, rim at (250,50)
-const RIM = {x:250,y:50}, ARC_PX = 221.5, CORNER_DX = 216, CORNER_Y = 99;
+// Geometry: 10px = 1ft; baseline y=10; rim center is 5.25 ft from the baseline
+const RIM = {x:250, y:62.5}, ARC_PX = 221.46 /* 22 ft 1.75 in */, CORNER_DX = 216.67 /* 21 ft 8 in */;
+const LANE_HALF = 60, SLOT_HALF = 120, ELBOW_DEG = 35, SHORT_DEG = 64; // 2pt zones outside the lane: Elbow = up to 35 deg from the rim's up-court axis, Wing = 35-64 deg, Short Corner = beyond 64 deg (toward the baseline)
+const ZONES = ['Corner 3','Wing 3','Slot 3','Top of Key 3','Short Corner','Wing','Elbow','Nail','In The Paint','Restricted Area'];
+const CORNER_Y = RIM.y + Math.sqrt(ARC_PX ** 2 - CORNER_DX ** 2);
 
 const defaults = () => ({
   activeBaseline:'JUCO', activeGameId:'game_1',
@@ -269,7 +311,7 @@ const defaults = () => ({
 let state = defaults();
 try { const s = localStorage.getItem(STORE_KEY); if (s) state = Object.assign(defaults(), JSON.parse(s)); } catch(e) {}
 // UI-only state (not persisted)
-const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', logQ:'', logField:'all', sortKey:'idx', sortDir:1};
+const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', logQ:'', logField:'all', sortKey:'idx', sortDir:1};
 
 function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {} }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -280,18 +322,43 @@ function courtMetrics(x, y) {
   const dx = x - RIM.x, dy = y - RIM.y;
   const distPx = Math.hypot(dx, dy);
   const distFt = +(distPx / 10).toFixed(1);
-  const side = x < 180 ? 'Left' : x > 320 ? 'Right' : 'Center';
+  const side = x < 190 ? 'Left' : x > 310 ? 'Right' : 'Center';
   const corner = y <= CORNER_Y && Math.abs(dx) > CORNER_DX;
   const is3 = corner || distPx > ARC_PX;
-  let location = 'Midrange';
+  const ang = Math.atan2(Math.abs(dx), y - RIM.y) * 180 / Math.PI; // 0 = straight up-court from the rim, 90 = level with the rim
+  let location;
   if (distFt < 5) location = 'Restricted Area';
-  else if (is3) location = corner ? 'Corner 3' : (Math.abs(dx) > 120 ? 'Wing 3' : 'Top 3');
-  else if (y < 190 && Math.abs(dx) <= 80) location = 'In The Paint';
+  else if (is3) location = corner ? 'Corner 3' : Math.abs(dx) <= LANE_HALF ? 'Top of Key 3' : Math.abs(dx) <= SLOT_HALF ? 'Slot 3' : 'Wing 3';
+  else if (Math.abs(dx) <= LANE_HALF) location = y < 200 ? 'In The Paint' : 'Nail';
+  else location = ang <= ELBOW_DEG ? 'Elbow' : ang < SHORT_DEG ? 'Wing' : 'Short Corner';
   return {distFt, side, location, is3};
 }
 
+function shootingPct(num, is3) {
+  const r = state.roster.find(x => x.num === num), t = r && r.stats;
+  const prior = (is3 ? 0.33 : 0.48) * BASELINE_MULT.JUCO;
+  let m = 0, a = 0;
+  if (t) { if (is3) { m = t.tpm; a = t.tpa; } else { m = t.fgm - t.tpm; a = t.fga - t.tpa; } }
+  return (m + PRIOR_ATT * prior) / (a + PRIOR_ATT);
+}
+function ftPct(num) {
+  const r = state.roster.find(x => x.num === num), t = r && r.stats;
+  const prior = 0.70 * BASELINE_MULT.JUCO;
+  return ((t ? (t.ftm || 0) : 0) + PRIOR_ATT * prior) / ((t ? (t.fta || 0) : 0) + PRIOR_ATT);
+}
 function expectedPoints(p) {
   if (p.result === 'TO') return 0;
+  if (p.result === 'FT') { // expected makes on the attempts earned
+    const pr = state.activeBaseline === 'ROSTER' ? ftPct(p.playerNum) : 0.70 * (BASELINE_MULT[state.activeBaseline] ?? 1);
+    return +((p.fta ?? 2) * pr).toFixed(2);
+  }
+  if (state.activeBaseline === 'ROSTER' && (p.result === 'Made' || p.result === 'Miss')) {
+    const m = courtMetrics(p.x, p.y);
+    let pr = shootingPct(p.playerNum, m.is3);
+    if (!m.is3) pr *= m.distFt < 5 ? 1.2 : 0.9; // a player's 2P% mixes rim and midrange looks
+    pr *= (SHOT_MULT[p.shotType] ?? 1) * (CONTESTS.find(c => c[0] === p.contest) || [0,0,0,1])[3];
+    return +(Math.min(Math.max(pr, 0.05), 0.95) * (m.is3 ? 3 : 2)).toFixed(2);
+  }
   const m = courtMetrics(p.x, p.y);
   let v = m.is3 ? 1.05 : (m.distFt < 5 ? 1.18 : 0.82);
   v *= BASELINE_MULT[state.activeBaseline] ?? 1;
@@ -304,12 +371,14 @@ function expectedPoints(p) {
 function derive(p) {
   const m = courtMetrics(p.x, p.y);
   const isShot = p.result === 'Made' || p.result === 'Miss';
-  const pts = p.result === 'Made' ? (m.is3 ? 3 : 2) : p.result === 'FT' ? 1 : 0;
-  const xp = expectedPoints(p);
-  return {...p, ...m, pts, xp, poe: +(pts - xp).toFixed(2), fga: isShot, fgm: p.result === 'Made',
+  const isFt = p.result === 'FT';
+  const ftm = isFt ? (p.ftm ?? 1) : 0, fta = isFt ? (p.fta ?? 2) : 0;
+  const pts = p.result === 'Made' ? (m.is3 ? 3 : 2) : ftm;
+  const xp = expectedPoints(isFt ? {...p, fta} : p);
+  return {...p, ...m, ftm, fta, pts, xp, poe: +(pts - xp).toFixed(2), fga: isShot, fgm: p.result === 'Made',
           f3a: isShot && m.is3, f3m: p.result === 'Made' && m.is3};
 }
-const outcomeLabel = d => d.result === 'TO' ? 'Turnover' : d.result === 'FT' ? 'Shooting Foul (FT)' :
+const outcomeLabel = d => d.result === 'TO' ? 'Turnover' : d.result === 'FT' ? `Free Throws ${d.ftm}/${d.fta}` :
   `${d.result === 'Made' ? 'Made' : 'Missed'} ${d.is3 ? '3' : '2'}Pt`;
 
 // ---------- Init ----------
@@ -344,6 +413,7 @@ function populateDropdowns() {
   fillFilter('fShot', 'All shot types', SHOT_TYPES.map(t => [t, t]), 'fShot');
   fillFilter('fPlayer', 'All players', state.roster.map(r => [r.num, '#' + r.num + ' ' + r.name]), 'fPlayer');
   fillFilter('fOut', 'All outcomes', [['Made','Made'],['Miss','Missed'],['Made3','Made 3PT'],['Miss3','Missed 3PT'],['Made2','Made 2PT'],['Miss2','Missed 2PT']], 'fOut');
+  fillFilter('fLoc', 'All zones', ZONES.map(z => [z, z]), 'fLoc');
   populateMain();
 }
 function populateMain() {
@@ -370,7 +440,7 @@ function newGame() {
   const g = {id:'game_' + Date.now(), name:name.trim(), date:new Date().toISOString().slice(0,10), possessions:[]};
   state.games.push(g); state.activeGameId = g.id; save(); populateDropdowns(); renderAll();
 }
-function changeBaseline(v) { state.activeBaseline = v; save(); updateCalculatedXp(); renderAll(); showToast('Baseline: ' + v.replace('_',' ')); }
+function changeBaseline(v) { state.activeBaseline = v; save(); updateCalculatedXp(); renderAll(); showToast('Baseline: ' + (v === 'ROSTER' ? 'Active Roster Stats' : v.replace('_',' '))); }
 function deletePossession(id) {
   const g = getActiveGame();
   g.possessions = g.possessions.filter(p => p.id !== id);
@@ -385,8 +455,8 @@ function readout(m) {
 }
 function handleCourtClick(e) {
   const rect = document.getElementById('courtSvg').getBoundingClientRect();
-  ui.x = Math.round(((e.clientX - rect.left) / rect.width) * 500);
-  ui.y = Math.round(((e.clientY - rect.top) / rect.height) * 470);
+  ui.x = Math.round(-10 + ((e.clientX - rect.left) / rect.width) * 520);
+  ui.y = Math.round(((e.clientY - rect.top) / rect.height) * 490);
   ui.hasPoint = true;
   const pin = document.getElementById('activePin'), line = document.getElementById('distanceLine');
   pin.setAttribute('cx', ui.x); pin.setAttribute('cy', ui.y); pin.classList.remove('hidden');
@@ -397,15 +467,21 @@ function handleCourtClick(e) {
 function updateCalculatedXp() {
   const result = document.getElementById('logOutcome').value;
   const el = document.getElementById('estXpVal');
-  if (result !== 'TO' && !ui.hasPoint) { el.innerText = '--'; return; }
-  el.innerText = expectedPoints({x:ui.x, y:ui.y, shotType:ui.shotType, contest:ui.contest, result}).toFixed(2);
+  document.getElementById('ftBox').style.display = result === 'FT' ? 'grid' : 'none';
+  if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { el.innerText = '--'; return; }
+  el.innerText = expectedPoints({x:ui.x, y:ui.y, shotType:ui.shotType, contest:ui.contest, result, playerNum:document.getElementById('logPlayer').value, fta:+document.getElementById('ftAtt').value || 2}).toFixed(2);
 }
 
 // ---------- Logging ----------
 function handleLogPossession(e) {
   e.preventDefault();
   const result = document.getElementById('logOutcome').value;
-  if (result !== 'TO' && !ui.hasPoint) { showToast('Click the court to place the shot first'); return; }
+  if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { showToast('Click the court to place the shot first'); return; }
+  let ftm, fta;
+  if (result === 'FT') {
+    ftm = +document.getElementById('ftMade').value || 0; fta = +document.getElementById('ftAtt').value || 0;
+    if (!Number.isInteger(ftm) || !Number.isInteger(fta) || fta < 1 || ftm < 0 || ftm > fta) { showToast('Free throws: made must be between 0 and attempts'); return; }
+  }
   const num = document.getElementById('logPlayer').value;
   const player = state.roster.find(r => r.num === num);
   if (!player) { showToast('Add a player to the roster first'); return; }
@@ -415,7 +491,7 @@ function handleLogPossession(e) {
     shotType: ui.shotType, contest: ui.contest,
     clockPhase: document.getElementById('logClockPhase').value,
     timestamp: document.getElementById('logTimestamp').value || '00:00',
-    x: ui.x, y: ui.y, executed: document.getElementById('logExecuted').checked
+    x: ui.x, y: ui.y, ftm, fta, executed: document.getElementById('logExecuted').checked
   });
   save(); renderAll();
   showToast(`Logged possession for #${num} ${player.name}`);
@@ -441,13 +517,13 @@ function outcomeMatch(p) {
   return resOk && ptOk;
 }
 function chartFilter(p) {
-  return (!ui.fPlay || p.playCode === ui.fPlay) && (!ui.fShot || (p.shotType === ui.fShot && p.result !== 'TO')) && (!ui.fPlayer || p.playerNum === ui.fPlayer) && outcomeMatch(p);
+  return (!ui.fPlay || p.playCode === ui.fPlay) && (!ui.fShot || (p.shotType === ui.fShot && p.fga)) && (!ui.fPlayer || p.playerNum === ui.fPlayer) && outcomeMatch(p) && (!ui.fLoc || (p.fga && p.location === ui.fLoc));
 }
 function setChartFilter() {
-  ui.fPlay = document.getElementById('fPlay').value; ui.fShot = document.getElementById('fShot').value; ui.fPlayer = document.getElementById('fPlayer').value; ui.fOut = document.getElementById('fOut').value;
+  ui.fPlay = document.getElementById('fPlay').value; ui.fShot = document.getElementById('fShot').value; ui.fPlayer = document.getElementById('fPlayer').value; ui.fOut = document.getElementById('fOut').value; ui.fLoc = document.getElementById('fLoc').value;
   renderAll();
 }
-function clearChartFilter() { ui.fPlay = ui.fShot = ui.fPlayer = ui.fOut = ''; populateDropdowns(); renderAll(); }
+function clearChartFilter() { ui.fPlay = ui.fShot = ui.fPlayer = ui.fOut = ui.fLoc = ''; populateDropdowns(); renderAll(); }
 function renderCourtPins(all) {
   const poss = all.filter(chartFilter), shots = poss.filter(p => p.fga);
   document.getElementById('shotPinsGroup').innerHTML = shots.map(p =>
@@ -481,15 +557,15 @@ function renderAnalytics(poss) {
   }).join('');
 
   const by = {};
-  state.roster.forEach(r => by[r.num] = {num:r.num, name:r.name, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, xp:0});
+  state.roster.forEach(r => by[r.num] = {num:r.num, name:r.name, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0, xp:0});
   poss.forEach(p => {
-    const s = by[p.playerNum] || (by[p.playerNum] = {num:p.playerNum, name:p.playerName, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, xp:0});
-    s.poss++; s.pts += p.pts; s.xp += p.xp; s.fga += p.fga; s.fgm += p.fgm; s.f3a += p.f3a; s.f3m += p.f3m;
+    const s = by[p.playerNum] || (by[p.playerNum] = {num:p.playerNum, name:p.playerName, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0, xp:0});
+    s.poss++; s.pts += p.pts; s.xp += p.xp; s.fga += p.fga; s.fgm += p.fgm; s.f3a += p.f3a; s.f3m += p.f3m; s.ftm += p.ftm; s.fta += p.fta;
   });
   document.getElementById('playerAnalyticsTable').innerHTML = Object.values(by).filter(s => s.poss).map(s => {
     const poe = s.pts - s.xp;
-    return `<tr class="text-slate-200"><td class="p-2 font-bold">#${esc(s.num)} ${esc(s.name)}</td><td class="text-center font-mono">${s.poss}</td><td class="text-center font-bold text-emerald-400">${s.pts}</td><td class="text-center font-mono">${s.fgm}/${s.fga}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.fgm, s.fga)}</td><td class="text-center font-mono">${s.f3m}/${s.f3a}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.f3m, s.f3a)}</td><td class="text-center font-mono text-amber-400 font-bold">${(s.pts / s.poss).toFixed(2)}</td><td class="text-center font-mono ${poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(poe)}</td></tr>`;
-  }).join('') || `<tr><td colspan="9" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
+    return `<tr class="text-slate-200"><td class="p-2 font-bold">#${esc(s.num)} ${esc(s.name)}</td><td class="text-center font-mono">${s.poss}</td><td class="text-center font-bold text-emerald-400">${s.pts}</td><td class="text-center font-mono">${s.fgm}/${s.fga}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.fgm, s.fga)}</td><td class="text-center font-mono">${s.f3m}/${s.f3a}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.f3m, s.f3a)}</td><td class="text-center font-mono">${s.ftm}/${s.fta}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.ftm, s.fta)}</td><td class="text-center font-mono text-amber-400 font-bold">${(s.pts / s.poss).toFixed(2)}</td><td class="text-center font-mono ${poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(poe)}</td></tr>`;
+  }).join('') || `<tr><td colspan="11" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
 
   const pb = {};
   poss.forEach(p => { const s = pb[p.playCode] || (pb[p.playCode] = {runs:0, pts:0, xp:0}); s.runs++; s.pts += p.pts; s.xp += p.xp; });
@@ -511,7 +587,7 @@ function renderGameLog(all) {
     return (ui.logField === 'all' ? Object.values(f).join(' ') : f[ui.logField]).toLowerCase().includes(q);
   });
   const key = {idx:p => p.idx, player:p => p.playerName.toLowerCase(), play:p => p.playCode.toLowerCase(), time:p => parseTs(p.timestamp) ?? -1,
-    outcome:p => outcomeLabel(p), dist:p => p.result === 'TO' ? -1 : p.distFt, pts:p => p.pts, xp:p => p.xp, poe:p => p.poe}[ui.sortKey];
+    outcome:p => outcomeLabel(p), dist:p => p.fga ? p.distFt : -1, pts:p => p.pts, xp:p => p.xp, poe:p => p.poe}[ui.sortKey];
   rows.sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : a.idx - b.idx) * ui.sortDir; });
   document.getElementById('logCount').innerText = `Showing ${rows.length} of ${all.length}`;
   document.getElementById('gameLogTable').innerHTML = rows.map(p => `
@@ -520,7 +596,7 @@ function renderGameLog(all) {
       <td class="p-2 font-bold">#${esc(p.playerNum)} ${esc(p.playerName)}</td>
       <td class="p-2">${esc(p.playCode)}</td>
       <td class="p-2">${esc(p.timestamp)} (${esc(p.clockPhase)})</td>
-      <td class="p-2 text-center font-mono text-amber-400">${p.result === 'TO' ? '-' : p.distFt + ' ft'}</td>
+      <td class="p-2 text-center font-mono text-amber-400">${p.fga ? p.distFt + ' ft' : '-'}</td>
       <td class="p-2">${esc(outcomeLabel(p))}</td>
       <td class="p-2 text-center font-bold text-emerald-400">${p.pts}</td>
       <td class="p-2 text-center font-mono text-slate-400">${p.xp.toFixed(2)}</td>
@@ -533,7 +609,7 @@ function renderGameLog(all) {
 function renderRoster(poss) {
   document.getElementById('rosterCards').innerHTML = state.roster.map((r, i) => {
     const mine = poss.filter(p => p.playerNum === r.num);
-    const s = mine.reduce((a, p) => ({pts:a.pts + p.pts, fgm:a.fgm + p.fgm, fga:a.fga + p.fga, f3m:a.f3m + p.f3m, f3a:a.f3a + p.f3a}), {pts:0, fgm:0, fga:0, f3m:0, f3a:0});
+    const s = mine.reduce((a, p) => ({pts:a.pts + p.pts, fgm:a.fgm + p.fgm, fga:a.fga + p.fga, f3m:a.f3m + p.f3m, f3a:a.f3a + p.f3a, ftm:a.ftm + p.ftm, fta:a.fta + p.fta}), {pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0});
     const cell = (l, v) => `<div class="bg-[#0d1424] p-1.5 rounded-lg border border-slate-800/50"><div class="text-slate-500 font-bold">${l}</div><div class="font-bold text-slate-200">${v}</div></div>`;
     return `<div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 space-y-2">
       <div class="flex items-center justify-between">
@@ -543,11 +619,50 @@ function renderRoster(poss) {
         </div>
         <button onclick="removeRosterPlayer(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
       </div>
-      <div class="grid grid-cols-4 gap-1 pt-1 border-t border-slate-800/60 text-center text-[10px]">
-        ${cell('PTS', s.pts)}${cell('FG', `${s.fgm}/${s.fga} (${pct(s.fgm, s.fga)})`)}${cell('3PT', `${s.f3m}/${s.f3a} (${pct(s.f3m, s.f3a)})`)}${cell('POSS', mine.length)}
-      </div></div>`;
+      <div class="grid grid-cols-5 gap-1 pt-1 border-t border-slate-800/60 text-center text-[10px]">
+        ${cell('PTS', s.pts)}${cell('FG', `${s.fgm}/${s.fga} (${pct(s.fgm, s.fga)})`)}${cell('3PT', `${s.f3m}/${s.f3a} (${pct(s.f3m, s.f3a)})`)}${cell('FT', `${s.ftm}/${s.fta} (${pct(s.ftm, s.fta)})`)}${cell('POSS', mine.length)}
+      </div>${seasonHtml(r, i)}</div>`;
   }).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No roster players added yet</div>`;
 }
+
+function seasonHtml(r, i) {
+  const t = r.stats;
+  const txt = t && t.fga
+    ? `Input stats: FG ${t.fgm}/${t.fga} (${pct(t.fgm, t.fga)}) · 3P ${t.tpm}/${t.tpa} (${pct(t.tpm, t.tpa)}) · 2P ${t.fgm - t.tpm}/${t.fga - t.tpa} (${pct(t.fgm - t.tpm, t.fga - t.tpa)}) · FT ${t.ftm || 0}/${t.fta || 0} (${pct(t.ftm || 0, t.fta || 0)})`
+    : 'No input stats (uses league prior)';
+  return `<div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60 text-[10px] text-slate-400"><span>${txt}</span><button onclick="openStatsModal(${i})" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold shrink-0">Edit stats</button></div>`;
+}
+let statsIdx = -1;
+const gv = id => document.getElementById(id);
+function openStatsModal(i) {
+  statsIdx = i; const r = state.roster[i], t = r.stats || {fgm:'', fga:'', tpm:'', tpa:'', ftm:'', fta:''};
+  gv('statsTitle').innerText = `#${r.num} ${r.name}`;
+  gv('sFgm').value = t.fgm; gv('sFga').value = t.fga; gv('s3m').value = t.tpm; gv('s3a').value = t.tpa; gv('sFtm').value = t.ftm ?? ''; gv('sFta').value = t.fta ?? '';
+  syncPct(); gv('statsModal').classList.remove('hidden');
+}
+function closeStatsModal() { gv('statsModal').classList.add('hidden'); }
+function syncPct() {
+  const f = (m, a) => +gv(a).value > 0 ? (+gv(m).value / +gv(a).value * 100).toFixed(1) : '';
+  gv('sFgp').value = f('sFgm', 'sFga'); gv('s3p').value = f('s3m', 's3a'); gv('sFtp').value = f('sFtm', 'sFta');
+  const m2 = +gv('sFgm').value - +gv('s3m').value, a2 = +gv('sFga').value - +gv('s3a').value;
+  gv('stats2p').innerText = a2 > 0 ? `Derived 2P: ${m2}/${a2} (${Math.round(m2 / a2 * 100)}%)` : '';
+}
+function pctToMakes(kind) {
+  const ids = {fg:['sFga','sFgm','sFgp'], '3p':['s3a','s3m','s3p'], ft:['sFta','sFtm','sFtp']}[kind];
+  const [aId, mId, pId] = ids;
+  const a = +gv(aId).value, v = parseFloat(gv(pId).value);
+  if (a > 0 && !isNaN(v)) gv(mId).value = Math.round(Math.min(Math.max(v, 0), 100) / 100 * a);
+  const m2 = +gv('sFgm').value - +gv('s3m').value, a2 = +gv('sFga').value - +gv('s3a').value;
+  gv('stats2p').innerText = a2 > 0 ? `Derived 2P: ${m2}/${a2} (${Math.round(m2 / a2 * 100)}%)` : '';
+}
+function saveStats() {
+  const t = {fgm:+gv('sFgm').value || 0, fga:+gv('sFga').value || 0, tpm:+gv('s3m').value || 0, tpa:+gv('s3a').value || 0, ftm:+gv('sFtm').value || 0, fta:+gv('sFta').value || 0};
+  if (Object.values(t).some(v => v < 0 || !Number.isInteger(v))) { showToast('Use whole numbers, 0 or higher'); return; }
+  if (t.fgm > t.fga || t.tpm > t.tpa || t.ftm > t.fta) { showToast('Makes cannot exceed attempts'); return; }
+  if (t.tpa > t.fga || t.tpm > t.fgm) { showToast('3P stats cannot exceed FG stats (FG includes 3s)'); return; }
+  state.roster[statsIdx].stats = t; save(); closeStatsModal(); renderAll(); showToast('Stats saved');
+}
+function clearStats() { delete state.roster[statsIdx].stats; save(); closeStatsModal(); renderAll(); showToast('Stats cleared'); }
 
 function addRosterPlayerPrompt() {
   const num = (prompt('Jersey number (e.g. 11):') || '').trim(); if (!num) return;
@@ -604,7 +719,7 @@ function handleLocalVideoUpload(e) {
 }
 
 // ---------- CSV ----------
-const CSV_COLS = ['num','player','play','result','shotType','contest','clockPhase','timestamp','x','y','dist','pts','xp','poe','executed'];
+const CSV_COLS = ['num','player','play','result','shotType','contest','clockPhase','timestamp','x','y','dist','pts','xp','poe','executed','ftm','fta'];
 const csvCell = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
 function parseCsv(text) {
   const rows = []; let row = [], cur = '', q = false;
@@ -622,7 +737,7 @@ function parseCsv(text) {
 function exportGameCsv() {
   const g = getActiveGame(), poss = g.possessions.map(derive);
   if (!poss.length) { showToast('No possessions to export'); return; }
-  const lines = [CSV_COLS.join(',')].concat(poss.map(p => [p.playerNum, p.playerName, p.playCode, p.result, p.shotType, p.contest, p.clockPhase, p.timestamp, p.x, p.y, p.distFt, p.pts, p.xp, p.poe, p.executed !== false].map(csvCell).join(',')));
+  const lines = [CSV_COLS.join(',')].concat(poss.map(p => [p.playerNum, p.playerName, p.playCode, p.result, p.shotType, p.contest, p.clockPhase, p.timestamp, p.x, p.y, p.distFt, p.pts, p.xp, p.poe, p.executed !== false, p.ftm, p.fta].map(csvCell).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'}));
   a.download = g.name.replace(/[^\w\-]+/g, '_') + '.csv';
@@ -643,7 +758,7 @@ function handleCsvFileUpload(e) {
       const x = +get('x'), y = +get('y'), result = get('result');
       if (!['Made','Miss','FT','TO'].includes(result) || isNaN(x) || isNaN(y)) { bad++; return; }
       const num = get('num'), pl = state.roster.find(p => p.num === num);
-      g.possessions.push({id:Date.now() + i, playerNum:num, playerName:pl ? pl.name : (get('player') || 'Player'), playCode:get('play') || 'Unknown',
+      g.possessions.push({id:Date.now() + i, ftm:(result === 'FT' && get('ftm') !== '' ? +get('ftm') : undefined), fta:(result === 'FT' && get('fta') !== '' ? +get('fta') : undefined), playerNum:num, playerName:pl ? pl.name : (get('player') || 'Player'), playCode:get('play') || 'Unknown',
         result, shotType:SHOT_TYPES.includes(get('shotType')) ? get('shotType') : 'Other', contest:get('contest') || 'Slight',
         clockPhase:get('clockPhase') || '22-10s', timestamp:get('timestamp') || '00:00', x, y, executed:get('executed') !== 'false'});
       ok++;
