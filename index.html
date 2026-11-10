@@ -26,6 +26,31 @@
   .ex.red{border-color:rgba(244,63,94,.4);color:#fb7185}
   .ex.sel{box-shadow:0 0 0 2px currentColor;background:rgba(255,255,255,.06)}
   .cl.sel{box-shadow:0 0 0 2px currentColor;background:rgba(255,255,255,.06)}
+  .hidden{display:none!important}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible{outline:2px solid #fbbf24;outline-offset:3px}
+  .lineup-panel{border:1px solid #334155;border-radius:1rem;padding:1rem;background:#080d1a}
+  .lineup-heading{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap}
+  .lineup-actions{display:flex;gap:.5rem}
+  .lineup-action{border:1px solid #475569;background:#1e293b;color:#e2e8f0;border-radius:.65rem;padding:.5rem .75rem;font-size:12px;font-weight:700}
+  .lineup-action.primary{background:#f59e0b;border-color:#f59e0b;color:#020617}
+  .lineup-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem;margin:.8rem 0}
+  .lineup-tile{min-width:0;min-height:88px;padding:.65rem .3rem;border:1px solid #334155;border-radius:.75rem;background:#0d1424;text-align:center;color:#cbd5e1}
+  .lineup-tile.selected{border-color:#fbbf24;background:#f59e0b20;box-shadow:inset 0 0 0 1px #fbbf24;color:#fbbf24}
+  .lineup-tile strong{display:block;font-size:20px;line-height:1.2;margin-bottom:.25rem}
+  .lineup-tile span{display:block;font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+  .lineup-tile small{display:block;font-size:10px;color:#94a3b8;margin-top:.3rem}
+  .lineup-empty{border-style:dashed;color:#64748b}
+  .lineup-help{color:#94a3b8;font-size:11px;line-height:1.5}
+  .pv-dialog{width:min(540px,calc(100% - 2rem));max-height:85vh;overflow:auto;margin:auto;padding:1.25rem;border:1px solid #334155;border-radius:1rem;background:#0d1424;color:#e2e8f0;box-shadow:0 24px 80px #0009}
+  .pv-dialog::backdrop{background:#000b;backdrop-filter:blur(4px)}
+  .lineup-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:1rem 0}
+  .lineup-choice{display:flex;gap:.6rem;align-items:center;padding:.75rem;border:1px solid #334155;border-radius:.75rem;background:#080d1a;cursor:pointer;font-size:12px;overflow-wrap:anywhere}
+  .lineup-choice.picked{border-color:#f59e0b;background:#f59e0b12}
+  .lineup-choice input{accent-color:#f59e0b;width:18px;height:18px;flex-shrink:0}
+  .lineup-choice:has(input:disabled){opacity:.5;cursor:not-allowed}
+  .lineup-dialog-footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
+  @media(max-width:480px){.lineup-panel{padding:.75rem}.lineup-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.lineup-choices{grid-template-columns:1fr}}
   th{padding-bottom:.5rem}
   ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#080d1a}::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
 </style>
@@ -39,7 +64,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <h1 class="font-black text-slate-100 text-sm tracking-wide">Track the Play. Measure the Look.</h1>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">v3.6</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">v3.7</span>
         </div>
         <div class="flex items-center space-x-2 text-[11px] text-slate-400 font-medium mt-0.5">
           <span>ACTIVE GAME:</span>
@@ -56,7 +81,7 @@
         <option value="NCAA_D3">NCAA D3 Standard</option>
         <option value="ROSTER">Active Roster Stats</option>
       </select>
-      <button onclick="showToast('Sign-in not implemented yet')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-200 text-xs font-bold">Sign In</button>
+      <button id="accountButton" onclick="openAuthDialog()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-200 text-xs font-bold">Sign In</button>
     </div>
   </div>
   <div class="max-w-4xl mx-auto px-4 pb-3 space-y-2">
@@ -133,7 +158,18 @@
         <div class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs">Est xP: <span id="estXpVal">--</span></div>
       </div>
       <form id="loggerForm" onsubmit="handleLogPossession(event)" class="space-y-4 text-xs">
-        <div><label class="lbl">PLAYER</label><select id="logPlayer" class="field" onchange="updateCalculatedXp()"></select></div>
+        <div class="lineup-panel" aria-labelledby="lineupHeading">
+          <div class="lineup-heading">
+            <div><h3 id="lineupHeading" class="font-bold text-sm">On court <span id="lineupCount" class="text-amber-400 text-xs"></span></h3><p class="lineup-help">Tap the player to log their possession.</p></div>
+            <div class="lineup-actions">
+              <button type="button" id="editLineupButton" class="lineup-action" onclick="openLineupDialog()">Set lineup</button>
+              <button type="button" id="subLineupButton" class="lineup-action primary" onclick="openSubDialog()" disabled>Substitute</button>
+            </div>
+          </div>
+          <input type="hidden" id="logPlayer" value="">
+          <div id="activePlayerButtons" class="lineup-grid" role="group" aria-label="Choose player on court"></div>
+          <p id="lineupStatus" class="lineup-help" aria-live="polite"></p>
+        </div>
         <div><label class="lbl">PLAY CALL / SET</label><select id="logPlay" class="field"></select></div>
         <div>
           <label class="lbl">OUTCOME <span class="text-slate-500 font-medium">(2 vs 3 comes from the shot location)</span></label>
@@ -150,29 +186,20 @@
         </div>
         <div><label class="lbl">SHOT TYPE</label><div class="grid grid-cols-3 gap-2" id="shotTypeGrid"></div></div>
         <div><label class="lbl">CONTEST LEVEL</label><div class="grid grid-cols-3 gap-2" id="contestGrid"></div></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="lbl">SHOT CLOCK PHASE</label>
-            <select id="logClockPhase" class="field">
-              <option value="First 8s">First 8s (0-8s)</option>
-              <option value="22-10s" selected>22-10s (Mid Clock)</option>
-              <option value="<= 10s">&lt;= 10s (Late Clock)</option>
-            </select>
-          </div>
-          <div>
-            <label class="lbl">VIDEO TIMESTAMP</label>
-            <div class="flex space-x-1">
-              <input type="text" id="logTimestamp" placeholder="00:00" class="field text-center font-mono">
-              <button type="button" onclick="captureCurrentVideoTime()" class="px-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30"><i data-lucide="camera" class="w-3.5 h-3.5"></i></button>
-            </div>
-          </div>
+        <div>
+          <label class="lbl" for="logClockPhase">SHOT CLOCK PHASE</label>
+          <select id="logClockPhase" class="field">
+            <option value="First 8s">First 8s (0-8s)</option>
+            <option value="22-10s" selected>22-10s (Mid Clock)</option>
+            <option value="<= 10s">&lt;= 10s (Late Clock)</option>
+          </select>
         </div>
         <div><label class="lbl">EXECUTION</label>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" class="opt ex green" data-v="1">Executed</button>
             <button type="button" class="opt ex red" data-v="0">Broken</button>
           </div></div>
-        <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase">Log Possession &amp; Calculate xP</button>
+        <button type="submit" id="logSubmit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase" disabled>Log Possession &amp; Calculate xP</button>
       </form>
     </div>
   </section>
@@ -211,7 +238,7 @@
     </div>
     <div class="flex flex-wrap gap-2 items-center text-xs">
       <select id="logField" class="field !w-auto !p-1.5 !text-[11px]" onchange="setLogSearch()">
-        <option value="all">Search: All</option><option value="player">Player</option><option value="play">Play call</option><option value="time">Time / phase</option><option value="outcome">Outcome</option>
+        <option value="all">Search: All</option><option value="player">Player</option><option value="play">Play call</option><option value="time">Clock phase</option><option value="outcome">Outcome</option>
       </select>
       <input id="logQ" type="search" placeholder="Search..." oninput="setLogSearch()" class="field !w-auto flex-1 min-w-[140px] !p-1.5 !text-[11px]">
       <span id="logCount" class="text-[11px] text-slate-400"></span>
@@ -225,7 +252,7 @@
   <!-- VIDEO -->
   <section id="viewVideo" class="hidden card space-y-4">
     <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-      <h2 class="font-bold text-sm text-slate-100">Integrated Video Sync Player</h2>
+      <h2 class="font-bold text-sm text-slate-100">Video Player</h2>
       <label class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 cursor-pointer">Open Video File
         <input type="file" accept="video/*" class="hidden" onchange="handleLocalVideoUpload(event)"></label>
     </div>
@@ -252,6 +279,48 @@
     <div id="playbookCards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
   </section>
 </main>
+
+<dialog id="authDialog" class="pv-dialog" aria-labelledby="authTitle">
+  <div class="lineup-heading"><h3 id="authTitle" class="font-bold text-base">Sign in to Play Value</h3><button type="button" class="lineup-action" onclick="closeAuthDialog()" aria-label="Close sign-in">Close</button></div>
+  <p id="authStatus" class="lineup-help mt-3" role="status" aria-live="polite">Connecting to sign-in…</p>
+  <button type="button" id="authRetry" class="lineup-action mt-3 hidden" onclick="initFirebaseAuth()">Retry connection</button>
+  <form id="authForm" onsubmit="handleSignIn(event)" class="mt-4 space-y-3">
+    <div><label for="authEmail" class="lbl">EMAIL</label><input id="authEmail" class="field" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+    <div><label for="authPassword" class="lbl">PASSWORD</label><div class="flex gap-2"><input id="authPassword" class="field" type="password" autocomplete="current-password" maxlength="4096" required><button type="button" id="showPassword" class="lineup-action" onclick="togglePasswordVisibility()" aria-pressed="false">Show</button></div></div>
+    <label class="flex items-center gap-2 text-xs"><input id="authRemember" type="checkbox" checked>Keep me signed in on this browser</label>
+    <button type="submit" id="authSubmit" class="lineup-action primary w-full" disabled>Sign In</button>
+    <button type="button" id="authReset" class="text-amber-400 text-xs font-bold" onclick="resetAuthPassword()" disabled>Forgot password?</button>
+  </form>
+  <div id="authSignedIn" class="hidden mt-4">
+    <p id="authSignedInEmail" class="text-sm font-bold break-all"></p>
+    <button type="button" id="authSignOut" class="lineup-action mt-4" onclick="handleSignOut()">Sign Out</button>
+  </div>
+  <p class="lineup-help mt-4">Games, rosters, and lineups stay in this browser's workspace. Signing in does not sync or move game data between devices.</p>
+</dialog>
+
+<dialog id="lineupDialog" class="pv-dialog" aria-labelledby="lineupDialogTitle" aria-describedby="lineupDialogHint">
+  <div class="lineup-heading"><h3 id="lineupDialogTitle" class="font-bold text-base">Set your five</h3><span id="lineupDraftCount" class="text-amber-400 font-bold text-sm" aria-live="polite"></span></div>
+  <p id="lineupDialogHint" class="lineup-help mt-2">Select exactly five players. Uncheck a player to open a spot.</p>
+  <p id="lineupGameName" class="text-xs text-amber-400 mt-2"></p>
+  <div id="lineupChoices" class="lineup-choices"></div>
+  <p id="lineupDraftMessage" class="lineup-help" aria-live="polite"></p>
+  <div class="lineup-dialog-footer">
+    <button type="button" class="lineup-action" onclick="document.getElementById('lineupDialog').close()">Cancel</button>
+    <button type="button" id="saveLineupButton" class="lineup-action primary" onclick="applyLineup()" disabled>Save lineup</button>
+  </div>
+</dialog>
+
+<dialog id="subDialog" class="pv-dialog" aria-labelledby="subDialogTitle" aria-describedby="subHint">
+  <h3 id="subDialogTitle" class="font-bold text-base">Make a substitution</h3>
+  <p id="subHint" class="lineup-help mt-2">Choose who comes out and who goes in. Your lineup stays at five.</p>
+  <div class="mt-4"><label class="lbl" for="subOut">PLAYER OUT · ON COURT</label><select id="subOut" class="field" onchange="updateSubSummary()"></select></div>
+  <div class="mt-3"><label class="lbl" for="subIn">PLAYER IN · BENCH</label><select id="subIn" class="field" onchange="updateSubSummary()"></select></div>
+  <p id="subSummary" class="lineup-help mt-3" aria-live="polite"></p>
+  <div class="lineup-dialog-footer">
+    <button type="button" class="lineup-action" onclick="document.getElementById('subDialog').close()">Cancel</button>
+    <button type="button" id="confirmSubButton" class="lineup-action primary" onclick="applySubstitution()" disabled>Confirm sub</button>
+  </div>
+</dialog>
 
 <!-- ROSTER STATS MODAL -->
 <div id="statsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4">
@@ -297,6 +366,18 @@
 
 <script>
 const STORE_KEY = 'playvalue_v36';
+// Public Firebase web configuration for the existing Play Value project.
+// Authentication is separate from the existing browser-local game workspace.
+const firebaseConfig = {
+  apiKey: "AIzaSyCEz0IWxW_rtm94fyVu4rdRMY7PeF5InBk",
+  authDomain: "play-value-90ed5.firebaseapp.com",
+  projectId: "play-value-90ed5",
+  storageBucket: "play-value-90ed5.firebasestorage.app",
+  messagingSenderId: "542567989712",
+  appId: "1:542567989712:web:bad63ccebaea3a3e05b9d5",
+  measurementId: "G-Q67LDR5HG3"
+};
+const account = {auth:null, sdk:null, user:null, ready:false, busy:false, loading:null, error:'', unsubscribe:null};
 const SHOT_TYPES = ['Catch & Shoot','Off Dribble','Layup','Dunk','Post Shot','Other'];
 const SHOT_MULT = {'Catch & Shoot':1.04,'Off Dribble':0.94,'Layup':1.0,'Dunk':1.12,'Post Shot':0.97,'Other':0.95};
 const CONTESTS = [['Open','3 - Open','green',1.25],['Slight','2 - Slight','amber',1.0],['Heavy','1 - Heavy','red',0.72]];
@@ -326,9 +407,247 @@ try { const s = localStorage.getItem(STORE_KEY); if (s) state = Object.assign(de
 // UI-only state (not persisted)
 const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', executed:true, logQ:'', logField:'all', sortKey:'idx', sortDir:1};
 
-function save(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {} }
+function save(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); return true; }
+  catch(e) { showToast('Unable to save in this browser. Check available storage and export your game data.'); return false; }
+}
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const getActiveGame = () => state.games.find(g => g.id === state.activeGameId) || state.games[0];
+
+// ---------- Firebase email/password authentication ----------
+// Load independently: a network/SDK failure must not break local shot tracking.
+function authMessage(message, isError = false) {
+  const el = document.getElementById('authStatus');
+  el.textContent = message;
+  el.style.color = isError ? '#fda4af' : '#94a3b8';
+}
+function renderAuth() {
+  const signedIn = !!account.user;
+  document.getElementById('accountButton').textContent = signedIn ? 'Account ✓' : 'Sign In';
+  document.getElementById('accountButton').title = signedIn ? `Signed in as ${account.user.email || 'Play Value user'}` : 'Sign in with your existing email and password';
+  document.getElementById('authTitle').textContent = signedIn ? 'Your Play Value account' : 'Sign in to Play Value';
+  document.getElementById('authForm').classList.toggle('hidden', signedIn);
+  document.getElementById('authSignedIn').classList.toggle('hidden', !signedIn);
+  document.getElementById('authSignedInEmail').textContent = account.user?.email || '';
+  document.getElementById('authRetry').classList.toggle('hidden', !account.error);
+  ['authSubmit','authReset'].forEach(id => document.getElementById(id).disabled = !account.ready || account.busy);
+  document.getElementById('authSignOut').disabled = account.busy;
+  document.getElementById('authSubmit').textContent = account.busy ? 'Please wait…' : 'Sign In';
+}
+function authErrorMessage(error) {
+  const messages = {
+    'auth/invalid-credential':'Email or password is incorrect. Try again or reset your password.',
+    'auth/invalid-login-credentials':'Email or password is incorrect. Try again or reset your password.',
+    'auth/wrong-password':'Email or password is incorrect. Try again or reset your password.',
+    'auth/user-not-found':'Email or password is incorrect. Try again or reset your password.',
+    'auth/invalid-email':'Enter a valid email address.',
+    'auth/user-disabled':'This account is disabled. Contact the team administrator.',
+    'auth/too-many-requests':'Too many attempts. Wait a few minutes before trying again.',
+    'auth/network-request-failed':'Unable to reach sign-in. Check your connection and try again.',
+    'auth/operation-not-allowed':'Email/password sign-in is disabled for this Firebase project. The site owner needs to enable it in Firebase Authentication.',
+    'auth/unauthorized-domain':'This website is not authorized for sign-in. The site owner needs to add this domain in Firebase Authentication settings.',
+    'auth/invalid-api-key':'The Firebase web configuration was rejected. Contact the site owner.',
+    'auth/app-not-authorized':'Firebase does not allow this website to use the configured key. Contact the site owner.',
+    'auth/web-storage-unsupported':'This browser is blocking sign-in storage. Allow site storage and try again.'
+  };
+  return messages[error?.code] || 'Sign-in could not complete. Check your connection and try again.';
+}
+async function initFirebaseAuth() {
+  if (account.ready) return;
+  if (account.loading) return account.loading;
+  account.error = '';
+  authMessage('Connecting to sign-in…'); renderAuth();
+  account.loading = (async () => {
+    let timeout;
+    try {
+      const modules = Promise.all([
+        import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js')
+      ]);
+      const [appSdk, authSdk] = await Promise.race([modules, new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error('Sign-in connection timed out')), 15000);
+      })]);
+      clearTimeout(timeout);
+      const app = appSdk.getApps().find(a => a.name === '[DEFAULT]') || appSdk.initializeApp(firebaseConfig);
+      account.auth = authSdk.getAuth(app);
+      account.sdk = authSdk;
+      if (account.unsubscribe) account.unsubscribe();
+      account.unsubscribe = authSdk.onAuthStateChanged(account.auth, user => {
+        account.user = user; account.ready = true; account.error = '';
+        if (user) document.getElementById('authPassword').value = '';
+        authMessage(user ? 'Signed in successfully.' : 'Use your existing Play Value email and password.');
+        renderAuth();
+      }, error => {
+        account.ready = false; account.error = authErrorMessage(error);
+        authMessage(account.error, true); renderAuth();
+      });
+    } catch(error) {
+      account.ready = false;
+      account.error = 'Sign-in could not connect. Check your connection or content blocker, then retry. Shot tracking is still available.';
+      authMessage(account.error, true); renderAuth();
+    } finally { clearTimeout(timeout); account.loading = null; }
+  })();
+  return account.loading;
+}
+function openAuthDialog() {
+  renderAuth();
+  document.getElementById('authDialog').showModal();
+  if (!account.ready && !account.loading) initFirebaseAuth();
+  if (!account.user) document.getElementById('authEmail').focus();
+}
+function closeAuthDialog() { document.getElementById('authDialog').close(); }
+function clearAuthPassword() {
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authPassword').type = 'password';
+  document.getElementById('showPassword').textContent = 'Show';
+  document.getElementById('showPassword').setAttribute('aria-pressed', 'false');
+}
+function togglePasswordVisibility() {
+  const field = document.getElementById('authPassword'), button = document.getElementById('showPassword');
+  const show = field.type === 'password';
+  field.type = show ? 'text' : 'password'; button.textContent = show ? 'Hide' : 'Show';
+  button.setAttribute('aria-pressed', String(show));
+}
+async function handleSignIn(event) {
+  event.preventDefault();
+  if (!account.ready || account.busy || !document.getElementById('authForm').reportValidity()) return;
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  account.busy = true; renderAuth(); authMessage('Signing in…');
+  try {
+    await account.sdk.setPersistence(account.auth, document.getElementById('authRemember').checked ? account.sdk.browserLocalPersistence : account.sdk.browserSessionPersistence);
+    await account.sdk.signInWithEmailAndPassword(account.auth, email, password);
+    clearAuthPassword(); closeAuthDialog(); showToast('Signed in to Play Value');
+  } catch(error) { authMessage(authErrorMessage(error), true); }
+  finally { account.busy = false; renderAuth(); }
+}
+async function resetAuthPassword() {
+  if (!account.ready || account.busy) return;
+  const email = document.getElementById('authEmail');
+  if (!email.reportValidity()) return;
+  account.busy = true; renderAuth(); authMessage('Requesting a password reset…');
+  try {
+    await account.sdk.sendPasswordResetEmail(account.auth, email.value.trim());
+    authMessage('If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.');
+  } catch(error) {
+    if (error?.code === 'auth/user-not-found') authMessage('If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.');
+    else authMessage(authErrorMessage(error), true);
+  } finally { account.busy = false; renderAuth(); }
+}
+async function handleSignOut() {
+  if (!account.ready || account.busy) return;
+  account.busy = true; renderAuth();
+  try { await account.sdk.signOut(account.auth); clearAuthPassword(); closeAuthDialog(); showToast('Signed out'); }
+  catch(error) { authMessage(authErrorMessage(error), true); }
+  finally { account.busy = false; renderAuth(); }
+}
+
+// ---------- Five-player lineups ----------
+// Jersey numbers are the existing roster identifier. Keep the v3.6 storage key
+// so this update preserves games, season stats, plays, and possessions.
+function cleanLineup(nums) {
+  const rosterNums = new Set(state.roster.map(r => r.num));
+  return [...new Set(Array.isArray(nums) ? nums.map(String) : [])].filter(n => rosterNums.has(n)).slice(0, 5);
+}
+function normalizeLineups() {
+  state.games.forEach(g => { g.activeLineup = cleanLineup(g.activeLineup); });
+}
+const activeLineup = () => cleanLineup(getActiveGame().activeLineup);
+let lineupDraft = [], lineupEditGameId = null, subGameId = null;
+
+function renderLineup() {
+  const nums = activeLineup(), selected = document.getElementById('logPlayer');
+  if (!nums.includes(selected.value)) selected.value = '';
+  const ready = nums.length === 5;
+  document.getElementById('lineupCount').textContent = `${nums.length}/5`;
+  document.getElementById('editLineupButton').textContent = nums.length ? 'Edit lineup' : 'Set lineup';
+  const canSub = ready && state.roster.some(r => !nums.includes(r.num));
+  const subButton = document.getElementById('subLineupButton');
+  subButton.disabled = !canSub;
+  subButton.title = canSub ? 'Swap an on-court player for a bench player' : ready ? 'No players on the bench' : 'Set five players first';
+  document.getElementById('activePlayerButtons').innerHTML = Array.from({length:5}, (_, i) => {
+    const r = state.roster.find(r => r.num === nums[i]);
+    if (!r) return `<button type="button" class="lineup-tile lineup-empty" onclick="openLineupDialog()" aria-label="Choose player for empty lineup spot ${i + 1}"><strong>+</strong><span>Empty spot</span></button>`;
+    const picked = r.num === selected.value;
+    return `<button type="button" class="lineup-tile ${picked ? 'selected' : ''}" data-player="${esc(r.num)}" onclick="selectActivePlayer(this.dataset.player)" aria-pressed="${picked}" aria-label="Select number ${esc(r.num)}, ${esc(r.name)}"><strong>#${esc(r.num)}</strong><span>${esc(r.name)}</span><small>${picked ? 'SELECTED' : esc(r.pos || 'ON COURT')}</small></button>`;
+  }).join('');
+  const status = document.getElementById('lineupStatus');
+  if (state.roster.length < 5) status.textContent = `Add ${5 - state.roster.length} more player${state.roster.length === 4 ? '' : 's'} in Roster, then set your five.`;
+  else if (!ready) status.textContent = `Choose ${5 - nums.length} player${nums.length === 4 ? '' : 's'} to complete this game's lineup before logging.`;
+  else if (!selected.value) status.textContent = 'Lineup ready. Tap the player who took the shot or finished the possession.';
+  else {
+    const r = state.roster.find(r => r.num === selected.value);
+    status.textContent = `Logging for #${r.num} ${r.name}${canSub ? '' : ' · No players on the bench'}`;
+  }
+  document.getElementById('logSubmit').disabled = !ready || !nums.includes(selected.value);
+}
+
+function selectActivePlayer(num) {
+  if (!activeLineup().includes(num)) return;
+  document.getElementById('logPlayer').value = num;
+  renderLineup(); updateCalculatedXp();
+  document.querySelectorAll('#activePlayerButtons [data-player]').forEach(b => { if (b.dataset.player === num) b.focus({preventScroll:true}); });
+}
+
+function openLineupDialog() {
+  lineupEditGameId = getActiveGame().id;
+  lineupDraft = [...activeLineup()];
+  document.getElementById('lineupGameName').textContent = getActiveGame().name;
+  renderLineupDraft();
+  document.getElementById('lineupDialog').showModal();
+}
+function renderLineupDraft() {
+  document.getElementById('lineupChoices').innerHTML = state.roster.map(r => {
+    const checked = lineupDraft.includes(r.num);
+    return `<label class="lineup-choice ${checked ? 'picked' : ''}"><input type="checkbox" value="${esc(r.num)}" onchange="toggleLineupPlayer(this.value, this.checked)" ${checked ? 'checked' : ''} ${!checked && lineupDraft.length >= 5 ? 'disabled' : ''}><span><strong>#${esc(r.num)} ${esc(r.name)}</strong><br><span class="lineup-help">${esc(r.pos || '')}</span></span></label>`;
+  }).join('') || '<p class="lineup-help">Your roster is empty. Add your players in the Roster tab first.</p>';
+  document.getElementById('lineupDraftCount').textContent = `${lineupDraft.length}/5 selected`;
+  document.getElementById('saveLineupButton').disabled = lineupDraft.length !== 5;
+  document.getElementById('lineupDraftMessage').textContent = state.roster.length < 5 ? 'At least five roster players are needed. Cancel and open Roster to add players.' : lineupDraft.length === 5 ? 'Ready to save. To change a player, uncheck someone first.' : `Choose ${5 - lineupDraft.length} more player${lineupDraft.length === 4 ? '' : 's'}.`;
+}
+function toggleLineupPlayer(num, checked) {
+  if (checked && lineupDraft.length < 5 && state.roster.some(r => r.num === num) && !lineupDraft.includes(num)) lineupDraft.push(num);
+  if (!checked) lineupDraft = lineupDraft.filter(n => n !== num);
+  renderLineupDraft();
+  document.querySelectorAll('#lineupChoices input').forEach(input => { if (input.value === num) input.focus({preventScroll:true}); });
+}
+function applyLineup() {
+  const nums = cleanLineup(lineupDraft), g = getActiveGame();
+  if (g.id !== lineupEditGameId || nums.length !== 5) { showToast('Choose five players for the current game.'); return; }
+  const previous = g.activeLineup;
+  g.activeLineup = [...nums];
+  if (!save()) { g.activeLineup = previous; document.getElementById('lineupDraftMessage').textContent = 'Unable to save. Check browser storage and try again. Your previous lineup is unchanged.'; return; }
+  document.getElementById('lineupDialog').close();
+  renderAll(); showToast('Five-player lineup saved');
+}
+function openSubDialog() {
+  const nums = activeLineup(), bench = state.roster.filter(r => !nums.includes(r.num));
+  if (nums.length !== 5) { openLineupDialog(); return; }
+  if (!bench.length) { showToast('No players on the bench. Add players in Roster.'); return; }
+  subGameId = getActiveGame().id;
+  const option = r => `<option value="${esc(r.num)}">#${esc(r.num)} — ${esc(r.name)}</option>`;
+  document.getElementById('subOut').innerHTML = '<option value="">Choose player out</option>' + nums.map(n => option(state.roster.find(r => r.num === n))).join('');
+  document.getElementById('subIn').innerHTML = '<option value="">Choose player in</option>' + bench.map(option).join('');
+  updateSubSummary();
+  document.getElementById('subDialog').showModal();
+}
+function updateSubSummary() {
+  const out = document.getElementById('subOut').value, incoming = document.getElementById('subIn').value;
+  document.getElementById('confirmSubButton').disabled = !out || !incoming;
+  document.getElementById('subSummary').textContent = out && incoming ? `#${out} out → #${incoming} in` : 'Pick one player from each list.';
+}
+function applySubstitution() {
+  const g = getActiveGame(), nums = activeLineup();
+  const out = document.getElementById('subOut').value, incoming = document.getElementById('subIn').value;
+  if (g.id !== subGameId || nums.length !== 5 || !nums.includes(out) || nums.includes(incoming) || !state.roster.some(r => r.num === incoming)) {
+    showToast('Lineup changed. Open Substitute again.'); return;
+  }
+  const previous = g.activeLineup;
+  g.activeLineup = nums.map(n => n === out ? incoming : n);
+  if (!save()) { g.activeLineup = previous; document.getElementById('subSummary').textContent = 'Unable to save. Check browser storage and try again. Your previous lineup is unchanged.'; return; }
+  document.getElementById('subDialog').close();
+  renderAll(); showToast(`Substitution: #${out} out, #${incoming} in`);
+}
 
 // ---------- Court math ----------
 function courtMetrics(x, y) {
@@ -396,11 +715,14 @@ const outcomeLabel = d => d.result === 'TO' ? 'Turnover' : d.result === 'FT' ? `
 
 // ---------- Init ----------
 window.addEventListener('DOMContentLoaded', () => {
+  normalizeLineups();
   document.getElementById('baselineSelect').value = state.activeBaseline;
   buildButtons(); populateDropdowns();
   const m = courtMetrics(ui.x, ui.y);
   readout(m);
   switchTab('tracker');
+  document.getElementById('authDialog').addEventListener('close', clearAuthPassword);
+  initFirebaseAuth();
 });
 
 function buildButtons() {
@@ -435,7 +757,7 @@ function populateMain() {
   const gs = document.getElementById('gameSelect');
   gs.innerHTML = state.games.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
   gs.value = state.activeGameId;
-  document.getElementById('logPlayer').innerHTML = state.roster.map(r => `<option value="${esc(r.num)}">${esc(r.num)} - ${esc(r.name)}</option>`).join('');
+  renderLineup();
   document.getElementById('logPlay').innerHTML = state.playbook.map(p => `<option value="${esc(p.code)}">${esc(p.code)} - ${esc(p.name)}</option>`).join('');
 }
 
@@ -448,11 +770,17 @@ function switchTab(tab) {
   renderAll();
 }
 
-function switchGame(id) { state.activeGameId = id; save(); renderAll(); }
+function switchGame(id) {
+  if (!state.games.some(g => g.id === id)) return;
+  state.activeGameId = id;
+  document.getElementById('logPlayer').value = '';
+  save(); renderAll();
+}
 function newGame() {
   const name = prompt('Game name (e.g. Cypress CC @ Fullerton):');
   if (!name || !name.trim()) return;
-  const g = {id:'game_' + Date.now(), name:name.trim(), date:new Date().toISOString().slice(0,10), possessions:[]};
+  const g = {id:'game_' + Date.now(), name:name.trim(), date:new Date().toISOString().slice(0,10), possessions:[], activeLineup:[]};
+  document.getElementById('logPlayer').value = '';
   state.games.push(g); state.activeGameId = g.id; save(); populateDropdowns(); renderAll();
 }
 function changeBaseline(v) { state.activeBaseline = v; save(); updateCalculatedXp(); renderAll(); showToast('Baseline: ' + (v === 'ROSTER' ? 'Active Roster Stats' : v.replace('_',' '))); }
@@ -483,6 +811,7 @@ function updateCalculatedXp() {
   const result = document.getElementById('logOutcome').value;
   const el = document.getElementById('estXpVal');
   document.getElementById('ftBox').style.display = result === 'FT' ? 'grid' : 'none';
+  if (activeLineup().length !== 5 || !activeLineup().includes(document.getElementById('logPlayer').value)) { el.innerText = '--'; return; }
   if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { el.innerText = '--'; return; }
   el.innerText = expectedPoints({x:ui.x, y:ui.y, shotType:ui.shotType, contest:ui.contest, result, playerNum:document.getElementById('logPlayer').value, fta:+document.getElementById('ftAtt').value || 2}).toFixed(2);
 }
@@ -490,6 +819,9 @@ function updateCalculatedXp() {
 // ---------- Logging ----------
 function handleLogPossession(e) {
   e.preventDefault();
+  const lineup = activeLineup(), num = document.getElementById('logPlayer').value;
+  if (lineup.length !== 5) { showToast('Set your five-player lineup before logging.'); return; }
+  if (!lineup.includes(num)) { showToast('Select a player who is on court.'); return; }
   const result = document.getElementById('logOutcome').value;
   if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { showToast('Click the court to place the shot first'); return; }
   let ftm, fta;
@@ -497,7 +829,6 @@ function handleLogPossession(e) {
     ftm = +document.getElementById('ftMade').value || 0; fta = +document.getElementById('ftAtt').value || 0;
     if (!Number.isInteger(ftm) || !Number.isInteger(fta) || fta < 1 || ftm < 0 || ftm > fta) { showToast('Free throws: made must be between 0 and attempts'); return; }
   }
-  const num = document.getElementById('logPlayer').value;
   const player = state.roster.find(r => r.num === num);
   if (!player) { showToast('Add a player to the roster first'); return; }
   getActiveGame().possessions.push({
@@ -505,16 +836,17 @@ function handleLogPossession(e) {
     playCode: document.getElementById('logPlay').value, result,
     shotType: ui.shotType, contest: ui.contest,
     clockPhase: document.getElementById('logClockPhase').value,
-    timestamp: document.getElementById('logTimestamp').value || '00:00',
-    x: ui.x, y: ui.y, ftm, fta, executed: ui.executed
+    x: ui.x, y: ui.y, ftm, fta, executed: ui.executed, lineup:[...lineup]
   });
+  if (!save()) { getActiveGame().possessions.pop(); return; }
   ui.executed = true; markSelected(); // reset to the default for the next possession
-  save(); renderAll();
+  renderAll();
   showToast(`Logged possession for #${num} ${player.name}`);
 }
 
 // ---------- Rendering ----------
 function renderAll() {
+  renderLineup();
   const poss = getActiveGame().possessions.map(derive);
   renderCourtPins(poss);
   if (ui.tab === 'analytics') renderAnalytics(poss);
@@ -522,7 +854,7 @@ function renderAll() {
   if (ui.tab === 'roster') renderRoster(poss);
   if (ui.tab === 'playbook') renderPlaybook();
   updateCalculatedXp();
-  lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
 }
 
 function outcomeMatch(p) {
@@ -591,19 +923,19 @@ function renderAnalytics(poss) {
   if (n) document.getElementById('playbookAnalyticsTable').insertAdjacentHTML('beforeend', `<tr class="text-slate-200 border-t-2 border-slate-700 font-bold"><td class="p-2">Total</td><td class="text-center font-mono">${n}</td><td class="text-center font-mono text-amber-400">${(pts / n).toFixed(2)}</td><td class="text-center font-mono ${pts - xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(pts - xp)}</td></tr>`);
 }
 
-const LOG_COLS = [['idx','#'],['player','PLAYER'],['play','PLAY CALL'],['time','TIME/PHASE'],['dist','DIST'],['outcome','OUTCOME'],['pts','PTS'],['xp','xP'],['poe','POE']];
+const LOG_COLS = [['idx','#'],['player','PLAYER'],['play','PLAY CALL'],['time','CLOCK PHASE'],['dist','DIST'],['outcome','OUTCOME'],['pts','PTS'],['xp','xP'],['poe','POE']];
 function sortLog(k) { if (ui.sortKey === k) ui.sortDir *= -1; else { ui.sortKey = k; ui.sortDir = 1; } renderAll(); }
 function setLogSearch() { ui.logQ = document.getElementById('logQ').value; ui.logField = document.getElementById('logField').value; renderAll(); }
 function renderGameLog(all) {
   document.getElementById('logHead').innerHTML = LOG_COLS.map(c =>
-    `<th class="p-2 cursor-pointer select-none hover:text-white ${['dist','pts','xp','poe'].includes(c[0]) ? 'text-center' : ''}" onclick="sortLog('${c[0]}')">${c[1]}${ui.sortKey === c[0] ? (ui.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '<th class="p-2 text-center">CLIP</th><th class="p-2"></th>';
+    `<th class="p-2 cursor-pointer select-none hover:text-white ${['dist','pts','xp','poe'].includes(c[0]) ? 'text-center' : ''}" onclick="sortLog('${c[0]}')">${c[1]}${ui.sortKey === c[0] ? (ui.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '<th class="p-2"></th>';
   const q = ui.logQ.trim().toLowerCase();
   let rows = all.map((p, i) => ({...p, idx:i + 1}));
   if (q) rows = rows.filter(p => {
-    const f = {player:`${p.playerNum} ${p.playerName}`, play:p.playCode, time:`${p.timestamp} ${p.clockPhase}`, outcome:outcomeLabel(p)};
+    const f = {player:`${p.playerNum} ${p.playerName}`, play:p.playCode, time:p.clockPhase || '', outcome:outcomeLabel(p)};
     return (ui.logField === 'all' ? Object.values(f).join(' ') : f[ui.logField]).toLowerCase().includes(q);
   });
-  const key = {idx:p => p.idx, player:p => p.playerName.toLowerCase(), play:p => p.playCode.toLowerCase(), time:p => parseTs(p.timestamp) ?? -1,
+  const key = {idx:p => p.idx, player:p => p.playerName.toLowerCase(), play:p => p.playCode.toLowerCase(), time:p => ['First 8s','22-10s','<= 10s'].indexOf(p.clockPhase),
     outcome:p => outcomeLabel(p), dist:p => p.fga ? p.distFt : -1, pts:p => p.pts, xp:p => p.xp, poe:p => p.poe}[ui.sortKey];
   rows.sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : a.idx - b.idx) * ui.sortDir; });
   document.getElementById('logCount').innerText = `Showing ${rows.length} of ${all.length}`;
@@ -612,15 +944,14 @@ function renderGameLog(all) {
       <td class="p-2 text-slate-500 font-mono">${p.idx}</td>
       <td class="p-2 font-bold">#${esc(p.playerNum)} ${esc(p.playerName)}</td>
       <td class="p-2">${esc(p.playCode)}${p.executed === false ? ' <span class="text-[10px] font-bold text-rose-400 px-1 rounded bg-rose-500/10 border border-rose-500/30">Broken</span>' : ''}</td>
-      <td class="p-2">${esc(p.timestamp)} (${esc(p.clockPhase)})</td>
+      <td class="p-2">${esc(p.clockPhase)}</td>
       <td class="p-2 text-center font-mono text-amber-400">${p.fga ? p.distFt + ' ft' : '-'}</td>
       <td class="p-2">${esc(outcomeLabel(p))}</td>
       <td class="p-2 text-center font-bold text-emerald-400">${p.pts}</td>
       <td class="p-2 text-center font-mono text-slate-400">${p.xp.toFixed(2)}</td>
       <td class="p-2 text-center font-mono ${p.poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(p.poe)}</td>
-      <td class="p-2 text-center"><button onclick="playClipAtTimestamp(${p.id})" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold text-[10px]">Clip</button></td>
       <td class="p-2 text-right"><button onclick="deletePossession(${p.id})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></td>
-    </tr>`).join('') || `<tr><td colspan="11" class="p-4 text-center text-slate-500">${all.length ? 'No possessions match your search' : 'No possessions logged yet'}</td></tr>`;
+    </tr>`).join('') || `<tr><td colspan="10" class="p-4 text-center text-slate-500">${all.length ? 'No possessions match your search' : 'No possessions logged yet'}</td></tr>`;
 }
 
 function renderRoster(poss) {
@@ -690,7 +1021,7 @@ function addRosterPlayerPrompt() {
 }
 function removeRosterPlayer(i) {
   const r = state.roster[i]; if (!r) return;
-  state.roster.splice(i, 1); save(); populateDropdowns(); renderAll(); showToast(`Removed #${r.num}`);
+  state.roster.splice(i, 1); normalizeLineups(); save(); populateDropdowns(); renderAll(); showToast(`Removed #${r.num}`);
 }
 
 function renderPlaybook() {
@@ -714,30 +1045,13 @@ function removePlaybookItem(i) {
 }
 
 // ---------- Video ----------
-function parseTs(t) {
-  const m = /^(\d+):(\d{1,2})$/.exec(String(t || '').trim());
-  return m ? (+m[1]) * 60 + (+m[2]) : null;
-}
-function playClipAtTimestamp(id) {
-  const p = getActiveGame().possessions.find(x => x.id === id);
-  switchTab('video');
-  const vid = document.getElementById('gameVideoPlayer');
-  const t = p && parseTs(p.timestamp);
-  if (t !== null) vid.currentTime = Math.max(0, t - 2);
-  vid.play().catch(() => {});
-}
-function captureCurrentVideoTime() {
-  const s = Math.floor(document.getElementById('gameVideoPlayer').currentTime || 0);
-  const v = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
-  document.getElementById('logTimestamp').value = v; showToast('Captured ' + v);
-}
 function handleLocalVideoUpload(e) {
   const f = e.target.files[0];
   if (f) { document.getElementById('gameVideoPlayer').src = URL.createObjectURL(f); showToast('Video loaded'); }
 }
 
 // ---------- CSV ----------
-const CSV_COLS = ['num','player','play','result','shotType','contest','clockPhase','timestamp','x','y','dist','pts','xp','poe','executed','ftm','fta'];
+const CSV_COLS = ['num','player','play','result','shotType','contest','clockPhase','timestamp','x','y','dist','pts','xp','poe','executed','ftm','fta','lineup'];
 const csvCell = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
 function parseCsv(text) {
   const rows = []; let row = [], cur = '', q = false;
@@ -755,7 +1069,7 @@ function parseCsv(text) {
 function exportGameCsv() {
   const g = getActiveGame(), poss = g.possessions.map(derive);
   if (!poss.length) { showToast('No possessions to export'); return; }
-  const lines = [CSV_COLS.join(',')].concat(poss.map(p => [p.playerNum, p.playerName, p.playCode, p.result, p.shotType, p.contest, p.clockPhase, p.timestamp, p.x, p.y, p.distFt, p.pts, p.xp, p.poe, p.executed !== false, p.ftm, p.fta].map(csvCell).join(',')));
+  const lines = [CSV_COLS.join(',')].concat(poss.map(p => [p.playerNum, p.playerName, p.playCode, p.result, p.shotType, p.contest, p.clockPhase, p.timestamp, p.x, p.y, p.distFt, p.pts, p.xp, p.poe, p.executed !== false, p.ftm, p.fta, Array.isArray(p.lineup) ? JSON.stringify(p.lineup) : ''].map(csvCell).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'}));
   a.download = g.name.replace(/[^\w\-]+/g, '_') + '.csv';
@@ -776,9 +1090,14 @@ function handleCsvFileUpload(e) {
       const x = +get('x'), y = +get('y'), result = get('result');
       if (!['Made','Miss','FT','TO'].includes(result) || isNaN(x) || isNaN(y)) { bad++; return; }
       const num = get('num'), pl = state.roster.find(p => p.num === num);
+      let lineup;
+      try {
+        const parsed = JSON.parse(get('lineup'));
+        if (Array.isArray(parsed) && parsed.length === 5 && parsed.every(n => typeof n === 'string' && n.trim()) && new Set(parsed).size === 5) lineup = parsed;
+      } catch(e) {} // Older exports have no lineup column; do not invent a historical lineup.
       g.possessions.push({id:Date.now() + i, ftm:(result === 'FT' && get('ftm') !== '' ? +get('ftm') : undefined), fta:(result === 'FT' && get('fta') !== '' ? +get('fta') : undefined), playerNum:num, playerName:pl ? pl.name : (get('player') || 'Player'), playCode:get('play') || 'Unknown',
         result, shotType:SHOT_TYPES.includes(get('shotType')) ? get('shotType') : 'Other', contest:get('contest') || 'Slight',
-        clockPhase:get('clockPhase') || '22-10s', timestamp:get('timestamp') || '00:00', x, y, executed:get('executed') !== 'false'});
+        clockPhase:get('clockPhase') || '22-10s', ...(get('timestamp') ? {timestamp:get('timestamp')} : {}), x, y, executed:get('executed') !== 'false', ...(lineup ? {lineup} : {})});
       ok++;
     });
     save(); closeSynergyModal(); renderAll();
@@ -788,7 +1107,7 @@ function handleCsvFileUpload(e) {
 }
 function loadDemoSynergyBatch() {
   getActiveGame().possessions.push({id:Date.now(), playerNum:'32', playerName:'Isaiah Valenzuela', playCode:'P&R Ball Handler',
-    result:'Made', shotType:'Layup', contest:'Open', clockPhase:'First 8s', timestamp:'00:08', x:250, y:82, executed:true});
+    result:'Made', shotType:'Layup', contest:'Open', clockPhase:'First 8s', x:250, y:82, executed:true});
   save(); closeSynergyModal(); renderAll(); showToast('Loaded demo possession');
 }
 
