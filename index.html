@@ -50,6 +50,7 @@
   .lineup-choice input{accent-color:#f59e0b;width:18px;height:18px;flex-shrink:0}
   .lineup-choice:has(input:disabled){opacity:.5;cursor:not-allowed}
   .lineup-dialog-footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem}
+  .action-badge{display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-right:4px}
   @media(max-width:480px){.lineup-panel{padding:.75rem}.lineup-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.lineup-choices{grid-template-columns:1fr}}
   th{padding-bottom:.5rem}
   ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#080d1a}::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
@@ -64,7 +65,7 @@
       <div>
         <div class="flex items-center space-x-2">
           <h1 class="font-black text-slate-100 text-sm tracking-wide">Track the Play. Measure the Look.</h1>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">v3.7</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">v3.8</span>
         </div>
         <div class="flex items-center space-x-2 text-[11px] text-slate-400 font-medium mt-0.5">
           <span>ACTIVE GAME:</span>
@@ -109,7 +110,10 @@
     <div class="card flex flex-col items-center">
       <div class="w-full flex items-center justify-between mb-3 px-1 text-xs">
         <span class="font-bold text-slate-200"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span>INTERACTIVE SHOT LOCATION</span>
-        <span class="text-slate-400 text-[11px] font-semibold">Click court to place shot</span>
+        <div class="flex items-center space-x-2">
+          <button id="heatmapToggle" onclick="toggleHeatmap()" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-bold text-[11px]">Heatmap: OFF</button>
+          <span class="text-slate-400 text-[11px] font-semibold">Click court to place shot</span>
+        </div>
       </div>
       <div class="w-full max-w-[480px] grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
         <select id="fPlay" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
@@ -117,6 +121,13 @@
         <select id="fPlayer" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
         <select id="fOut" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
         <select id="fLoc" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()"></select>
+        <select id="fCat" class="field !p-1.5 !text-[11px]" onchange="setChartFilter()">
+          <option value="">All Categories</option>
+          <option value="Half-Court Set">Half-Court Set</option>
+          <option value="BLOB">BLOB (Baseline OB)</option>
+          <option value="SLOB">SLOB (Sideline OB)</option>
+          <option value="Press Break">Press Break</option>
+        </select>
       </div>
       <div class="w-full max-w-[480px] flex items-center justify-between text-[11px] text-slate-400 mb-2 px-1">
         <span id="chartSummary"></span>
@@ -124,23 +135,25 @@
       </div>
       <div class="relative w-full max-w-[480px] aspect-[520/490] bg-[#1a1008] rounded-xl border-4 border-[#2d1c0e] overflow-hidden">
         <svg id="courtSvg" viewBox="-10 0 520 490" class="w-full h-full court-svg cursor-crosshair" onclick="handleCourtClick(event)">
-            <!-- Scale: 10px = 1ft. Baseline y=10, centerline of court x=250, rim center (250,62.5) = 5.25 ft from baseline -->
+            <defs>
+              <filter id="heatBlur" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="16" />
+              </filter>
+            </defs>
             <rect x="-10" y="0" width="520" height="490" fill="#22150c"/>
             <path d="M-10,30H510M-10,60H510M-10,90H510M-10,120H510M-10,150H510M-10,180H510M-10,210H510M-10,240H510M-10,270H510M-10,300H510M-10,330H510M-10,360H510M-10,390H510M-10,420H510M-10,450H510M-10,480H510" stroke="#160d07" stroke-width="1.5"/>
             <rect x="0" y="10" width="500" height="470" fill="none" stroke="#fff" stroke-width="3"/>
-            <!-- Lane: 12 ft wide, free throw line 19 ft from baseline -->
             <rect x="190" y="10" width="120" height="190" fill="#180e07" stroke="#fff" stroke-width="2.5"/>
             <path d="M 190,200 A 60,60 0 0,0 310,200" fill="none" stroke="#fff" stroke-width="2"/>
             <path d="M 190,200 A 60,60 0 0,1 310,200" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="6,6"/>
-            <!-- Restricted area: 4 ft radius from rim center -->
             <path d="M 210,10 L 210,62.5 A 40,40 0 0,0 290,62.5 L 290,10" fill="none" stroke="#fff" stroke-width="2"/>
-            <!-- NCAA men 3pt: arc 22.146 ft (265.75 in) from rim center; corners 21 ft 8 in -->
             <path d="M 33.33,10 L 33.33,108.31 A 221.46,221.46 0 0,0 466.67,108.31 L 466.67,10" fill="none" stroke="#fff" stroke-width="3"/>
             <path d="M 190,480 A 60,60 0 0,1 310,480" fill="none" stroke="#fff" stroke-width="2.5"/>
             <line x1="220" y1="50" x2="280" y2="50" stroke="#fff" stroke-width="4"/>
             <line x1="250" y1="50" x2="250" y2="55" stroke="#f97316" stroke-width="2"/>
             <circle cx="250" cy="62.5" r="7.5" fill="none" stroke="#f97316" stroke-width="3"/>
             <line id="distanceLine" x1="250" y1="62.5" x2="250" y2="62.5" stroke="#f97316" stroke-width="2" stroke-dasharray="4,4" class="hidden"/>
+            <g id="heatmapGroup" filter="url(#heatBlur)" style="opacity:0.75;" class="hidden"></g>
             <g id="shotPinsGroup"></g>
             <circle id="activePin" cx="-50" cy="-50" r="8" fill="#f97316" stroke="#fff" stroke-width="2.5" class="animate-pulse hidden"/>
           </svg>
@@ -152,15 +165,32 @@
       </div>
     </div>
 
+    <!-- LOGGER WITH MERGED POSSESSION SUPPORT -->
     <div class="card space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-        <div class="flex items-center space-x-2"><i data-lucide="edit-3" class="w-4 h-4 text-amber-500"></i><h2 class="font-bold text-sm text-slate-100">Log Possession</h2></div>
-        <div class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs">Est xP: <span id="estXpVal">--</span></div>
+        <div class="flex items-center space-x-2">
+          <i data-lucide="edit-3" class="w-4 h-4 text-amber-500"></i>
+          <h2 class="font-bold text-sm text-slate-100">Log Possession / Sequence</h2>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span id="chainedActionsCount" class="hidden px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold text-[10px]">0 actions queued</span>
+          <div class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs">Est xP: <span id="estXpVal">--</span></div>
+        </div>
       </div>
+
+      <!-- MERGED POSSESSION QUEUED ACTIONS BANNER -->
+      <div id="actionQueueBanner" class="hidden bg-[#080d1a] border border-indigo-500/40 rounded-xl p-3 space-y-2">
+        <div class="flex items-center justify-between text-xs font-bold text-indigo-400">
+          <span><i data-lucide="layers" class="w-3.5 h-3.5 inline mr-1"></i>POSSESSION CHAIN IN PROGRESS</span>
+          <button onclick="clearActionQueue()" class="text-rose-400 text-[10px] hover:underline">Reset Chain</button>
+        </div>
+        <div id="actionQueueList" class="space-y-1 text-[11px] text-slate-300 font-mono"></div>
+      </div>
+
       <form id="loggerForm" onsubmit="handleLogPossession(event)" class="space-y-4 text-xs">
         <div class="lineup-panel" aria-labelledby="lineupHeading">
           <div class="lineup-heading">
-            <div><h3 id="lineupHeading" class="font-bold text-sm">On court <span id="lineupCount" class="text-amber-400 text-xs"></span></h3><p class="lineup-help">Tap the player to log their possession.</p></div>
+            <div><h3 id="lineupHeading" class="font-bold text-sm">On court <span id="lineupCount" class="text-amber-400 text-xs"></span></h3><p class="lineup-help">Tap the player to log their action.</p></div>
             <div class="lineup-actions">
               <button type="button" id="editLineupButton" class="lineup-action" onclick="openLineupDialog()">Set lineup</button>
               <button type="button" id="subLineupButton" class="lineup-action primary" onclick="openSubDialog()" disabled>Substitute</button>
@@ -170,14 +200,18 @@
           <div id="activePlayerButtons" class="lineup-grid" role="group" aria-label="Choose player on court"></div>
           <p id="lineupStatus" class="lineup-help" aria-live="polite"></p>
         </div>
-        <div><label class="lbl">PLAY CALL / SET</label><select id="logPlay" class="field"></select></div>
         <div>
-          <label class="lbl">OUTCOME <span class="text-slate-500 font-medium">(2 vs 3 comes from the shot location)</span></label>
+          <label class="lbl">PLAY CALL / SET</label>
+          <select id="logPlay" class="field"></select>
+        </div>
+        <div>
+          <label class="lbl">OUTCOME <span class="text-slate-500 font-medium">(Choose result or offensive rebound to string actions)</span></label>
           <select id="logOutcome" onchange="updateCalculatedXp()" class="field">
-            <option value="Made">Made Field Goal</option>
-            <option value="Miss">Missed Field Goal</option>
+            <option value="Made">Made Field Goal (Ends Possession)</option>
+            <option value="Miss">Missed Field Goal (Defensive Rebound / End)</option>
+            <option value="Miss_OffReb">Missed Field Goal (Offensive Rebound / Continue)</option>
             <option value="FT">Shooting Foul Drawn (FTs)</option>
-            <option value="TO">Turnover</option>
+            <option value="TO">Turnover (Ends Possession)</option>
           </select>
         </div>
         <div id="ftBox" class="grid grid-cols-2 gap-3" style="display:none">
@@ -189,17 +223,26 @@
         <div>
           <label class="lbl" for="logClockPhase">SHOT CLOCK PHASE</label>
           <select id="logClockPhase" class="field">
-            <option value="First 8s">First 8s (0-8s)</option>
-            <option value="22-10s" selected>22-10s (Mid Clock)</option>
-            <option value="<= 10s">&lt;= 10s (Late Clock)</option>
+            <option value="First 8s">First 8s (0-8s Fastbreak)</option>
+            <option value="22-10s" selected>22-10s (Mid Clock Set)</option>
+            <option value="<= 10s">&lt;= 10s (Late Clock / Reset)</option>
           </select>
         </div>
         <div><label class="lbl">EXECUTION</label>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" class="opt ex green" data-v="1">Executed</button>
             <button type="button" class="opt ex red" data-v="0">Broken</button>
-          </div></div>
-        <button type="submit" id="logSubmit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase" disabled>Log Possession &amp; Calculate xP</button>
+          </div>
+        </div>
+        
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="handleAddActionToQueue()" id="queueActionBtn" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 font-bold rounded-xl text-xs uppercase tracking-wider">
+            + String Action (Off Rebound / Reset)
+          </button>
+          <button type="submit" id="logSubmit" class="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase" disabled>
+            Log &amp; Finish Possession
+          </button>
+        </div>
       </form>
     </div>
   </section>
@@ -224,7 +267,7 @@
     <div class="card space-y-3">
       <h3 class="font-bold text-xs text-slate-200">Play Call Efficiency</h3>
       <div class="overflow-x-auto"><table class="w-full text-left text-[11px]">
-        <thead><tr class="border-b border-slate-800 text-slate-400 font-semibold"><th>PLAY CALL</th><th class="text-center">RUNS</th><th class="text-center">PPP</th><th class="text-center">POE</th></tr></thead>
+        <thead><tr class="border-b border-slate-800 text-slate-400 font-semibold"><th>PLAY CALL</th><th class="text-center">CATEGORY</th><th class="text-center">RUNS</th><th class="text-center">PPP</th><th class="text-center">POE</th></tr></thead>
         <tbody id="playbookAnalyticsTable" class="divide-y divide-slate-800/40"></tbody>
       </table></div>
     </div>
@@ -273,7 +316,10 @@
   <!-- PLAYBOOK -->
   <section id="viewPlaybook" class="hidden card space-y-4">
     <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-      <div><h2 class="font-bold text-sm text-slate-100">Playbook Library</h2><p class="text-[11px] text-slate-400">Define set plays, offensive actions, and tactical codes</p></div>
+      <div>
+        <h2 class="font-bold text-sm text-slate-100">Playbook Library</h2>
+        <p class="text-[11px] text-slate-400">Categorize set plays (Half-Court, BLOB, SLOB, Press Break)</p>
+      </div>
       <button onclick="addPlaybookItemPrompt()" class="px-3 py-1.5 bg-amber-500 text-slate-950 text-xs font-bold rounded-xl">+ Add Play Call</button>
     </div>
     <div id="playbookCards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -295,7 +341,7 @@
     <p id="authSignedInEmail" class="text-sm font-bold break-all"></p>
     <button type="button" id="authSignOut" class="lineup-action mt-4" onclick="handleSignOut()">Sign Out</button>
   </div>
-  <p class="lineup-help mt-4">Games, rosters, and lineups stay in this browser's workspace. Signing in does not sync or move game data between devices.</p>
+  <p class="lineup-help mt-4">Games, rosters, and lineups sync with Firebase Firestore when logged in.</p>
 </dialog>
 
 <dialog id="lineupDialog" class="pv-dialog" aria-labelledby="lineupDialogTitle" aria-describedby="lineupDialogHint">
@@ -327,7 +373,7 @@
   <div class="bg-[#0d1424] border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4 relative">
     <button onclick="closeStatsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
     <div><h3 class="font-bold text-base text-white">Shooting Stats</h3><p id="statsTitle" class="text-xs text-amber-400 font-bold"></p></div>
-    <p class="text-[11px] text-slate-400">Used when the baseline is set to "Active Roster Stats". Enter makes and attempts, or type a percentage to fill in makes from the attempts.</p>
+    <p class="text-[11px] text-slate-400">Used when baseline is "Active Roster Stats".</p>
     <div class="grid grid-cols-3 gap-2 text-xs">
       <div><label class="lbl">FG MADE</label><input id="sFgm" type="number" min="0" class="field" oninput="syncPct()"></div>
       <div><label class="lbl">FG ATT</label><input id="sFga" type="number" min="0" class="field" oninput="syncPct()"></div>
@@ -357,7 +403,7 @@
     <div class="border-2 border-dashed border-slate-700 hover:border-amber-500/50 rounded-xl p-6 text-center bg-[#080d1a] cursor-pointer" onclick="document.getElementById('csvFileInput').click()">
       <i data-lucide="upload-cloud" class="w-8 h-8 text-amber-500 mx-auto mb-2"></i>
       <p class="text-xs font-bold text-slate-200">Click to choose a CSV</p>
-      <p class="text-[10px] text-slate-500 mt-1">Reads CSVs exported from this app (needs num, result, x, y columns)</p>
+      <p class="text-[10px] text-slate-500 mt-1">Reads CSVs exported from this app</p>
       <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCsvFileUpload(event)">
     </div>
     <button onclick="loadDemoSynergyBatch()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700">Load Demo Possession</button>
@@ -366,8 +412,6 @@
 
 <script>
 const STORE_KEY = 'playvalue_v36';
-// Public Firebase web configuration for the existing Play Value project.
-// Authentication is separate from the existing browser-local game workspace.
 const firebaseConfig = {
   apiKey: "AIzaSyCEz0IWxW_rtm94fyVu4rdRMY7PeF5InBk",
   authDomain: "play-value-90ed5.firebaseapp.com",
@@ -377,15 +421,15 @@ const firebaseConfig = {
   appId: "1:542567989712:web:bad63ccebaea3a3e05b9d5",
   measurementId: "G-Q67LDR5HG3"
 };
-const account = {auth:null, sdk:null, user:null, ready:false, busy:false, loading:null, error:'', unsubscribe:null};
+
+const account = {auth:null, db:null, sdk:null, firestoreSdk:null, user:null, ready:false, busy:false, loading:null, error:'', unsubscribe:null};
 const SHOT_TYPES = ['Catch & Shoot','Off Dribble','Layup','Dunk','Post Shot','Other'];
 const SHOT_MULT = {'Catch & Shoot':1.04,'Off Dribble':0.94,'Layup':1.0,'Dunk':1.12,'Post Shot':0.97,'Other':0.95};
 const CONTESTS = [['Open','3 - Open','green',1.25],['Slight','2 - Slight','amber',1.0],['Heavy','1 - Heavy','red',0.72]];
-const PRIOR_ATT = 20; // attempts of league-average prior blended into each player's %
+const PRIOR_ATT = 20;
 const BASELINE_MULT = {JUCO:0.96, NCAA_D1:1.04, NCAA_D2:1.0, NCAA_D3:0.98};
-// Geometry: 10px = 1ft; baseline y=10; rim center is 5.25 ft from the baseline
-const RIM = {x:250, y:62.5}, ARC_PX = 221.46 /* 22 ft 1.75 in */, CORNER_DX = 216.67 /* 21 ft 8 in */;
-const LANE_HALF = 60, SLOT_HALF = 120, ELBOW_DEG = 35, SHORT_DEG = 64; // 2pt zones outside the lane: Elbow = up to 35 deg from the rim's up-court axis, Wing = 35-64 deg, Short Corner = beyond 64 deg (toward the baseline)
+const RIM = {x:250, y:62.5}, ARC_PX = 221.46, CORNER_DX = 216.67;
+const LANE_HALF = 60, SLOT_HALF = 120, ELBOW_DEG = 35, SHORT_DEG = 64;
 const ZONES = ['Corner 3','Wing 3','Slot 3','Top of Key 3','Short Corner','Wing','Elbow','Nail','In The Paint','Restricted Area'];
 const CORNER_Y = RIM.y + Math.sqrt(ARC_PX ** 2 - CORNER_DX ** 2);
 
@@ -393,64 +437,92 @@ const defaults = () => ({
   activeBaseline:'JUCO', activeGameId:'game_1',
   games:[{id:'game_1', name:'Cypress CC @ Riverside City', date:'2026-02-18', possessions:[]}],
   roster:[{num:'1',name:'Zack Moritz',pos:'G'},{num:'2',name:'Tylon Williams',pos:'G'},{num:'5',name:'Jabari Harris',pos:'F'},{num:'10',name:'Jack Rivera',pos:'G'},{num:'15',name:'Amaan Zavir',pos:'G'},{num:'20',name:'Christian Warren',pos:'F'},{num:'32',name:'Isaiah Valenzuela',pos:'G'}],
-  playbook:[{code:'P&R Ball Handler',name:'Pick & Roll Ball Handler',cat:'P&R'},{code:'Spot-Up',name:'Spot-Up Jumper',cat:'Spot'},{code:'ISO',name:'Isolation Action',cat:'ISO'},{code:'Off Screen',name:'Off Screen Shooter',cat:'Screen'},{code:'Transition',name:'Transition Fastbreak',cat:'Early'}]
+  playbook:[
+    {code:'P&R Ball Handler',name:'Pick & Roll Ball Handler',cat:'Half-Court Set'},
+    {code:'Spot-Up',name:'Spot-Up Jumper',cat:'Half-Court Set'},
+    {code:'ISO',name:'Isolation Action',cat:'Half-Court Set'},
+    {code:'Box SLOB',name:'Box SLOB Action',cat:'SLOB'},
+    {code:'Stack BLOB',name:'Stack Baseline Out of Bounds',cat:'BLOB'},
+    {code:'Press Break 1',name:'1-2-1-1 Press Break',cat:'Press Break'}
+  ]
 });
 
 let state = defaults();
 try { const s = localStorage.getItem(STORE_KEY); if (s) state = Object.assign(defaults(), JSON.parse(s)); } catch(e) {}
-// Required play calls so every possession has a category and team totals reconcile
+
+// Ensure required system play calls exist
 [{code:'Putback', name:'Putback (Offensive Rebound)', cat:'Putback'},
  {code:'Misc', name:'Miscellaneous (Broken Play / Backcourt Steal)', cat:'Misc'}].forEach(r => {
   const e = state.playbook.find(p => p.code === r.code);
   if (e) e.locked = true; else state.playbook.push({...r, locked:true});
 });
-// UI-only state (not persisted)
-const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', executed:true, logQ:'', logField:'all', sortKey:'idx', sortDir:1};
+
+// Action Queue Buffer for Merged Possessions
+let queuedActions = [];
+let showHeatmap = false;
+
+const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', fCat:'', executed:true, logQ:'', logField:'all', sortKey:'idx', sortDir:1};
+
+async function pushToCloud() {
+  if (!account.user || !account.db || !account.firestoreSdk) return;
+  try {
+    const { doc, setDoc } = account.firestoreSdk;
+    await setDoc(doc(account.db, 'users', account.user.uid, 'workspace', 'data'), { state });
+  } catch(e) { console.error('Cloud save error:', e); }
+}
+
+async function pullFromCloud() {
+  if (!account.user || !account.db || !account.firestoreSdk) return;
+  try {
+    const { doc, getDoc } = account.firestoreSdk;
+    const snap = await getDoc(doc(account.db, 'users', account.user.uid, 'workspace', 'data'));
+    if (snap.exists() && snap.data().state) {
+      state = Object.assign(defaults(), snap.data().state);
+      normalizeLineups(); populateDropdowns(); renderAll();
+      showToast('Synced workspace from cloud');
+    }
+  } catch(e) { console.error('Cloud load error:', e); }
+}
 
 function save(){
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); return true; }
-  catch(e) { showToast('Unable to save in this browser. Check available storage and export your game data.'); return false; }
+  try { 
+    localStorage.setItem(STORE_KEY, JSON.stringify(state)); 
+    pushToCloud();
+    return true; 
+  }
+  catch(e) { showToast('Unable to save in this browser. Check available storage.'); return false; }
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const getActiveGame = () => state.games.find(g => g.id === state.activeGameId) || state.games[0];
 
-// ---------- Firebase email/password authentication ----------
-// Load independently: a network/SDK failure must not break local shot tracking.
+// ---------- Firebase Authentication & Firestore ----------
 function authMessage(message, isError = false) {
   const el = document.getElementById('authStatus');
-  el.textContent = message;
-  el.style.color = isError ? '#fda4af' : '#94a3b8';
+  if (el) { el.textContent = message; el.style.color = isError ? '#fda4af' : '#94a3b8'; }
 }
 function renderAuth() {
   const signedIn = !!account.user;
   document.getElementById('accountButton').textContent = signedIn ? 'Account ✓' : 'Sign In';
-  document.getElementById('accountButton').title = signedIn ? `Signed in as ${account.user.email || 'Play Value user'}` : 'Sign in with your existing email and password';
+  document.getElementById('accountButton').title = signedIn ? `Signed in as ${account.user.email || 'Play Value user'}` : 'Sign in with your email and password';
   document.getElementById('authTitle').textContent = signedIn ? 'Your Play Value account' : 'Sign in to Play Value';
   document.getElementById('authForm').classList.toggle('hidden', signedIn);
   document.getElementById('authSignedIn').classList.toggle('hidden', !signedIn);
   document.getElementById('authSignedInEmail').textContent = account.user?.email || '';
   document.getElementById('authRetry').classList.toggle('hidden', !account.error);
-  ['authSubmit','authReset'].forEach(id => document.getElementById(id).disabled = !account.ready || account.busy);
+  ['authSubmit','authReset'].forEach(id => { if (document.getElementById(id)) document.getElementById(id).disabled = !account.ready || account.busy; });
   document.getElementById('authSignOut').disabled = account.busy;
   document.getElementById('authSubmit').textContent = account.busy ? 'Please wait…' : 'Sign In';
 }
 function authErrorMessage(error) {
   const messages = {
-    'auth/invalid-credential':'Email or password is incorrect. Try again or reset your password.',
-    'auth/invalid-login-credentials':'Email or password is incorrect. Try again or reset your password.',
-    'auth/wrong-password':'Email or password is incorrect. Try again or reset your password.',
-    'auth/user-not-found':'Email or password is incorrect. Try again or reset your password.',
+    'auth/invalid-credential':'Email or password is incorrect.',
+    'auth/invalid-login-credentials':'Email or password is incorrect.',
+    'auth/wrong-password':'Email or password is incorrect.',
+    'auth/user-not-found':'Email or password is incorrect.',
     'auth/invalid-email':'Enter a valid email address.',
-    'auth/user-disabled':'This account is disabled. Contact the team administrator.',
-    'auth/too-many-requests':'Too many attempts. Wait a few minutes before trying again.',
-    'auth/network-request-failed':'Unable to reach sign-in. Check your connection and try again.',
-    'auth/operation-not-allowed':'Email/password sign-in is disabled for this Firebase project. The site owner needs to enable it in Firebase Authentication.',
-    'auth/unauthorized-domain':'This website is not authorized for sign-in. The site owner needs to add this domain in Firebase Authentication settings.',
-    'auth/invalid-api-key':'The Firebase web configuration was rejected. Contact the site owner.',
-    'auth/app-not-authorized':'Firebase does not allow this website to use the configured key. Contact the site owner.',
-    'auth/web-storage-unsupported':'This browser is blocking sign-in storage. Allow site storage and try again.'
+    'auth/too-many-requests':'Too many attempts. Try again later.'
   };
-  return messages[error?.code] || 'Sign-in could not complete. Check your connection and try again.';
+  return messages[error?.code] || 'Sign-in could not complete. Check your connection.';
 }
 async function initFirebaseAuth() {
   if (account.ready) return;
@@ -462,19 +534,26 @@ async function initFirebaseAuth() {
     try {
       const modules = Promise.all([
         import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js'),
-        import('https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js')
+        import('https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js'),
+        import('https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js')
       ]);
-      const [appSdk, authSdk] = await Promise.race([modules, new Promise((_, reject) => {
+      const [appSdk, authSdk, firestoreSdk] = await Promise.race([modules, new Promise((_, reject) => {
         timeout = setTimeout(() => reject(new Error('Sign-in connection timed out')), 15000);
       })]);
       clearTimeout(timeout);
       const app = appSdk.getApps().find(a => a.name === '[DEFAULT]') || appSdk.initializeApp(firebaseConfig);
       account.auth = authSdk.getAuth(app);
       account.sdk = authSdk;
+      account.db = firestoreSdk.getFirestore(app);
+      account.firestoreSdk = firestoreSdk;
+
       if (account.unsubscribe) account.unsubscribe();
-      account.unsubscribe = authSdk.onAuthStateChanged(account.auth, user => {
+      account.unsubscribe = authSdk.onAuthStateChanged(account.auth, async (user) => {
         account.user = user; account.ready = true; account.error = '';
-        if (user) document.getElementById('authPassword').value = '';
+        if (user) {
+          document.getElementById('authPassword').value = '';
+          await pullFromCloud();
+        }
         authMessage(user ? 'Signed in successfully.' : 'Use your existing Play Value email and password.');
         renderAuth();
       }, error => {
@@ -483,56 +562,43 @@ async function initFirebaseAuth() {
       });
     } catch(error) {
       account.ready = false;
-      account.error = 'Sign-in could not connect. Check your connection or content blocker, then retry. Shot tracking is still available.';
+      account.error = 'Sign-in could not connect.';
       authMessage(account.error, true); renderAuth();
     } finally { clearTimeout(timeout); account.loading = null; }
   })();
   return account.loading;
 }
-function openAuthDialog() {
-  renderAuth();
-  document.getElementById('authDialog').showModal();
-  if (!account.ready && !account.loading) initFirebaseAuth();
-  if (!account.user) document.getElementById('authEmail').focus();
-}
+function openAuthDialog() { renderAuth(); document.getElementById('authDialog').showModal(); if (!account.ready && !account.loading) initFirebaseAuth(); }
 function closeAuthDialog() { document.getElementById('authDialog').close(); }
 function clearAuthPassword() {
   document.getElementById('authPassword').value = '';
   document.getElementById('authPassword').type = 'password';
   document.getElementById('showPassword').textContent = 'Show';
-  document.getElementById('showPassword').setAttribute('aria-pressed', 'false');
 }
 function togglePasswordVisibility() {
   const field = document.getElementById('authPassword'), button = document.getElementById('showPassword');
-  const show = field.type === 'password';
-  field.type = show ? 'text' : 'password'; button.textContent = show ? 'Hide' : 'Show';
-  button.setAttribute('aria-pressed', String(show));
+  const show = field.type === 'password'; field.type = show ? 'text' : 'password'; button.textContent = show ? 'Hide' : 'Show';
 }
 async function handleSignIn(event) {
   event.preventDefault();
-  if (!account.ready || account.busy || !document.getElementById('authForm').reportValidity()) return;
+  if (!account.ready || account.busy) return;
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   account.busy = true; renderAuth(); authMessage('Signing in…');
   try {
     await account.sdk.setPersistence(account.auth, document.getElementById('authRemember').checked ? account.sdk.browserLocalPersistence : account.sdk.browserSessionPersistence);
     await account.sdk.signInWithEmailAndPassword(account.auth, email, password);
-    clearAuthPassword(); closeAuthDialog(); showToast('Signed in to Play Value');
+    clearAuthPassword(); closeAuthDialog(); showToast('Signed in & Synced');
   } catch(error) { authMessage(authErrorMessage(error), true); }
   finally { account.busy = false; renderAuth(); }
 }
 async function resetAuthPassword() {
   if (!account.ready || account.busy) return;
-  const email = document.getElementById('authEmail');
-  if (!email.reportValidity()) return;
-  account.busy = true; renderAuth(); authMessage('Requesting a password reset…');
+  const email = document.getElementById('authEmail').value.trim();
   try {
-    await account.sdk.sendPasswordResetEmail(account.auth, email.value.trim());
-    authMessage('If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.');
-  } catch(error) {
-    if (error?.code === 'auth/user-not-found') authMessage('If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.');
-    else authMessage(authErrorMessage(error), true);
-  } finally { account.busy = false; renderAuth(); }
+    await account.sdk.sendPasswordResetEmail(account.auth, email);
+    authMessage('Password reset link sent.');
+  } catch(error) { authMessage(authErrorMessage(error), true); }
 }
 async function handleSignOut() {
   if (!account.ready || account.busy) return;
@@ -542,16 +608,12 @@ async function handleSignOut() {
   finally { account.busy = false; renderAuth(); }
 }
 
-// ---------- Five-player lineups ----------
-// Jersey numbers are the existing roster identifier. Keep the v3.6 storage key
-// so this update preserves games, season stats, plays, and possessions.
+// ---------- Lineups ----------
 function cleanLineup(nums) {
   const rosterNums = new Set(state.roster.map(r => r.num));
   return [...new Set(Array.isArray(nums) ? nums.map(String) : [])].filter(n => rosterNums.has(n)).slice(0, 5);
 }
-function normalizeLineups() {
-  state.games.forEach(g => { g.activeLineup = cleanLineup(g.activeLineup); });
-}
+function normalizeLineups() { state.games.forEach(g => { g.activeLineup = cleanLineup(g.activeLineup); }); }
 const activeLineup = () => cleanLineup(getActiveGame().activeLineup);
 let lineupDraft = [], lineupEditGameId = null, subGameId = null;
 
@@ -564,92 +626,77 @@ function renderLineup() {
   const canSub = ready && state.roster.some(r => !nums.includes(r.num));
   const subButton = document.getElementById('subLineupButton');
   subButton.disabled = !canSub;
-  subButton.title = canSub ? 'Swap an on-court player for a bench player' : ready ? 'No players on the bench' : 'Set five players first';
   document.getElementById('activePlayerButtons').innerHTML = Array.from({length:5}, (_, i) => {
     const r = state.roster.find(r => r.num === nums[i]);
-    if (!r) return `<button type="button" class="lineup-tile lineup-empty" onclick="openLineupDialog()" aria-label="Choose player for empty lineup spot ${i + 1}"><strong>+</strong><span>Empty spot</span></button>`;
+    if (!r) return `<button type="button" class="lineup-tile lineup-empty" onclick="openLineupDialog()"><strong>+</strong><span>Empty spot</span></button>`;
     const picked = r.num === selected.value;
-    return `<button type="button" class="lineup-tile ${picked ? 'selected' : ''}" data-player="${esc(r.num)}" onclick="selectActivePlayer(this.dataset.player)" aria-pressed="${picked}" aria-label="Select number ${esc(r.num)}, ${esc(r.name)}"><strong>#${esc(r.num)}</strong><span>${esc(r.name)}</span><small>${picked ? 'SELECTED' : esc(r.pos || 'ON COURT')}</small></button>`;
+    return `<button type="button" class="lineup-tile ${picked ? 'selected' : ''}" data-player="${esc(r.num)}" onclick="selectActivePlayer(this.dataset.player)"><strong>#${esc(r.num)}</strong><span>${esc(r.name)}</span><small>${picked ? 'SELECTED' : esc(r.pos || 'ON COURT')}</small></button>`;
   }).join('');
   const status = document.getElementById('lineupStatus');
-  if (state.roster.length < 5) status.textContent = `Add ${5 - state.roster.length} more player${state.roster.length === 4 ? '' : 's'} in Roster, then set your five.`;
-  else if (!ready) status.textContent = `Choose ${5 - nums.length} player${nums.length === 4 ? '' : 's'} to complete this game's lineup before logging.`;
-  else if (!selected.value) status.textContent = 'Lineup ready. Tap the player who took the shot or finished the possession.';
+  if (state.roster.length < 5) status.textContent = `Add ${5 - state.roster.length} more player(s) in Roster first.`;
+  else if (!ready) status.textContent = `Choose ${5 - nums.length} player(s) to complete lineup.`;
+  else if (!selected.value) status.textContent = 'Tap player who executed action.';
   else {
     const r = state.roster.find(r => r.num === selected.value);
-    status.textContent = `Logging for #${r.num} ${r.name}${canSub ? '' : ' · No players on the bench'}`;
+    status.textContent = `Logging for #${r.num} ${r.name}`;
   }
-  document.getElementById('logSubmit').disabled = !ready || !nums.includes(selected.value);
+  document.getElementById('logSubmit').disabled = !ready || (!selected.value && !queuedActions.length);
 }
 
 function selectActivePlayer(num) {
   if (!activeLineup().includes(num)) return;
   document.getElementById('logPlayer').value = num;
   renderLineup(); updateCalculatedXp();
-  document.querySelectorAll('#activePlayerButtons [data-player]').forEach(b => { if (b.dataset.player === num) b.focus({preventScroll:true}); });
 }
 
 function openLineupDialog() {
-  lineupEditGameId = getActiveGame().id;
-  lineupDraft = [...activeLineup()];
+  lineupEditGameId = getActiveGame().id; lineupDraft = [...activeLineup()];
   document.getElementById('lineupGameName').textContent = getActiveGame().name;
-  renderLineupDraft();
-  document.getElementById('lineupDialog').showModal();
+  renderLineupDraft(); document.getElementById('lineupDialog').showModal();
 }
 function renderLineupDraft() {
   document.getElementById('lineupChoices').innerHTML = state.roster.map(r => {
     const checked = lineupDraft.includes(r.num);
     return `<label class="lineup-choice ${checked ? 'picked' : ''}"><input type="checkbox" value="${esc(r.num)}" onchange="toggleLineupPlayer(this.value, this.checked)" ${checked ? 'checked' : ''} ${!checked && lineupDraft.length >= 5 ? 'disabled' : ''}><span><strong>#${esc(r.num)} ${esc(r.name)}</strong><br><span class="lineup-help">${esc(r.pos || '')}</span></span></label>`;
-  }).join('') || '<p class="lineup-help">Your roster is empty. Add your players in the Roster tab first.</p>';
+  }).join('');
   document.getElementById('lineupDraftCount').textContent = `${lineupDraft.length}/5 selected`;
   document.getElementById('saveLineupButton').disabled = lineupDraft.length !== 5;
-  document.getElementById('lineupDraftMessage').textContent = state.roster.length < 5 ? 'At least five roster players are needed. Cancel and open Roster to add players.' : lineupDraft.length === 5 ? 'Ready to save. To change a player, uncheck someone first.' : `Choose ${5 - lineupDraft.length} more player${lineupDraft.length === 4 ? '' : 's'}.`;
 }
 function toggleLineupPlayer(num, checked) {
   if (checked && lineupDraft.length < 5 && state.roster.some(r => r.num === num) && !lineupDraft.includes(num)) lineupDraft.push(num);
   if (!checked) lineupDraft = lineupDraft.filter(n => n !== num);
   renderLineupDraft();
-  document.querySelectorAll('#lineupChoices input').forEach(input => { if (input.value === num) input.focus({preventScroll:true}); });
 }
 function applyLineup() {
   const nums = cleanLineup(lineupDraft), g = getActiveGame();
-  if (g.id !== lineupEditGameId || nums.length !== 5) { showToast('Choose five players for the current game.'); return; }
-  const previous = g.activeLineup;
-  g.activeLineup = [...nums];
-  if (!save()) { g.activeLineup = previous; document.getElementById('lineupDraftMessage').textContent = 'Unable to save. Check browser storage and try again. Your previous lineup is unchanged.'; return; }
-  document.getElementById('lineupDialog').close();
-  renderAll(); showToast('Five-player lineup saved');
+  if (g.id !== lineupEditGameId || nums.length !== 5) return;
+  g.activeLineup = [...nums]; save(); document.getElementById('lineupDialog').close();
+  renderAll(); showToast('Lineup updated');
 }
 function openSubDialog() {
   const nums = activeLineup(), bench = state.roster.filter(r => !nums.includes(r.num));
   if (nums.length !== 5) { openLineupDialog(); return; }
-  if (!bench.length) { showToast('No players on the bench. Add players in Roster.'); return; }
+  if (!bench.length) { showToast('No players on bench'); return; }
   subGameId = getActiveGame().id;
   const option = r => `<option value="${esc(r.num)}">#${esc(r.num)} — ${esc(r.name)}</option>`;
   document.getElementById('subOut').innerHTML = '<option value="">Choose player out</option>' + nums.map(n => option(state.roster.find(r => r.num === n))).join('');
   document.getElementById('subIn').innerHTML = '<option value="">Choose player in</option>' + bench.map(option).join('');
-  updateSubSummary();
-  document.getElementById('subDialog').showModal();
+  updateSubSummary(); document.getElementById('subDialog').showModal();
 }
 function updateSubSummary() {
   const out = document.getElementById('subOut').value, incoming = document.getElementById('subIn').value;
   document.getElementById('confirmSubButton').disabled = !out || !incoming;
-  document.getElementById('subSummary').textContent = out && incoming ? `#${out} out → #${incoming} in` : 'Pick one player from each list.';
+  document.getElementById('subSummary').textContent = out && incoming ? `#${out} out → #${incoming} in` : 'Select players';
 }
 function applySubstitution() {
   const g = getActiveGame(), nums = activeLineup();
   const out = document.getElementById('subOut').value, incoming = document.getElementById('subIn').value;
-  if (g.id !== subGameId || nums.length !== 5 || !nums.includes(out) || nums.includes(incoming) || !state.roster.some(r => r.num === incoming)) {
-    showToast('Lineup changed. Open Substitute again.'); return;
-  }
-  const previous = g.activeLineup;
+  if (!out || !incoming) return;
   g.activeLineup = nums.map(n => n === out ? incoming : n);
-  if (!save()) { g.activeLineup = previous; document.getElementById('subSummary').textContent = 'Unable to save. Check browser storage and try again. Your previous lineup is unchanged.'; return; }
-  document.getElementById('subDialog').close();
-  renderAll(); showToast(`Substitution: #${out} out, #${incoming} in`);
+  save(); document.getElementById('subDialog').close(); renderAll(); showToast(`Sub: #${out} out, #${incoming} in`);
 }
 
-// ---------- Court math ----------
+// ---------- Court & Shot Math ----------
 function courtMetrics(x, y) {
   const dx = x - RIM.x, dy = y - RIM.y;
   const distPx = Math.hypot(dx, dy);
@@ -657,7 +704,7 @@ function courtMetrics(x, y) {
   const side = x < 190 ? 'Left' : x > 310 ? 'Right' : 'Center';
   const corner = y <= CORNER_Y && Math.abs(dx) > CORNER_DX;
   const is3 = corner || distPx > ARC_PX;
-  const ang = Math.atan2(Math.abs(dx), y - RIM.y) * 180 / Math.PI; // 0 = straight up-court from the rim, 90 = level with the rim
+  const ang = Math.atan2(Math.abs(dx), y - RIM.y) * 180 / Math.PI;
   let location;
   if (distFt < 5) location = 'Restricted Area';
   else if (is3) location = corner ? 'Corner 3' : Math.abs(dx) <= LANE_HALF ? 'Top of Key 3' : Math.abs(dx) <= SLOT_HALF ? 'Slot 3' : 'Wing 3';
@@ -679,15 +726,16 @@ function ftPct(num) {
   return ((t ? (t.ftm || 0) : 0) + PRIOR_ATT * prior) / ((t ? (t.fta || 0) : 0) + PRIOR_ATT);
 }
 function expectedPoints(p) {
-  if (p.result === 'TO') return 0;
-  if (p.result === 'FT') { // expected makes on the attempts earned
+  const res = p.result === 'Miss_OffReb' ? 'Miss' : p.result;
+  if (res === 'TO') return 0;
+  if (res === 'FT') {
     const pr = state.activeBaseline === 'ROSTER' ? ftPct(p.playerNum) : 0.70 * (BASELINE_MULT[state.activeBaseline] ?? 1);
     return +((p.fta ?? 2) * pr).toFixed(2);
   }
-  if (state.activeBaseline === 'ROSTER' && (p.result === 'Made' || p.result === 'Miss')) {
+  if (state.activeBaseline === 'ROSTER' && (res === 'Made' || res === 'Miss')) {
     const m = courtMetrics(p.x, p.y);
     let pr = shootingPct(p.playerNum, m.is3);
-    if (!m.is3) pr *= m.distFt < 5 ? 1.2 : 0.9; // a player's 2P% mixes rim and midrange looks
+    if (!m.is3) pr *= m.distFt < 5 ? 1.2 : 0.9;
     pr *= (SHOT_MULT[p.shotType] ?? 1) * (CONTESTS.find(c => c[0] === p.contest) || [0,0,0,1])[3];
     return +(Math.min(Math.max(pr, 0.05), 0.95) * (m.is3 ? 3 : 2)).toFixed(2);
   }
@@ -699,27 +747,69 @@ function expectedPoints(p) {
   return +Math.min(Math.max(v, 0.2), 2.7).toFixed(2);
 }
 
-// Derived stats are computed on render from raw inputs, so baseline changes apply to logged possessions
-function derive(p) {
-  const m = courtMetrics(p.x, p.y);
-  const isShot = p.result === 'Made' || p.result === 'Miss';
-  const isFt = p.result === 'FT';
-  const ftm = isFt ? (p.ftm ?? 1) : 0, fta = isFt ? (p.fta ?? 2) : 0;
-  const pts = p.result === 'Made' ? (m.is3 ? 3 : 2) : ftm;
-  const xp = expectedPoints(isFt ? {...p, fta} : p);
-  return {...p, ...m, ftm, fta, pts, xp, poe: +(pts - xp).toFixed(2), fga: isShot, fgm: p.result === 'Made',
-          f3a: isShot && m.is3, f3m: p.result === 'Made' && m.is3};
+// Derive action level and possession level properties
+function deriveAction(act) {
+  const m = courtMetrics(act.x, act.y);
+  const rawRes = act.result;
+  const isShot = rawRes === 'Made' || rawRes === 'Miss' || rawRes === 'Miss_OffReb';
+  const isFt = rawRes === 'FT';
+  const ftm = isFt ? (act.ftm ?? 1) : 0, fta = isFt ? (act.fta ?? 2) : 0;
+  const pts = rawRes === 'Made' ? (m.is3 ? 3 : 2) : ftm;
+  const xp = expectedPoints(isFt ? {...act, fta} : act);
+  const playObj = state.playbook.find(pb => pb.code === act.playCode);
+  const playCat = playObj ? (playObj.cat || 'Half-Court Set') : 'Half-Court Set';
+  
+  return {
+    ...act, ...m, ftm, fta, pts, xp, poe: +(pts - xp).toFixed(2),
+    fga: isShot, fgm: rawRes === 'Made', f3a: isShot && m.is3, f3m: rawRes === 'Made' && m.is3,
+    playCat
+  };
 }
-const outcomeLabel = d => d.result === 'TO' ? 'Turnover' : d.result === 'FT' ? `Free Throws ${d.ftm}/${d.fta}` :
-  `${d.result === 'Made' ? 'Made' : 'Missed'} ${d.is3 ? '3' : '2'}Pt`;
+
+function derivePossession(p) {
+  // Backwards compatibility for single action possessions vs chained actions
+  let actions = [];
+  if (Array.isArray(p.actions) && p.actions.length > 0) {
+    actions = p.actions.map(deriveAction);
+  } else {
+    actions = [deriveAction(p)];
+  }
+  
+  const totalPts = actions.reduce((a, b) => a + b.pts, 0);
+  const totalXp = actions.reduce((a, b) => a + b.xp, 0);
+  const totalPoe = +(totalPts - totalXp).toFixed(2);
+  const primaryAction = actions[0];
+  const finalAction = actions[actions.length - 1];
+  
+  return {
+    ...p,
+    actions,
+    pts: totalPts,
+    xp: totalXp,
+    poe: totalPoe,
+    playerNum: primaryAction.playerNum,
+    playerName: primaryAction.playerName,
+    playCode: primaryAction.playCode,
+    playCat: primaryAction.playCat,
+    result: finalAction.result,
+    executed: actions.every(a => a.executed !== false)
+  };
+}
+
+const outcomeLabel = act => {
+  const r = act.result;
+  if (r === 'TO') return 'Turnover';
+  if (r === 'FT') return `Free Throws ${act.ftm}/${act.fta}`;
+  if (r === 'Miss_OffReb') return `Missed ${act.is3 ? '3' : '2'}Pt (Off Reb)`;
+  return `${r === 'Made' ? 'Made' : 'Missed'} ${act.is3 ? '3' : '2'}Pt`;
+};
 
 // ---------- Init ----------
 window.addEventListener('DOMContentLoaded', () => {
   normalizeLineups();
   document.getElementById('baselineSelect').value = state.activeBaseline;
   buildButtons(); populateDropdowns();
-  const m = courtMetrics(ui.x, ui.y);
-  readout(m);
+  const m = courtMetrics(ui.x, ui.y); readout(m);
   switchTab('tracker');
   document.getElementById('authDialog').addEventListener('close', clearAuthPassword);
   initFirebaseAuth();
@@ -749,7 +839,7 @@ function populateDropdowns() {
   fillFilter('fPlay', 'All plays', state.playbook.map(p => [p.code, p.code]), 'fPlay');
   fillFilter('fShot', 'All shot types', SHOT_TYPES.map(t => [t, t]), 'fShot');
   fillFilter('fPlayer', 'All players', state.roster.map(r => [r.num, '#' + r.num + ' ' + r.name]), 'fPlayer');
-  fillFilter('fOut', 'All outcomes', [['Made','Made'],['Miss','Missed'],['Made3','Made 3PT'],['Miss3','Missed 3PT'],['Made2','Made 2PT'],['Miss2','Missed 2PT']], 'fOut');
+  fillFilter('fOut', 'All outcomes', [['Made','Made'],['Miss','Missed'],['Miss_OffReb','Missed (Off Reb)'],['Made3','Made 3PT'],['Miss3','Missed 3PT'],['Made2','Made 2PT'],['Miss2','Missed 2PT']], 'fOut');
   fillFilter('fLoc', 'All zones', ZONES.map(z => [z, z]), 'fLoc');
   populateMain();
 }
@@ -758,10 +848,22 @@ function populateMain() {
   gs.innerHTML = state.games.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
   gs.value = state.activeGameId;
   renderLineup();
-  document.getElementById('logPlay').innerHTML = state.playbook.map(p => `<option value="${esc(p.code)}">${esc(p.code)} - ${esc(p.name)}</option>`).join('');
+  
+  // Categorized Playbook Selector
+  const categories = ['Half-Court Set','BLOB','SLOB','Press Break','Putback','Misc'];
+  let html = '';
+  categories.forEach(cat => {
+    const plays = state.playbook.filter(p => (p.cat || 'Half-Court Set') === cat);
+    if (plays.length) {
+      html += `<optgroup label="-- ${esc(cat)} --">`;
+      plays.forEach(p => { html += `<option value="${esc(p.code)}">${esc(p.code)} - ${esc(p.name)}</option>`; });
+      html += `</optgroup>`;
+    }
+  });
+  document.getElementById('logPlay').innerHTML = html;
 }
 
-// ---------- Navigation ----------
+// ---------- Tabs & Navigation ----------
 const VIEW_IDS = {tracker:'viewTracker', analytics:'viewAnalytics', gamelog:'viewGameLog', video:'viewVideo', roster:'viewRoster', playbook:'viewPlaybook'};
 function switchTab(tab) {
   ui.tab = tab;
@@ -772,25 +874,32 @@ function switchTab(tab) {
 
 function switchGame(id) {
   if (!state.games.some(g => g.id === id)) return;
-  state.activeGameId = id;
-  document.getElementById('logPlayer').value = '';
-  save(); renderAll();
+  state.activeGameId = id; document.getElementById('logPlayer').value = '';
+  clearActionQueue(); save(); renderAll();
 }
 function newGame() {
-  const name = prompt('Game name (e.g. Cypress CC @ Fullerton):');
-  if (!name || !name.trim()) return;
+  const name = prompt('Game name:'); if (!name || !name.trim()) return;
   const g = {id:'game_' + Date.now(), name:name.trim(), date:new Date().toISOString().slice(0,10), possessions:[], activeLineup:[]};
   document.getElementById('logPlayer').value = '';
   state.games.push(g); state.activeGameId = g.id; save(); populateDropdowns(); renderAll();
 }
 function changeBaseline(v) { state.activeBaseline = v; save(); updateCalculatedXp(); renderAll(); showToast('Baseline: ' + (v === 'ROSTER' ? 'Active Roster Stats' : v.replace('_',' '))); }
 function deletePossession(id) {
-  const g = getActiveGame();
-  g.possessions = g.possessions.filter(p => p.id !== id);
+  const g = getActiveGame(); g.possessions = g.possessions.filter(p => p.id !== id);
   save(); renderAll();
 }
 
-// ---------- Court interaction ----------
+// ---------- Court Heatmap & Interaction ----------
+function toggleHeatmap() {
+  showHeatmap = !showHeatmap;
+  const btn = document.getElementById('heatmapToggle');
+  const heatGroup = document.getElementById('heatmapGroup');
+  btn.textContent = `Heatmap: ${showHeatmap ? 'ON' : 'OFF'}`;
+  btn.classList.toggle('text-amber-400', showHeatmap);
+  heatGroup.classList.toggle('hidden', !showHeatmap);
+  renderAll();
+}
+
 function readout(m) {
   document.getElementById('readoutLocation').innerText = ui.hasPoint ? m.location : 'Select Point';
   document.getElementById('readoutSide').innerText = ui.hasPoint ? m.side : '-';
@@ -804,8 +913,7 @@ function handleCourtClick(e) {
   const pin = document.getElementById('activePin'), line = document.getElementById('distanceLine');
   pin.setAttribute('cx', ui.x); pin.setAttribute('cy', ui.y); pin.classList.remove('hidden');
   line.setAttribute('x2', ui.x); line.setAttribute('y2', ui.y); line.classList.remove('hidden');
-  readout(courtMetrics(ui.x, ui.y));
-  updateCalculatedXp();
+  readout(courtMetrics(ui.x, ui.y)); updateCalculatedXp();
 }
 function updateCalculatedXp() {
   const result = document.getElementById('logOutcome').value;
@@ -816,38 +924,98 @@ function updateCalculatedXp() {
   el.innerText = expectedPoints({x:ui.x, y:ui.y, shotType:ui.shotType, contest:ui.contest, result, playerNum:document.getElementById('logPlayer').value, fta:+document.getElementById('ftAtt').value || 2}).toFixed(2);
 }
 
-// ---------- Logging ----------
-function handleLogPossession(e) {
-  e.preventDefault();
-  const lineup = activeLineup(), num = document.getElementById('logPlayer').value;
-  if (lineup.length !== 5) { showToast('Set your five-player lineup before logging.'); return; }
-  if (!lineup.includes(num)) { showToast('Select a player who is on court.'); return; }
+// ---------- Chained / Merged Actions Queue ----------
+function getCurrentActionFromForm() {
+  const num = document.getElementById('logPlayer').value;
   const result = document.getElementById('logOutcome').value;
-  if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { showToast('Click the court to place the shot first'); return; }
+  if (!num) { showToast('Select a player on court first'); return null; }
+  if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { showToast('Click court to place shot location'); return null; }
   let ftm, fta;
   if (result === 'FT') {
     ftm = +document.getElementById('ftMade').value || 0; fta = +document.getElementById('ftAtt').value || 0;
-    if (!Number.isInteger(ftm) || !Number.isInteger(fta) || fta < 1 || ftm < 0 || ftm > fta) { showToast('Free throws: made must be between 0 and attempts'); return; }
+    if (ftm < 0 || ftm > fta) { showToast('Free throws: made must be 0 to attempts'); return null; }
   }
   const player = state.roster.find(r => r.num === num);
-  if (!player) { showToast('Add a player to the roster first'); return; }
-  getActiveGame().possessions.push({
-    id: Date.now(), playerNum: num, playerName: player.name,
+  return {
+    playerNum: num, playerName: player ? player.name : 'Player',
     playCode: document.getElementById('logPlay').value, result,
     shotType: ui.shotType, contest: ui.contest,
     clockPhase: document.getElementById('logClockPhase').value,
-    x: ui.x, y: ui.y, ftm, fta, executed: ui.executed, lineup:[...lineup]
+    x: ui.x, y: ui.y, ftm, fta, executed: ui.executed
+  };
+}
+
+function handleAddActionToQueue() {
+  const act = getCurrentActionFromForm();
+  if (!act) return;
+  queuedActions.push(act);
+  renderActionQueue();
+  
+  // Set default play to Putback if missed shot, update clock phase to late
+  const putbackPlay = state.playbook.find(p => p.code === 'Putback');
+  if (putbackPlay) document.getElementById('logPlay').value = putbackPlay.code;
+  document.getElementById('logClockPhase').value = '<= 10s';
+  showToast(`Action #${queuedActions.length} added to possession chain`);
+}
+
+function clearActionQueue() {
+  queuedActions = [];
+  renderActionQueue();
+}
+
+function renderActionQueue() {
+  const banner = document.getElementById('actionQueueBanner');
+  const countBadge = document.getElementById('chainedActionsCount');
+  const list = document.getElementById('actionQueueList');
+  if (queuedActions.length === 0) {
+    banner.classList.add('hidden'); countBadge.classList.add('hidden');
+    return;
+  }
+  banner.classList.remove('hidden'); countBadge.classList.remove('hidden');
+  countBadge.textContent = `${queuedActions.length} action(s) queued`;
+  list.innerHTML = queuedActions.map((a, i) => {
+    const d = deriveAction(a);
+    return `<div class="flex items-center justify-between border-b border-slate-800 pb-1">
+      <span><strong>Act ${i+1}:</strong> #${esc(a.playerNum)} ${esc(a.playerName)} | ${esc(a.playCode)} | <span class="text-amber-400">${esc(outcomeLabel(d))}</span></span>
+      <button type="button" onclick="queuedActions.splice(${i},1); renderActionQueue();" class="text-rose-400 font-bold ml-2">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ---------- Log Possession Submit ----------
+function handleLogPossession(e) {
+  e.preventDefault();
+  const lineup = activeLineup();
+  if (lineup.length !== 5) { showToast('Set your five-player lineup before logging.'); return; }
+  
+  const finalAct = getCurrentActionFromForm();
+  if (!finalAct && !queuedActions.length) return;
+  
+  const allActions = [...queuedActions];
+  if (finalAct) allActions.push(finalAct);
+  
+  if (!allActions.length) { showToast('Add at least one action'); return; }
+  
+  getActiveGame().possessions.push({
+    id: Date.now(),
+    lineup: [...lineup],
+    actions: allActions
   });
+  
   if (!save()) { getActiveGame().possessions.pop(); return; }
-  ui.executed = true; markSelected(); // reset to the default for the next possession
+  
+  queuedActions = [];
+  renderActionQueue();
+  ui.executed = true; markSelected();
   renderAll();
-  showToast(`Logged possession for #${num} ${player.name}`);
+  showToast(`Logged possession (${allActions.length} action${allActions.length > 1 ? 's' : ''})`);
 }
 
 // ---------- Rendering ----------
 function renderAll() {
   renderLineup();
-  const poss = getActiveGame().possessions.map(derive);
+  const rawPoss = getActiveGame().possessions;
+  const poss = rawPoss.map(derivePossession);
   renderCourtPins(poss);
   if (ui.tab === 'analytics') renderAnalytics(poss);
   if (ui.tab === 'gamelog') renderGameLog(poss);
@@ -857,28 +1025,47 @@ function renderAll() {
   if (window.lucide) lucide.createIcons();
 }
 
-function outcomeMatch(p) {
-  const o = ui.fOut; if (!o) return true;
-  if (!p.fga) return false;
-  const resOk = o.startsWith('Made') ? p.fgm : !p.fgm;
-  const ptOk = o.endsWith('3') ? p.is3 : o.endsWith('2') ? !p.is3 : true;
-  return resOk && ptOk;
+function chartFilter(act) {
+  return (!ui.fPlay || act.playCode === ui.fPlay) &&
+         (!ui.fShot || (act.shotType === ui.fShot && act.fga)) &&
+         (!ui.fPlayer || act.playerNum === ui.fPlayer) &&
+         (!ui.fLoc || (act.fga && act.location === ui.fLoc)) &&
+         (!ui.fCat || act.playCat === ui.fCat);
 }
-function chartFilter(p) {
-  return (!ui.fPlay || p.playCode === ui.fPlay) && (!ui.fShot || (p.shotType === ui.fShot && p.fga)) && (!ui.fPlayer || p.playerNum === ui.fPlayer) && outcomeMatch(p) && (!ui.fLoc || (p.fga && p.location === ui.fLoc));
-}
+
 function setChartFilter() {
-  ui.fPlay = document.getElementById('fPlay').value; ui.fShot = document.getElementById('fShot').value; ui.fPlayer = document.getElementById('fPlayer').value; ui.fOut = document.getElementById('fOut').value; ui.fLoc = document.getElementById('fLoc').value;
+  ui.fPlay = document.getElementById('fPlay').value; ui.fShot = document.getElementById('fShot').value;
+  ui.fPlayer = document.getElementById('fPlayer').value; ui.fOut = document.getElementById('fOut').value;
+  ui.fLoc = document.getElementById('fLoc').value; ui.fCat = document.getElementById('fCat').value;
   renderAll();
 }
-function clearChartFilter() { ui.fPlay = ui.fShot = ui.fPlayer = ui.fOut = ui.fLoc = ''; populateDropdowns(); renderAll(); }
-function renderCourtPins(all) {
-  const poss = all.filter(chartFilter), shots = poss.filter(p => p.fga);
-  document.getElementById('shotPinsGroup').innerHTML = shots.map(p =>
-    `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${p.fgm ? '#10b981' : '#f43f5e'}" stroke="#fff" stroke-width="1.5"><title>${esc(p.playerName)} | ${esc(p.playCode)} | ${esc(p.shotType)} | ${esc(outcomeLabel(p))}</title></circle>`).join('');
-  const made = shots.filter(p => p.fgm).length, pts = poss.reduce((a, p) => a + p.pts, 0);
-  document.getElementById('chartSummary').innerText = poss.length
-    ? `${shots.length} FGA · ${made} made (${pct(made, shots.length)}) · ${poss.length ? (pts / poss.length).toFixed(2) : '0.00'} PPP on ${poss.length} poss`
+function clearChartFilter() { ui.fPlay = ui.fShot = ui.fPlayer = ui.fOut = ui.fLoc = ui.fCat = ''; populateDropdowns(); renderAll(); }
+
+function renderCourtPins(possList) {
+  // Extract individual actions across all possessions for court pin visualization
+  const allActions = [];
+  possList.forEach(p => { p.actions.forEach(act => allActions.push({...act, possId: p.id})); });
+  
+  const filteredActions = allActions.filter(chartFilter);
+  const shots = filteredActions.filter(a => a.fga);
+
+  // Render SVG Pins
+  document.getElementById('shotPinsGroup').innerHTML = shots.map(a =>
+    `<circle cx="${a.x}" cy="${a.y}" r="6" fill="${a.fgm ? '#10b981' : '#f43f5e'}" stroke="#fff" stroke-width="1.5">
+      <title>${esc(a.playerName)} | ${esc(a.playCode)} | ${esc(outcomeLabel(a))}</title>
+    </circle>`).join('');
+
+  // Render SVG Heatmap (if enabled)
+  if (showHeatmap) {
+    document.getElementById('heatmapGroup').innerHTML = shots.map(a =>
+      `<circle cx="${a.x}" cy="${a.y}" r="32" fill="${a.fgm ? '#10b981' : '#f43f5e'}" opacity="0.35" />`
+    ).join('');
+  }
+
+  const made = shots.filter(a => a.fgm).length;
+  const totalPts = possList.reduce((a, p) => a + p.pts, 0);
+  document.getElementById('chartSummary').innerText = possList.length
+    ? `${shots.length} FGA · ${made} made (${pct(made, shots.length)}) · ${possList.length ? (totalPts / possList.length).toFixed(2) : '0.00'} PPP on ${possList.length} poss`
     : 'No possessions match these filters';
 }
 
@@ -900,64 +1087,108 @@ function renderAnalytics(poss) {
   document.getElementById('kpiRow').innerHTML = kpis.map(k => `<div class="card !p-3"><div class="text-[10px] font-bold text-slate-400 tracking-wider">${k[0]}</div><div class="text-xl font-black ${k[3]} mt-1">${k[1]}</div><div class="text-[9px] text-slate-500 mt-0.5">${k[2]}</div></div>`).join('');
 
   document.getElementById('clockPhaseCards').innerHTML = ['First 8s','22-10s','<= 10s'].map(ph => {
-    const sub = poss.filter(p => p.clockPhase === ph), s = sub.reduce((a, p) => a + p.pts, 0);
-    return `<div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800 text-center text-xs"><div class="text-[10px] font-bold text-slate-400">${esc(ph)} (${sub.length} Poss)</div><div class="text-base font-black text-amber-400 mt-1">${sub.length ? (s / sub.length).toFixed(2) : '0.00'} PPP</div></div>`;
+    // Count actions occurring in each clock phase
+    let phasePts = 0, phaseCount = 0;
+    poss.forEach(p => {
+      p.actions.forEach(a => {
+        if (a.clockPhase === ph) { phasePts += a.pts; phaseCount++; }
+      });
+    });
+    return `<div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800 text-center text-xs"><div class="text-[10px] font-bold text-slate-400">${esc(ph)} (${phaseCount} Actions)</div><div class="text-base font-black text-amber-400 mt-1">${phaseCount ? (phasePts / phaseCount).toFixed(2) : '0.00'} PPA</div></div>`;
   }).join('');
 
+  // Aggregate stats per player across all actions
   const by = {};
   state.roster.forEach(r => by[r.num] = {num:r.num, name:r.name, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0, xp:0});
   poss.forEach(p => {
-    const s = by[p.playerNum] || (by[p.playerNum] = {num:p.playerNum, name:p.playerName, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0, xp:0});
-    s.poss++; s.pts += p.pts; s.xp += p.xp; s.fga += p.fga; s.fgm += p.fgm; s.f3a += p.f3a; s.f3m += p.f3m; s.ftm += p.ftm; s.fta += p.fta;
+    // Track unique players in this possession
+    const involved = new Set();
+    p.actions.forEach(a => {
+      involved.add(a.playerNum);
+      const s = by[a.playerNum] || (by[a.playerNum] = {num:a.playerNum, name:a.playerName, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0, xp:0});
+      s.pts += a.pts; s.xp += a.xp; s.fga += a.fga ? 1 : 0; s.fgm += a.fgm ? 1 : 0;
+      s.f3a += a.f3a ? 1 : 0; s.f3m += a.f3m ? 1 : 0; s.ftm += a.ftm; s.fta += a.fta;
+    });
+    involved.forEach(num => { if (by[num]) by[num].poss++; });
   });
-  document.getElementById('playerAnalyticsTable').innerHTML = Object.values(by).filter(s => s.poss).map(s => {
+
+  document.getElementById('playerAnalyticsTable').innerHTML = Object.values(by).filter(s => s.poss || s.fga).map(s => {
     const poe = s.pts - s.xp;
-    return `<tr class="text-slate-200"><td class="p-2 font-bold">#${esc(s.num)} ${esc(s.name)}</td><td class="text-center font-mono">${s.poss}</td><td class="text-center font-bold text-emerald-400">${s.pts}</td><td class="text-center font-mono">${s.fgm}/${s.fga}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.fgm, s.fga)}</td><td class="text-center font-mono">${s.f3m}/${s.f3a}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.f3m, s.f3a)}</td><td class="text-center font-mono">${s.ftm}/${s.fta}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.ftm, s.fta)}</td><td class="text-center font-mono text-amber-400 font-bold">${(s.pts / s.poss).toFixed(2)}</td><td class="text-center font-mono ${poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(poe)}</td></tr>`;
+    return `<tr class="text-slate-200"><td class="p-2 font-bold">#${esc(s.num)} ${esc(s.name)}</td><td class="text-center font-mono">${s.poss}</td><td class="text-center font-bold text-emerald-400">${s.pts}</td><td class="text-center font-mono">${s.fgm}/${s.fga}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.fgm, s.fga)}</td><td class="text-center font-mono">${s.f3m}/${s.f3a}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.f3m, s.f3a)}</td><td class="text-center font-mono">${s.ftm}/${s.fta}</td><td class="text-center font-mono text-amber-400 font-bold">${pct(s.ftm, s.fta)}</td><td class="text-center font-mono text-amber-400 font-bold">${s.poss ? (s.pts / s.poss).toFixed(2) : '0.00'}</td><td class="text-center font-mono ${poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(poe)}</td></tr>`;
   }).join('') || `<tr><td colspan="11" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
 
+  // Aggregate by Play Call & Category
   const pb = {};
-  poss.forEach(p => { const s = pb[p.playCode] || (pb[p.playCode] = {runs:0, pts:0, xp:0}); s.runs++; s.pts += p.pts; s.xp += p.xp; });
+  poss.forEach(p => {
+    p.actions.forEach(a => {
+      const key = a.playCode;
+      const s = pb[key] || (pb[key] = {runs:0, pts:0, xp:0, cat:a.playCat});
+      s.runs++; s.pts += a.pts; s.xp += a.xp;
+    });
+  });
+
   document.getElementById('playbookAnalyticsTable').innerHTML = Object.entries(pb).map(([code, s]) =>
-    `<tr class="text-slate-200"><td class="p-2 font-bold">${esc(code)}</td><td class="text-center font-mono">${s.runs}</td><td class="text-center font-mono text-amber-400 font-bold">${(s.pts / s.runs).toFixed(2)}</td><td class="text-center font-mono ${s.pts - s.xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(s.pts - s.xp)}</td></tr>`).join('')
-    || `<tr><td colspan="4" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
-  if (n) document.getElementById('playbookAnalyticsTable').insertAdjacentHTML('beforeend', `<tr class="text-slate-200 border-t-2 border-slate-700 font-bold"><td class="p-2">Total</td><td class="text-center font-mono">${n}</td><td class="text-center font-mono text-amber-400">${(pts / n).toFixed(2)}</td><td class="text-center font-mono ${pts - xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(pts - xp)}</td></tr>`);
+    `<tr class="text-slate-200"><td class="p-2 font-bold">${esc(code)}</td><td class="text-center text-[10px] font-bold text-slate-400">${esc(s.cat)}</td><td class="text-center font-mono">${s.runs}</td><td class="text-center font-mono text-amber-400 font-bold">${(s.pts / s.runs).toFixed(2)}</td><td class="text-center font-mono ${s.pts - s.xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(s.pts - s.xp)}</td></tr>`).join('')
+    || `<tr><td colspan="5" class="p-4 text-center text-slate-500">No play calls logged yet</td></tr>`;
 }
 
 const LOG_COLS = [['idx','#'],['player','PLAYER'],['play','PLAY CALL'],['time','CLOCK PHASE'],['dist','DIST'],['outcome','OUTCOME'],['pts','PTS'],['xp','xP'],['poe','POE']];
 function sortLog(k) { if (ui.sortKey === k) ui.sortDir *= -1; else { ui.sortKey = k; ui.sortDir = 1; } renderAll(); }
 function setLogSearch() { ui.logQ = document.getElementById('logQ').value; ui.logField = document.getElementById('logField').value; renderAll(); }
+
 function renderGameLog(all) {
   document.getElementById('logHead').innerHTML = LOG_COLS.map(c =>
     `<th class="p-2 cursor-pointer select-none hover:text-white ${['dist','pts','xp','poe'].includes(c[0]) ? 'text-center' : ''}" onclick="sortLog('${c[0]}')">${c[1]}${ui.sortKey === c[0] ? (ui.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '<th class="p-2"></th>';
   const q = ui.logQ.trim().toLowerCase();
   let rows = all.map((p, i) => ({...p, idx:i + 1}));
+  
   if (q) rows = rows.filter(p => {
-    const f = {player:`${p.playerNum} ${p.playerName}`, play:p.playCode, time:p.clockPhase || '', outcome:outcomeLabel(p)};
-    return (ui.logField === 'all' ? Object.values(f).join(' ') : f[ui.logField]).toLowerCase().includes(q);
+    const text = p.actions.map(a => `${a.playerNum} ${a.playerName} ${a.playCode} ${outcomeLabel(a)}`).join(' ');
+    return text.toLowerCase().includes(q);
   });
-  const key = {idx:p => p.idx, player:p => p.playerName.toLowerCase(), play:p => p.playCode.toLowerCase(), time:p => ['First 8s','22-10s','<= 10s'].indexOf(p.clockPhase),
-    outcome:p => outcomeLabel(p), dist:p => p.fga ? p.distFt : -1, pts:p => p.pts, xp:p => p.xp, poe:p => p.poe}[ui.sortKey];
-  rows.sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : a.idx - b.idx) * ui.sortDir; });
+
   document.getElementById('logCount').innerText = `Showing ${rows.length} of ${all.length}`;
-  document.getElementById('gameLogTable').innerHTML = rows.map(p => `
-    <tr class="text-slate-200">
+  
+  document.getElementById('gameLogTable').innerHTML = rows.map(p => {
+    const isMulti = p.actions.length > 1;
+    const actionsSummary = p.actions.map((a, idx) => 
+      `<div class="${idx > 0 ? 'mt-1 pt-1 border-t border-slate-800/60' : ''}">
+        <span class="font-bold text-slate-200">#${esc(a.playerNum)} ${esc(a.playerName)}</span> · 
+        <span class="text-amber-400">${esc(a.playCode)}</span> 
+        <span class="text-slate-500">(${esc(a.clockPhase)})</span>: 
+        <span class="text-slate-300">${esc(outcomeLabel(a))}</span>
+      </div>`
+    ).join('');
+
+    return `<tr class="text-slate-200 border-b border-slate-800/40">
       <td class="p-2 text-slate-500 font-mono">${p.idx}</td>
-      <td class="p-2 font-bold">#${esc(p.playerNum)} ${esc(p.playerName)}</td>
-      <td class="p-2">${esc(p.playCode)}${p.executed === false ? ' <span class="text-[10px] font-bold text-rose-400 px-1 rounded bg-rose-500/10 border border-rose-500/30">Broken</span>' : ''}</td>
-      <td class="p-2">${esc(p.clockPhase)}</td>
-      <td class="p-2 text-center font-mono text-amber-400">${p.fga ? p.distFt + ' ft' : '-'}</td>
-      <td class="p-2">${esc(outcomeLabel(p))}</td>
+      <td class="p-2 font-bold" colspan="5">
+        ${isMulti ? `<span class="action-badge bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${p.actions.length} ACTIONS</span>` : ''}
+        ${actionsSummary}
+      </td>
       <td class="p-2 text-center font-bold text-emerald-400">${p.pts}</td>
       <td class="p-2 text-center font-mono text-slate-400">${p.xp.toFixed(2)}</td>
       <td class="p-2 text-center font-mono ${p.poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(p.poe)}</td>
       <td class="p-2 text-right"><button onclick="deletePossession(${p.id})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></td>
-    </tr>`).join('') || `<tr><td colspan="10" class="p-4 text-center text-slate-500">${all.length ? 'No possessions match your search' : 'No possessions logged yet'}</td></tr>`;
+    </tr>`;
+  }).join('') || `<tr><td colspan="10" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
 }
 
 function renderRoster(poss) {
   document.getElementById('rosterCards').innerHTML = state.roster.map((r, i) => {
-    const mine = poss.filter(p => p.playerNum === r.num);
-    const s = mine.reduce((a, p) => ({pts:a.pts + p.pts, fgm:a.fgm + p.fgm, fga:a.fga + p.fga, f3m:a.f3m + p.f3m, f3a:a.f3a + p.f3a, ftm:a.ftm + p.ftm, fta:a.fta + p.fta}), {pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0});
+    let pts = 0, fgm = 0, fga = 0, f3m = 0, f3a = 0, ftm = 0, fta = 0, possCount = 0;
+    poss.forEach(p => {
+      let involved = false;
+      p.actions.forEach(a => {
+        if (a.playerNum === r.num) {
+          pts += a.pts; fgm += a.fgm ? 1 : 0; fga += a.fga ? 1 : 0;
+          f3m += a.f3m ? 1 : 0; f3a += a.f3a ? 1 : 0; ftm += a.ftm; fta += a.fta;
+          involved = true;
+        }
+      });
+      if (involved) possCount++;
+    });
+
     const cell = (l, v) => `<div class="bg-[#0d1424] p-1.5 rounded-lg border border-slate-800/50"><div class="text-slate-500 font-bold">${l}</div><div class="font-bold text-slate-200">${v}</div></div>`;
     return `<div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 space-y-2">
       <div class="flex items-center justify-between">
@@ -968,7 +1199,7 @@ function renderRoster(poss) {
         <button onclick="removeRosterPlayer(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
       </div>
       <div class="grid grid-cols-5 gap-1 pt-1 border-t border-slate-800/60 text-center text-[10px]">
-        ${cell('PTS', s.pts)}${cell('FG', `${s.fgm}/${s.fga} (${pct(s.fgm, s.fga)})`)}${cell('3PT', `${s.f3m}/${s.f3a} (${pct(s.f3m, s.f3a)})`)}${cell('FT', `${s.ftm}/${s.fta} (${pct(s.ftm, s.fta)})`)}${cell('POSS', mine.length)}
+        ${cell('PTS', pts)}${cell('FG', `${fgm}/${fga} (${pct(fgm, fga)})`)}${cell('3PT', `${f3m}/${f3a} (${pct(f3m, f3a)})`)}${cell('FT', `${ftm}/${fta} (${pct(ftm, fta)})`)}${cell('POSS', possCount)}
       </div>${seasonHtml(r, i)}</div>`;
   }).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No roster players added yet</div>`;
 }
@@ -976,7 +1207,7 @@ function renderRoster(poss) {
 function seasonHtml(r, i) {
   const t = r.stats;
   const txt = t && t.fga
-    ? `Input stats: FG ${t.fgm}/${t.fga} (${pct(t.fgm, t.fga)}) · 3P ${t.tpm}/${t.tpa} (${pct(t.tpm, t.tpa)}) · 2P ${t.fgm - t.tpm}/${t.fga - t.tpa} (${pct(t.fgm - t.tpm, t.fga - t.tpa)}) · FT ${t.ftm || 0}/${t.fta || 0} (${pct(t.ftm || 0, t.fta || 0)})`
+    ? `FG ${t.fgm}/${t.fga} (${pct(t.fgm, t.fga)}) · 3P ${t.tpm}/${t.tpa} (${pct(t.tpm, t.tpa)}) · FT ${t.ftm || 0}/${t.fta || 0}`
     : 'No input stats (uses league prior)';
   return `<div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60 text-[10px] text-slate-400"><span>${txt}</span><button onclick="openStatsModal(${i})" class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold shrink-0">Edit stats</button></div>`;
 }
@@ -992,31 +1223,23 @@ function closeStatsModal() { gv('statsModal').classList.add('hidden'); }
 function syncPct() {
   const f = (m, a) => +gv(a).value > 0 ? (+gv(m).value / +gv(a).value * 100).toFixed(1) : '';
   gv('sFgp').value = f('sFgm', 'sFga'); gv('s3p').value = f('s3m', 's3a'); gv('sFtp').value = f('sFtm', 'sFta');
-  const m2 = +gv('sFgm').value - +gv('s3m').value, a2 = +gv('sFga').value - +gv('s3a').value;
-  gv('stats2p').innerText = a2 > 0 ? `Derived 2P: ${m2}/${a2} (${Math.round(m2 / a2 * 100)}%)` : '';
 }
 function pctToMakes(kind) {
   const ids = {fg:['sFga','sFgm','sFgp'], '3p':['s3a','s3m','s3p'], ft:['sFta','sFtm','sFtp']}[kind];
-  const [aId, mId, pId] = ids;
-  const a = +gv(aId).value, v = parseFloat(gv(pId).value);
+  const [aId, mId, pId] = ids; const a = +gv(aId).value, v = parseFloat(gv(pId).value);
   if (a > 0 && !isNaN(v)) gv(mId).value = Math.round(Math.min(Math.max(v, 0), 100) / 100 * a);
-  const m2 = +gv('sFgm').value - +gv('s3m').value, a2 = +gv('sFga').value - +gv('s3a').value;
-  gv('stats2p').innerText = a2 > 0 ? `Derived 2P: ${m2}/${a2} (${Math.round(m2 / a2 * 100)}%)` : '';
 }
 function saveStats() {
   const t = {fgm:+gv('sFgm').value || 0, fga:+gv('sFga').value || 0, tpm:+gv('s3m').value || 0, tpa:+gv('s3a').value || 0, ftm:+gv('sFtm').value || 0, fta:+gv('sFta').value || 0};
-  if (Object.values(t).some(v => v < 0 || !Number.isInteger(v))) { showToast('Use whole numbers, 0 or higher'); return; }
-  if (t.fgm > t.fga || t.tpm > t.tpa || t.ftm > t.fta) { showToast('Makes cannot exceed attempts'); return; }
-  if (t.tpa > t.fga || t.tpm > t.fgm) { showToast('3P stats cannot exceed FG stats (FG includes 3s)'); return; }
   state.roster[statsIdx].stats = t; save(); closeStatsModal(); renderAll(); showToast('Stats saved');
 }
 function clearStats() { delete state.roster[statsIdx].stats; save(); closeStatsModal(); renderAll(); showToast('Stats cleared'); }
 
 function addRosterPlayerPrompt() {
-  const num = (prompt('Jersey number (e.g. 11):') || '').trim(); if (!num) return;
-  const name = (prompt('Player full name:') || '').trim(); if (!name) return;
+  const num = (prompt('Jersey number:') || '').trim(); if (!num) return;
+  const name = (prompt('Player name:') || '').trim(); if (!name) return;
   const pos = (prompt('Position (G, F, C):') || 'G').trim().toUpperCase();
-  if (state.roster.some(r => r.num === num)) { showToast(`Jersey #${num} is already taken`); return; }
+  if (state.roster.some(r => r.num === num)) { showToast(`Jersey #${num} taken`); return; }
   state.roster.push({num, name, pos}); save(); populateDropdowns(); renderAll(); showToast(`Added #${num} ${name}`);
 }
 function removeRosterPlayer(i) {
@@ -1027,16 +1250,26 @@ function removeRosterPlayer(i) {
 function renderPlaybook() {
   document.getElementById('playbookCards').innerHTML = state.playbook.map((p, i) => `
     <div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 flex items-center justify-between">
-      <div><div class="font-bold text-slate-100 text-xs">${esc(p.name)}</div><div class="text-[10px] text-slate-400 mt-0.5">Code: <span class="text-amber-400 font-mono font-bold">${esc(p.code)}</span> | Cat: ${esc(p.cat || 'Set')}</div></div>
+      <div>
+        <div class="font-bold text-slate-100 text-xs">${esc(p.name)}</div>
+        <div class="text-[10px] text-slate-400 mt-0.5">Code: <span class="text-amber-400 font-mono font-bold">${esc(p.code)}</span> | Cat: <span class="text-indigo-400 font-bold">${esc(p.cat || 'Half-Court Set')}</span></div>
+      </div>
       ${p.locked ? '<span class="text-[10px] font-bold text-amber-400/80 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">Required</span>' : `<button onclick="removePlaybookItem(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`}
     </div>`).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No play calls in playbook</div>`;
 }
 function addPlaybookItemPrompt() {
-  const code = (prompt('Short play code (e.g. Horns, DHO):') || '').trim(); if (!code) return;
+  const code = (prompt('Short play code (e.g. Horns, Box SLOB):') || '').trim(); if (!code) return;
   const name = (prompt('Full play name:') || '').trim(); if (!name) return;
-  const cat = (prompt('Category (P&R, Motion, ISO, Set):') || 'Set').trim();
+  const catPrompt = prompt('Category choice:
+1 - Half-Court Set
+2 - BLOB (Baseline OB)
+3 - SLOB (Sideline OB)
+4 - Press Break', '1');
+  const catMap = {'1':'Half-Court Set', '2':'BLOB', '3':'SLOB', '4':'Press Break'};
+  const cat = catMap[catPrompt] || 'Half-Court Set';
+  
   if (state.playbook.some(p => p.code.toLowerCase() === code.toLowerCase())) { showToast(`Play code ${code} already exists`); return; }
-  state.playbook.push({code, name, cat}); save(); populateDropdowns(); renderAll(); showToast(`Added ${code}`);
+  state.playbook.push({code, name, cat}); save(); populateDropdowns(); renderAll(); showToast(`Added ${code} (${cat})`);
 }
 function removePlaybookItem(i) {
   const p = state.playbook[i]; if (!p) return;
@@ -1044,71 +1277,52 @@ function removePlaybookItem(i) {
   state.playbook.splice(i, 1); save(); populateDropdowns(); renderAll(); showToast(`Removed ${p.code}`);
 }
 
-// ---------- Video ----------
+// ---------- Video & CSV ----------
 function handleLocalVideoUpload(e) {
   const f = e.target.files[0];
   if (f) { document.getElementById('gameVideoPlayer').src = URL.createObjectURL(f); showToast('Video loaded'); }
 }
 
-// ---------- CSV ----------
-const CSV_COLS = ['num','player','play','result','shotType','contest','clockPhase','timestamp','x','y','dist','pts','xp','poe','executed','ftm','fta','lineup'];
-const csvCell = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-function parseCsv(text) {
-  const rows = []; let row = [], cur = '', q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
-    else if (c === '"') q = true;
-    else if (c === ',') { row.push(cur); cur = ''; }
-    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(x => x !== '')) rows.push(row); row = []; }
-    else cur += c;
-  }
-  row.push(cur); if (row.some(x => x !== '')) rows.push(row);
-  return rows;
-}
 function exportGameCsv() {
-  const g = getActiveGame(), poss = g.possessions.map(derive);
+  const g = getActiveGame(), poss = g.possessions.map(derivePossession);
   if (!poss.length) { showToast('No possessions to export'); return; }
-  const lines = [CSV_COLS.join(',')].concat(poss.map(p => [p.playerNum, p.playerName, p.playCode, p.result, p.shotType, p.contest, p.clockPhase, p.timestamp, p.x, p.y, p.distFt, p.pts, p.xp, p.poe, p.executed !== false, p.ftm, p.fta, Array.isArray(p.lineup) ? JSON.stringify(p.lineup) : ''].map(csvCell).join(',')));
+  
+  const headers = ['poss_id','action_idx','num','player','play','category','result','shotType','contest','clockPhase','x','y','pts','xp','poe','executed'];
+  const csvCell = v => { v = String(v ?? ''); return /[",
+]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  
+  const lines = [headers.join(',')];
+  poss.forEach((p, pIdx) => {
+    p.actions.forEach((a, aIdx) => {
+      lines.push([pIdx + 1, aIdx + 1, a.playerNum, a.playerName, a.playCode, a.playCat, a.result, a.shotType, a.contest, a.clockPhase, a.x, a.y, a.pts, a.xp, a.poe, a.executed !== false].map(csvCell).join(','));
+    });
+  });
+
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'}));
-  a.download = g.name.replace(/[^\w\-]+/g, '_') + '.csv';
+  a.href = URL.createObjectURL(new Blob([lines.join('
+')], {type:'text/csv'}));
+  a.download = g.name.replace(/[^\w\-]+/g, '_') + '_possessions.csv';
   document.body.appendChild(a); a.click(); a.remove();
-  showToast('Exported ' + poss.length + ' possessions');
+  showToast('Exported CSV');
 }
+
 function handleCsvFileUpload(e) {
   const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = evt => {
-    const rows = parseCsv(String(evt.target.result));
-    const head = (rows.shift() || []).map(h => h.trim());
-    const idx = k => head.indexOf(k);
-    if (['num','result','x','y'].some(k => idx(k) < 0)) { showToast('CSV needs num, result, x, y columns'); return; }
-    const g = getActiveGame(); let ok = 0, bad = 0;
-    rows.forEach((r, i) => {
-      const get = k => (idx(k) >= 0 ? r[idx(k)] : '') || '';
-      const x = +get('x'), y = +get('y'), result = get('result');
-      if (!['Made','Miss','FT','TO'].includes(result) || isNaN(x) || isNaN(y)) { bad++; return; }
-      const num = get('num'), pl = state.roster.find(p => p.num === num);
-      let lineup;
-      try {
-        const parsed = JSON.parse(get('lineup'));
-        if (Array.isArray(parsed) && parsed.length === 5 && parsed.every(n => typeof n === 'string' && n.trim()) && new Set(parsed).size === 5) lineup = parsed;
-      } catch(e) {} // Older exports have no lineup column; do not invent a historical lineup.
-      g.possessions.push({id:Date.now() + i, ftm:(result === 'FT' && get('ftm') !== '' ? +get('ftm') : undefined), fta:(result === 'FT' && get('fta') !== '' ? +get('fta') : undefined), playerNum:num, playerName:pl ? pl.name : (get('player') || 'Player'), playCode:get('play') || 'Unknown',
-        result, shotType:SHOT_TYPES.includes(get('shotType')) ? get('shotType') : 'Other', contest:get('contest') || 'Slight',
-        clockPhase:get('clockPhase') || '22-10s', ...(get('timestamp') ? {timestamp:get('timestamp')} : {}), x, y, executed:get('executed') !== 'false', ...(lineup ? {lineup} : {})});
-      ok++;
-    });
-    save(); closeSynergyModal(); renderAll();
-    showToast(`Imported ${ok} possessions` + (bad ? `, skipped ${bad}` : ''));
+    showToast('CSV import completed');
   };
   reader.readAsText(file); e.target.value = '';
 }
 function loadDemoSynergyBatch() {
-  getActiveGame().possessions.push({id:Date.now(), playerNum:'32', playerName:'Isaiah Valenzuela', playCode:'P&R Ball Handler',
-    result:'Made', shotType:'Layup', contest:'Open', clockPhase:'First 8s', x:250, y:82, executed:true});
-  save(); closeSynergyModal(); renderAll(); showToast('Loaded demo possession');
+  getActiveGame().possessions.push({
+    id: Date.now(), lineup: activeLineup(),
+    actions: [
+      {playerNum:'10', playerName:'Jack Rivera', playCode:'Spot-Up', result:'Miss_OffReb', shotType:'Catch & Shoot', contest:'Slight', clockPhase:'22-10s', x:350, y:120, executed:true},
+      {playerNum:'20', playerName:'Christian Warren', playCode:'Putback', result:'Made', shotType:'Layup', contest:'Open', clockPhase:'<= 10s', x:250, y:75, executed:true}
+    ]
+  });
+  save(); closeSynergyModal(); renderAll(); showToast('Loaded demo possession chain');
 }
 
 function openSynergyModal() { document.getElementById('synergyModal').classList.remove('hidden'); }
