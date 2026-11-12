@@ -96,6 +96,14 @@
       <button class="tab-btn" data-tab="roster" onclick="switchTab('roster')">Roster</button>
       <button class="tab-btn" data-tab="playbook" onclick="switchTab('playbook')">Playbook</button>
     </div>
+    <div class="flex items-center gap-2">
+      <span class="text-[11px] font-bold text-slate-400 tracking-wider shrink-0">VIEW DATA</span>
+      <div class="flex flex-1 bg-[#080d1a] p-1 rounded-xl border border-slate-800/80 gap-1">
+        <button class="tab-btn half-view" data-view="all" onclick="setViewHalf('all')">Both Halves</button>
+        <button class="tab-btn half-view" data-view="1" onclick="setViewHalf('1')">1st Half</button>
+        <button class="tab-btn half-view" data-view="2" onclick="setViewHalf('2')">2nd Half</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -157,6 +165,13 @@
         <div class="flex items-center space-x-2"><i data-lucide="edit-3" class="w-4 h-4 text-amber-500"></i><h2 class="font-bold text-sm text-slate-100">Log Possession</h2></div>
         <div class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono font-bold text-xs">Est xP: <span id="estXpVal">--</span></div>
       </div>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="lbl !mb-0 shrink-0">LOGGING</span>
+        <div class="flex flex-1 bg-[#080d1a] p-1 rounded-xl border border-slate-800/80 gap-1">
+          <button type="button" class="tab-btn half-log" data-half="1" onclick="setLogHalf('1')">1st Half</button>
+          <button type="button" class="tab-btn half-log" data-half="2" onclick="setLogHalf('2')">2nd Half</button>
+        </div>
+      </div>
       <form id="loggerForm" onsubmit="handleLogPossession(event)" class="space-y-4 text-xs">
         <div class="lineup-panel" aria-labelledby="lineupHeading">
           <div class="lineup-heading">
@@ -170,14 +185,22 @@
           <div id="activePlayerButtons" class="lineup-grid" role="group" aria-label="Choose player on court"></div>
           <p id="lineupStatus" class="lineup-help" aria-live="polite"></p>
         </div>
-        <div><label class="lbl">PLAY CALL / SET</label><select id="logPlay" class="field"></select></div>
+        <div class="relative">
+          <label class="lbl" for="logPlaySearch">PLAY CALL / SET <span class="text-slate-500 font-medium">(type to search)</span></label>
+          <input type="hidden" id="logPlay" value="">
+          <input id="logPlaySearch" class="field" type="text" autocomplete="off" placeholder="Start typing a play name…" role="combobox" aria-expanded="false" aria-controls="playSuggest" oninput="onPlayInput()" onfocus="onPlayInput()" onkeydown="onPlayKey(event)" onblur="setTimeout(closePlaySuggest,150)">
+          <div id="playSuggest" role="listbox" class="hidden absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-auto rounded-xl border border-slate-700 bg-[#0d1424] shadow-2xl"></div>
+        </div>
         <div>
           <label class="lbl">OUTCOME <span class="text-slate-500 font-medium">(2 vs 3 comes from the shot location)</span></label>
-          <select id="logOutcome" onchange="updateCalculatedXp()" class="field">
+          <select id="logOutcome" onchange="onOutcomeChange()" class="field">
             <option value="Made">Made Field Goal</option>
             <option value="Miss">Missed Field Goal</option>
+            <option value="AND1">And-1 (Made FG + 1 Free Throw)</option>
             <option value="FT">Shooting Foul Drawn (FTs)</option>
+            <option value="BONUS">Bonus Free Throws (Non-Shooting Foul)</option>
             <option value="TO">Turnover</option>
+            <option value="NS">No Shot – Play Broke Down (continues)</option>
           </select>
         </div>
         <div id="ftBox" class="grid grid-cols-2 gap-3" style="display:none">
@@ -199,7 +222,14 @@
             <button type="button" class="opt ex green" data-v="1">Executed</button>
             <button type="button" class="opt ex red" data-v="0">Broken</button>
           </div></div>
-        <button type="submit" id="logSubmit" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase" disabled>Log Possession &amp; Calculate xP</button>
+        <div id="chainBanner" class="hidden flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold">
+          <span>Adding to possession <span id="chainLabel"></span></span>
+          <button type="button" onclick="endChain()" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">End possession</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="submit" id="logSubmit" data-continue="0" class="py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-black rounded-xl text-[11px] tracking-wider uppercase" disabled>Log &amp; End Possession</button>
+          <button type="submit" id="logContinue" data-continue="1" class="py-3 bg-slate-800 border border-amber-500/40 text-amber-400 font-black rounded-xl text-[11px] tracking-wider uppercase" disabled>Log &amp; Continue</button>
+        </div>
       </form>
     </div>
   </section>
@@ -207,6 +237,16 @@
   <!-- ANALYTICS -->
   <section id="viewAnalytics" class="hidden space-y-5">
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="kpiRow"></div>
+    <div class="card space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+        <h3 class="font-bold text-xs text-slate-200">1st Half vs 2nd Half</h3>
+        <span class="text-[10px] text-slate-400">Always shows both halves</span>
+      </div>
+      <div class="overflow-x-auto"><table class="w-full text-left text-[11px]">
+        <thead><tr class="border-b border-slate-800 text-slate-400 font-semibold"><th>METRIC</th><th class="text-center">1ST HALF</th><th class="text-center">2ND HALF</th><th class="text-center">TOTAL</th></tr></thead>
+        <tbody id="halfCompareTable" class="divide-y divide-slate-800/40"></tbody>
+      </table></div>
+    </div>
     <div class="card space-y-3">
       <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
         <h3 class="font-bold text-xs text-slate-200">Shot Clock Phase Efficiency</h3>
@@ -272,11 +312,11 @@
 
   <!-- PLAYBOOK -->
   <section id="viewPlaybook" class="hidden card space-y-4">
-    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-      <div><h2 class="font-bold text-sm text-slate-100">Playbook Library</h2><p class="text-[11px] text-slate-400">Define set plays, offensive actions, and tactical codes</p></div>
-      <button onclick="addPlaybookItemPrompt()" class="px-3 py-1.5 bg-amber-500 text-slate-950 text-xs font-bold rounded-xl">+ Add Play Call</button>
+    <div class="border-b border-slate-800/80 pb-3">
+      <h2 class="font-bold text-sm text-slate-100">Playbook Library</h2>
+      <p class="text-[11px] text-slate-400">Name each play and file it as Man Play, Zone Play, Press Break, BLOB or SLOB</p>
     </div>
-    <div id="playbookCards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    <div id="playbookCards" class="space-y-4"></div>
   </section>
 </main>
 
@@ -379,6 +419,8 @@ const firebaseConfig = {
 };
 const account = {auth:null, sdk:null, user:null, ready:false, busy:false, loading:null, error:'', unsubscribe:null};
 const SHOT_TYPES = ['Catch & Shoot','Off Dribble','Layup','Dunk','Post Shot','Other'];
+const PLAY_CATS = [['Man','Man Play'],['Zone','Zone Play'],['Press Break','Press Break'],['BLOB','BLOB'],['SLOB','SLOB']];
+const ALL_CATS = [...PLAY_CATS, ['Other','Other (Required)']]; // 'Other' holds the built-in Putback and Misc plays
 const SHOT_MULT = {'Catch & Shoot':1.04,'Off Dribble':0.94,'Layup':1.0,'Dunk':1.12,'Post Shot':0.97,'Other':0.95};
 const CONTESTS = [['Open','3 - Open','green',1.25],['Slight','2 - Slight','amber',1.0],['Heavy','1 - Heavy','red',0.72]];
 const PRIOR_ATT = 20; // attempts of league-average prior blended into each player's %
@@ -393,19 +435,23 @@ const defaults = () => ({
   activeBaseline:'JUCO', activeGameId:'game_1',
   games:[{id:'game_1', name:'Cypress CC @ Riverside City', date:'2026-02-18', possessions:[]}],
   roster:[{num:'1',name:'Zack Moritz',pos:'G'},{num:'2',name:'Tylon Williams',pos:'G'},{num:'5',name:'Jabari Harris',pos:'F'},{num:'10',name:'Jack Rivera',pos:'G'},{num:'15',name:'Amaan Zavir',pos:'G'},{num:'20',name:'Christian Warren',pos:'F'},{num:'32',name:'Isaiah Valenzuela',pos:'G'}],
-  playbook:[{code:'P&R Ball Handler',name:'Pick & Roll Ball Handler',cat:'P&R'},{code:'Spot-Up',name:'Spot-Up Jumper',cat:'Spot'},{code:'ISO',name:'Isolation Action',cat:'ISO'},{code:'Off Screen',name:'Off Screen Shooter',cat:'Screen'},{code:'Transition',name:'Transition Fastbreak',cat:'Early'}]
+  playbook:[{code:'P&R Ball Handler',name:'Pick & Roll Ball Handler',cat:'Man'},{code:'Spot-Up',name:'Spot-Up Jumper',cat:'Man'},{code:'ISO',name:'Isolation Action',cat:'Man'},{code:'Off Screen',name:'Off Screen Shooter',cat:'Man'},{code:'Transition',name:'Transition Fastbreak',cat:'Man'}]
 });
 
 let state = defaults();
 try { const s = localStorage.getItem(STORE_KEY); if (s) state = Object.assign(defaults(), JSON.parse(s)); } catch(e) {}
 // Required play calls so every possession has a category and team totals reconcile
-[{code:'Putback', name:'Putback (Offensive Rebound)', cat:'Putback'},
- {code:'Misc', name:'Miscellaneous (Broken Play / Backcourt Steal)', cat:'Misc'}].forEach(r => {
+[{code:'Putback', name:'Putback (Offensive Rebound)', cat:'Other'},
+ {code:'Misc', name:'Miscellaneous (Broken Play / Backcourt Steal)', cat:'Other'}].forEach(r => {
   const e = state.playbook.find(p => p.code === r.code);
-  if (e) e.locked = true; else state.playbook.push({...r, locked:true});
+  if (e) { e.locked = true; e.cat = 'Other'; } else state.playbook.push({...r, locked:true});
 });
+// Plays saved under an older category (Half-Court Set, P&R, ...) default to Man Play; re-file zone plays from the Playbook tab
+state.playbook.forEach(p => { if (!ALL_CATS.some(c => c[0] === p.cat)) p.cat = 'Man'; });
+// Outcomes that don't need a shot location on the court
+const noPoint = r => r === 'TO' || r === 'FT' || r === 'NS' || r === 'BONUS';
 // UI-only state (not persisted)
-const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', executed:true, logQ:'', logField:'all', sortKey:'idx', sortDir:1};
+const ui = {tab:'tracker', x:250, y:100, hasPoint:false, shotType:'Catch & Shoot', contest:'Open', fPlay:'', fShot:'', fPlayer:'', fOut:'', fLoc:'', executed:true, logQ:'', logField:'all', sortKey:'idx', sortDir:1, chain:null, half:'all'};
 
 function save(){
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); return true; }
@@ -579,7 +625,7 @@ function renderLineup() {
     const r = state.roster.find(r => r.num === selected.value);
     status.textContent = `Logging for #${r.num} ${r.name}${canSub ? '' : ' · No players on the bench'}`;
   }
-  document.getElementById('logSubmit').disabled = !ready || !nums.includes(selected.value);
+  document.getElementById('logSubmit').disabled = document.getElementById('logContinue').disabled = !ready || !nums.includes(selected.value);
 }
 
 function selectActivePlayer(num) {
@@ -649,6 +695,123 @@ function applySubstitution() {
   renderAll(); showToast(`Substitution: #${out} out, #${incoming} in`);
 }
 
+// ---------- Chained possessions ----------
+// Each log is an event. Events that share a `chain` id count as one possession.
+function renderChain() {
+  const chains = [...new Set(getActiveGame().possessions.map(p => p.chain ?? p.id))];
+  if (ui.chain != null && !chains.includes(ui.chain)) ui.chain = null;
+  document.getElementById('chainBanner').classList.toggle('hidden', ui.chain == null);
+  if (ui.chain != null) document.getElementById('chainLabel').textContent = '#' + (chains.indexOf(ui.chain) + 1);
+}
+function endChain() { ui.chain = null; renderChain(); }
+function continuePossession(chain) {
+  const g = getActiveGame(), e = g.possessions.find(p => (p.chain ?? p.id) === chain);
+  if (e) { g.half = e.half ?? '1'; save(); }
+  ui.chain = chain; switchTab('tracker'); showToast('Your next log will be added to that possession'); }
+
+// ---------- Halves ----------
+function renderHalfControls() {
+  const lg = getActiveGame().half || '1';
+  document.querySelectorAll('.half-log').forEach(b => b.classList.toggle('active', b.dataset.half === lg));
+  document.querySelectorAll('.half-view').forEach(b => b.classList.toggle('active', b.dataset.view === ui.half));
+}
+function setLogHalf(h) {
+  const g = getActiveGame(); g.half = h; ui.chain = null; save(); renderAll();
+  showToast(`Now logging the ${h === '1' ? '1st' : '2nd'} half`);
+}
+function setViewHalf(v) { ui.half = v; renderAll(); }
+function setPossessionHalf(chain, h) {
+  if (!['1','2'].includes(h)) return;
+  getActiveGame().possessions.forEach(p => { if ((p.chain ?? p.id) === chain) p.half = h; });
+  save(); renderAll();
+}
+function halfStats(list) {
+  const n = new Set(list.map(p => p.chain)).size, pts = list.reduce((a, p) => a + p.pts, 0), xp = list.reduce((a, p) => a + p.xp, 0);
+  const c = k => list.filter(p => p[k]).length, ex = list.filter(p => p.executed !== false).length;
+  return [['Possessions', n], ['Points', pts], ['PPP', n ? (pts / n).toFixed(2) : '-'], ['Avg xP / poss', n ? (xp / n).toFixed(2) : '-'], ['POE', list.length ? fmtSigned(pts - xp) : '-'],
+    ['FG', `${c('fgm')}/${c('fga')} (${pct(c('fgm'), c('fga'))})`], ['3P', `${c('f3m')}/${c('f3a')} (${pct(c('f3m'), c('f3a'))})`],
+    ['FT', `${list.reduce((a, p) => a + p.ftm, 0)}/${list.reduce((a, p) => a + p.fta, 0)} (${pct(list.reduce((a, p) => a + p.ftm, 0), list.reduce((a, p) => a + p.fta, 0))})`],
+    ['Turnovers', list.filter(p => p.result === 'TO').length], ['Execution %', pct(ex, list.length)]];
+}
+function renderHalfCompare(all) {
+  const cols = [all.filter(p => p.half === '1'), all.filter(p => p.half === '2'), all].map(halfStats);
+  document.getElementById('halfCompareTable').innerHTML = cols[0].map((row, i) =>
+    `<tr class="text-slate-200"><td class="p-2 font-bold text-slate-400">${row[0]}</td>${cols.map(c => `<td class="text-center font-mono ${i === 2 ? 'text-amber-400 font-bold' : ''}">${c[i][1]}</td>`).join('')}</tr>`).join('');
+}
+
+// ---------- Play call search (type to filter, pick from the list) ----------
+let playMatches = [], playActive = -1;
+const playTypeLabel = k => (ALL_CATS.find(c => c[0] === k) || [k, k])[1];
+function onPlayInput() {
+  const q = document.getElementById('logPlaySearch').value.trim().toLowerCase();
+  const exact = state.playbook.find(p => p.name.toLowerCase() === q);
+  document.getElementById('logPlay').value = exact ? exact.code : '';
+  const rank = k => ALL_CATS.findIndex(c => c[0] === k);
+  playMatches = state.playbook.filter(p => !q || p.name.toLowerCase().includes(q) || playTypeLabel(p.cat).toLowerCase().includes(q))
+    .sort((a, b) => (b.name.toLowerCase().startsWith(q) - a.name.toLowerCase().startsWith(q)) || rank(a.cat) - rank(b.cat) || a.name.localeCompare(b.name));
+  playActive = playMatches.length ? 0 : -1;
+  renderPlaySuggest();
+}
+function renderPlaySuggest() {
+  const box = document.getElementById('playSuggest');
+  box.innerHTML = playMatches.length ? playMatches.map((p, i) => `<div role="option" id="playOpt_${i}" aria-selected="${i === playActive}" onmousedown="event.preventDefault();pickPlay(${i})" class="px-3 py-2 flex items-center justify-between gap-2 cursor-pointer text-xs ${i === playActive ? 'bg-amber-500/20 text-amber-300' : 'text-slate-200 hover:bg-slate-800'}"><span class="font-bold">${esc(p.name)}</span><span class="text-[10px] text-slate-400 shrink-0">${esc(playTypeLabel(p.cat))}</span></div>`).join('')
+    : '<div class="px-3 py-2 text-xs text-slate-500">No matching plays. Add it in the Playbook tab.</div>';
+  box.classList.remove('hidden');
+  document.getElementById('logPlaySearch').setAttribute('aria-expanded', 'true');
+  const a = document.getElementById('playOpt_' + playActive); if (a) a.scrollIntoView({block:'nearest'});
+}
+function closePlaySuggest() {
+  document.getElementById('playSuggest').classList.add('hidden');
+  document.getElementById('logPlaySearch').setAttribute('aria-expanded', 'false');
+}
+function pickPlay(i) {
+  const p = playMatches[i]; if (!p) return;
+  document.getElementById('logPlay').value = p.code;
+  document.getElementById('logPlaySearch').value = p.name;
+  closePlaySuggest();
+}
+function onPlayKey(e) {
+  const open = !document.getElementById('playSuggest').classList.contains('hidden');
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (!open) { onPlayInput(); return; }
+    if (playMatches.length) { playActive = (playActive + (e.key === 'ArrowDown' ? 1 : -1) + playMatches.length) % playMatches.length; renderPlaySuggest(); }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (open && playActive >= 0) pickPlay(playActive);
+  } else if (e.key === 'Escape') closePlaySuggest();
+}
+function clearPlayInput() {
+  document.getElementById('logPlay').value = '';
+  document.getElementById('logPlaySearch').value = '';
+  closePlaySuggest();
+}
+
+// ---------- And-1 / bonus free throw inputs ----------
+function onOutcomeChange() {
+  const r = document.getElementById('logOutcome').value, att = document.getElementById('ftAtt'), made = document.getElementById('ftMade');
+  const was1 = att.readOnly;
+  att.readOnly = r === 'AND1';
+  if (r === 'AND1') { att.value = 1; made.value = Math.min(+made.value || 0, 1); }
+  else if (was1) { att.value = 2; made.value = 1; }
+  updateCalculatedXp();
+}
+
+// ---------- Merge / split possessions in the log ----------
+function mergeUp(chain) {
+  const g = getActiveGame(), order = [...new Set(g.possessions.map(p => p.chain ?? p.id))], i = order.indexOf(chain);
+  if (i < 1) { showToast('No earlier possession to merge into'); return; }
+  const prev = order[i - 1];
+  const ph = g.possessions.find(p => (p.chain ?? p.id) === prev)?.half ?? '1';
+  g.possessions.forEach(p => { if ((p.chain ?? p.id) === chain) { p.chain = prev; p.half = ph; } });
+  if (ui.chain === chain) ui.chain = prev;
+  save(); renderAll(); showToast('Merged into the previous possession');
+}
+function unlinkEvent(id) {
+  const p = getActiveGame().possessions.find(x => x.id === id); if (!p) return;
+  p.chain = Date.now(); save(); renderAll(); showToast('Split off as its own possession');
+}
+
 // ---------- Court math ----------
 function courtMetrics(x, y) {
   const dx = x - RIM.x, dy = y - RIM.y;
@@ -678,39 +841,43 @@ function ftPct(num) {
   const prior = 0.70 * BASELINE_MULT.JUCO;
   return ((t ? (t.ftm || 0) : 0) + PRIOR_ATT * prior) / ((t ? (t.fta || 0) : 0) + PRIOR_ATT);
 }
+function ftXp(p, fta) { // expected makes on the free throws earned
+  const pr = state.activeBaseline === 'ROSTER' ? ftPct(p.playerNum) : 0.70 * (BASELINE_MULT[state.activeBaseline] ?? 1);
+  return fta * pr;
+}
 function expectedPoints(p) {
-  if (p.result === 'TO') return 0;
-  if (p.result === 'FT') { // expected makes on the attempts earned
-    const pr = state.activeBaseline === 'ROSTER' ? ftPct(p.playerNum) : 0.70 * (BASELINE_MULT[state.activeBaseline] ?? 1);
-    return +((p.fta ?? 2) * pr).toFixed(2);
-  }
-  if (state.activeBaseline === 'ROSTER' && (p.result === 'Made' || p.result === 'Miss')) {
+  if (p.result === 'TO' || p.result === 'NS') return 0;
+  if (p.result === 'FT' || p.result === 'BONUS') return +ftXp(p, p.fta ?? 2).toFixed(2);
+  const extra = p.result === 'AND1' ? ftXp(p, p.fta ?? 1) : 0; // and-1: shot value plus the free throw
+  if (state.activeBaseline === 'ROSTER' && (p.result === 'Made' || p.result === 'Miss' || p.result === 'AND1')) {
     const m = courtMetrics(p.x, p.y);
     let pr = shootingPct(p.playerNum, m.is3);
     if (!m.is3) pr *= m.distFt < 5 ? 1.2 : 0.9; // a player's 2P% mixes rim and midrange looks
     pr *= (SHOT_MULT[p.shotType] ?? 1) * (CONTESTS.find(c => c[0] === p.contest) || [0,0,0,1])[3];
-    return +(Math.min(Math.max(pr, 0.05), 0.95) * (m.is3 ? 3 : 2)).toFixed(2);
+    return +(Math.min(Math.max(pr, 0.05), 0.95) * (m.is3 ? 3 : 2) + extra).toFixed(2);
   }
   const m = courtMetrics(p.x, p.y);
   let v = m.is3 ? 1.05 : (m.distFt < 5 ? 1.18 : 0.82);
   v *= BASELINE_MULT[state.activeBaseline] ?? 1;
   v *= SHOT_MULT[p.shotType] ?? 1;
   v *= (CONTESTS.find(c => c[0] === p.contest) || [0,0,0,1])[3];
-  return +Math.min(Math.max(v, 0.2), 2.7).toFixed(2);
+  return +(Math.min(Math.max(v, 0.2), 2.7) + extra).toFixed(2);
 }
 
 // Derived stats are computed on render from raw inputs, so baseline changes apply to logged possessions
 function derive(p) {
   const m = courtMetrics(p.x, p.y);
-  const isShot = p.result === 'Made' || p.result === 'Miss';
-  const isFt = p.result === 'FT';
-  const ftm = isFt ? (p.ftm ?? 1) : 0, fta = isFt ? (p.fta ?? 2) : 0;
-  const pts = p.result === 'Made' ? (m.is3 ? 3 : 2) : ftm;
+  const isShot = p.result === 'Made' || p.result === 'Miss' || p.result === 'AND1';
+  const madeFg = p.result === 'Made' || p.result === 'AND1';
+  const isFt = p.result === 'FT' || p.result === 'BONUS' || p.result === 'AND1';
+  const and1 = p.result === 'AND1';
+  const ftm = isFt ? (p.ftm ?? (and1 ? 0 : 1)) : 0, fta = isFt ? (p.fta ?? (and1 ? 1 : 2)) : 0;
+  const pts = (madeFg ? (m.is3 ? 3 : 2) : 0) + ftm;
   const xp = expectedPoints(isFt ? {...p, fta} : p);
-  return {...p, ...m, ftm, fta, pts, xp, poe: +(pts - xp).toFixed(2), fga: isShot, fgm: p.result === 'Made',
-          f3a: isShot && m.is3, f3m: p.result === 'Made' && m.is3};
+  return {...p, ...m, chain: p.chain ?? p.id, half: p.half ?? '1', ftm, fta, pts, xp, poe: +(pts - xp).toFixed(2), fga: isShot, fgm: madeFg,
+          f3a: isShot && m.is3, f3m: madeFg && m.is3};
 }
-const outcomeLabel = d => d.result === 'TO' ? 'Turnover' : d.result === 'FT' ? `Free Throws ${d.ftm}/${d.fta}` :
+const outcomeLabel = d => d.result === 'NS' ? 'No Shot (Broke Down)' : d.result === 'AND1' ? `And-1 ${d.is3 ? '3' : '2'}Pt + FT ${d.ftm}/${d.fta}` : d.result === 'BONUS' ? `Bonus FTs ${d.ftm}/${d.fta}` : d.result === 'TO' ? 'Turnover' : d.result === 'FT' ? `Free Throws ${d.ftm}/${d.fta}` :
   `${d.result === 'Made' ? 'Made' : 'Missed'} ${d.is3 ? '3' : '2'}Pt`;
 
 // ---------- Init ----------
@@ -758,7 +925,8 @@ function populateMain() {
   gs.innerHTML = state.games.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
   gs.value = state.activeGameId;
   renderLineup();
-  document.getElementById('logPlay').innerHTML = state.playbook.map(p => `<option value="${esc(p.code)}">${esc(p.code)} - ${esc(p.name)}</option>`).join('');
+  const lp = document.getElementById('logPlay');
+  if (!state.playbook.some(p => p.code === lp.value)) { lp.value = ''; document.getElementById('logPlaySearch').value = ''; }
 }
 
 // ---------- Navigation ----------
@@ -773,6 +941,7 @@ function switchTab(tab) {
 function switchGame(id) {
   if (!state.games.some(g => g.id === id)) return;
   state.activeGameId = id;
+  ui.chain = null;
   document.getElementById('logPlayer').value = '';
   save(); renderAll();
 }
@@ -781,6 +950,7 @@ function newGame() {
   if (!name || !name.trim()) return;
   const g = {id:'game_' + Date.now(), name:name.trim(), date:new Date().toISOString().slice(0,10), possessions:[], activeLineup:[]};
   document.getElementById('logPlayer').value = '';
+  ui.chain = null;
   state.games.push(g); state.activeGameId = g.id; save(); populateDropdowns(); renderAll();
 }
 function changeBaseline(v) { state.activeBaseline = v; save(); updateCalculatedXp(); renderAll(); showToast('Baseline: ' + (v === 'ROSTER' ? 'Active Roster Stats' : v.replace('_',' '))); }
@@ -810,47 +980,57 @@ function handleCourtClick(e) {
 function updateCalculatedXp() {
   const result = document.getElementById('logOutcome').value;
   const el = document.getElementById('estXpVal');
-  document.getElementById('ftBox').style.display = result === 'FT' ? 'grid' : 'none';
+  document.getElementById('ftBox').style.display = ['FT','AND1','BONUS'].includes(result) ? 'grid' : 'none';
   if (activeLineup().length !== 5 || !activeLineup().includes(document.getElementById('logPlayer').value)) { el.innerText = '--'; return; }
-  if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { el.innerText = '--'; return; }
+  if (!noPoint(result) && !ui.hasPoint) { el.innerText = '--'; return; }
   el.innerText = expectedPoints({x:ui.x, y:ui.y, shotType:ui.shotType, contest:ui.contest, result, playerNum:document.getElementById('logPlayer').value, fta:+document.getElementById('ftAtt').value || 2}).toFixed(2);
 }
 
 // ---------- Logging ----------
 function handleLogPossession(e) {
   e.preventDefault();
+  const submitter = e.submitter;
   const lineup = activeLineup(), num = document.getElementById('logPlayer').value;
   if (lineup.length !== 5) { showToast('Set your five-player lineup before logging.'); return; }
   if (!lineup.includes(num)) { showToast('Select a player who is on court.'); return; }
+  const playCode = document.getElementById('logPlay').value;
+  if (!playCode) { showToast('Pick a play call from the list'); return; }
   const result = document.getElementById('logOutcome').value;
-  if (result !== 'TO' && result !== 'FT' && !ui.hasPoint) { showToast('Click the court to place the shot first'); return; }
+  if (!noPoint(result) && !ui.hasPoint) { showToast('Click the court to place the shot first'); return; }
   let ftm, fta;
-  if (result === 'FT') {
+  if (['FT','AND1','BONUS'].includes(result)) {
     ftm = +document.getElementById('ftMade').value || 0; fta = +document.getElementById('ftAtt').value || 0;
-    if (!Number.isInteger(ftm) || !Number.isInteger(fta) || fta < 1 || ftm < 0 || ftm > fta) { showToast('Free throws: made must be between 0 and attempts'); return; }
+    if (!Number.isInteger(ftm) || !Number.isInteger(fta) || fta < 1 || ftm < 0 || ftm > fta || (result === 'AND1' && fta !== 1)) { showToast('Free throws: made must be between 0 and attempts'); return; }
   }
   const player = state.roster.find(r => r.num === num);
   if (!player) { showToast('Add a player to the roster first'); return; }
+  const id = Date.now(), chain = ui.chain ?? id;
+  const head = ui.chain != null ? getActiveGame().possessions.find(p => (p.chain ?? p.id) === ui.chain) : null;
+  const half = head ? (head.half ?? '1') : (getActiveGame().half || '1');
   getActiveGame().possessions.push({
-    id: Date.now(), playerNum: num, playerName: player.name,
-    playCode: document.getElementById('logPlay').value, result,
+    id, chain, half, playerNum: num, playerName: player.name,
+    playCode, result,
     shotType: ui.shotType, contest: ui.contest,
     clockPhase: document.getElementById('logClockPhase').value,
     x: ui.x, y: ui.y, ftm, fta, executed: ui.executed, lineup:[...lineup]
   });
   if (!save()) { getActiveGame().possessions.pop(); return; }
-  ui.executed = true; markSelected(); // reset to the default for the next possession
+  ui.chain = submitter?.dataset.continue === '1' ? chain : null;
+  clearPlayInput(); ui.executed = true; markSelected(); // reset to the default for the next possession
   renderAll();
-  showToast(`Logged possession for #${num} ${player.name}`);
+  showToast(ui.chain != null ? 'Logged. Possession still open.' : `Logged possession for #${num} ${player.name}`);
 }
 
 // ---------- Rendering ----------
 function renderAll() {
   renderLineup();
-  const poss = getActiveGame().possessions.map(derive);
+  renderChain();
+  renderHalfControls();
+  const all = getActiveGame().possessions.map(derive);
+  const poss = ui.half === 'all' ? all : all.filter(p => p.half === ui.half);
   renderCourtPins(poss);
-  if (ui.tab === 'analytics') renderAnalytics(poss);
-  if (ui.tab === 'gamelog') renderGameLog(poss);
+  if (ui.tab === 'analytics') renderAnalytics(poss, all);
+  if (ui.tab === 'gamelog') renderGameLog(all);
   if (ui.tab === 'roster') renderRoster(poss);
   if (ui.tab === 'playbook') renderPlaybook();
   updateCalculatedXp();
@@ -877,16 +1057,18 @@ function renderCourtPins(all) {
   document.getElementById('shotPinsGroup').innerHTML = shots.map(p =>
     `<circle cx="${p.x}" cy="${p.y}" r="6" fill="${p.fgm ? '#10b981' : '#f43f5e'}" stroke="#fff" stroke-width="1.5"><title>${esc(p.playerName)} | ${esc(p.playCode)} | ${esc(p.shotType)} | ${esc(outcomeLabel(p))}</title></circle>`).join('');
   const made = shots.filter(p => p.fgm).length, pts = poss.reduce((a, p) => a + p.pts, 0);
+  const np = new Set(poss.map(p => p.chain)).size;
   document.getElementById('chartSummary').innerText = poss.length
-    ? `${shots.length} FGA · ${made} made (${pct(made, shots.length)}) · ${poss.length ? (pts / poss.length).toFixed(2) : '0.00'} PPP on ${poss.length} poss`
+    ? `${shots.length} FGA · ${made} made (${pct(made, shots.length)}) · ${(pts / np).toFixed(2)} PPP on ${np} poss`
     : 'No possessions match these filters';
 }
 
 const fmtSigned = n => (n >= 0 ? '+' : '') + n.toFixed(2);
 const pct = (a, b) => b > 0 ? Math.round(a / b * 100) + '%' : '-';
 
-function renderAnalytics(poss) {
-  const n = poss.length;
+function renderAnalytics(poss, all = poss) {
+  renderHalfCompare(all);
+  const n = new Set(poss.map(p => p.chain)).size;
   const pts = poss.reduce((a, p) => a + p.pts, 0);
   const xp = poss.reduce((a, p) => a + p.xp, 0);
   const exec = poss.filter(p => p.executed !== false).length;
@@ -895,20 +1077,20 @@ function renderAnalytics(poss) {
     ['PTS SCORED', pts, 'Total Points', 'text-emerald-400'],
     ['AVG SQI (xP)', n ? (xp / n).toFixed(2) : '0.00', 'Shot Quality Index', 'text-sky-400'],
     ['NET POE', fmtSigned(pts - xp), 'Points Over Exp', 'text-amber-400'],
-    ['EXECUTION %', pct(exec, n), 'Executed vs Broken', 'text-indigo-400']
+    ['EXECUTION %', pct(exec, poss.length), 'Executed vs Broken', 'text-indigo-400']
   ];
   document.getElementById('kpiRow').innerHTML = kpis.map(k => `<div class="card !p-3"><div class="text-[10px] font-bold text-slate-400 tracking-wider">${k[0]}</div><div class="text-xl font-black ${k[3]} mt-1">${k[1]}</div><div class="text-[9px] text-slate-500 mt-0.5">${k[2]}</div></div>`).join('');
 
   document.getElementById('clockPhaseCards').innerHTML = ['First 8s','22-10s','<= 10s'].map(ph => {
-    const sub = poss.filter(p => p.clockPhase === ph), s = sub.reduce((a, p) => a + p.pts, 0);
-    return `<div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800 text-center text-xs"><div class="text-[10px] font-bold text-slate-400">${esc(ph)} (${sub.length} Poss)</div><div class="text-base font-black text-amber-400 mt-1">${sub.length ? (s / sub.length).toFixed(2) : '0.00'} PPP</div></div>`;
+    const sub = poss.filter(p => p.clockPhase === ph), s = sub.reduce((a, p) => a + p.pts, 0), c = new Set(sub.map(p => p.chain)).size;
+    return `<div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800 text-center text-xs"><div class="text-[10px] font-bold text-slate-400">${esc(ph)} (${c} Poss)</div><div class="text-base font-black text-amber-400 mt-1">${c ? (s / c).toFixed(2) : '0.00'} PPP</div></div>`;
   }).join('');
 
   const by = {};
   state.roster.forEach(r => by[r.num] = {num:r.num, name:r.name, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0, xp:0});
   poss.forEach(p => {
     const s = by[p.playerNum] || (by[p.playerNum] = {num:p.playerNum, name:p.playerName, poss:0, pts:0, fgm:0, fga:0, f3m:0, f3a:0, ftm:0, fta:0, xp:0});
-    s.poss++; s.pts += p.pts; s.xp += p.xp; s.fga += p.fga; s.fgm += p.fgm; s.f3a += p.f3a; s.f3m += p.f3m; s.ftm += p.ftm; s.fta += p.fta;
+    (s.ch ||= new Set()).add(p.chain); s.poss = s.ch.size; s.pts += p.pts; s.xp += p.xp; s.fga += p.fga; s.fgm += p.fgm; s.f3a += p.f3a; s.f3m += p.f3m; s.ftm += p.ftm; s.fta += p.fta;
   });
   document.getElementById('playerAnalyticsTable').innerHTML = Object.values(by).filter(s => s.poss).map(s => {
     const poe = s.pts - s.xp;
@@ -920,28 +1102,33 @@ function renderAnalytics(poss) {
   document.getElementById('playbookAnalyticsTable').innerHTML = Object.entries(pb).map(([code, s]) =>
     `<tr class="text-slate-200"><td class="p-2 font-bold">${esc(code)}</td><td class="text-center font-mono">${s.runs}</td><td class="text-center font-mono text-amber-400 font-bold">${(s.pts / s.runs).toFixed(2)}</td><td class="text-center font-mono ${s.pts - s.xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(s.pts - s.xp)}</td></tr>`).join('')
     || `<tr><td colspan="4" class="p-4 text-center text-slate-500">No possessions logged yet</td></tr>`;
-  if (n) document.getElementById('playbookAnalyticsTable').insertAdjacentHTML('beforeend', `<tr class="text-slate-200 border-t-2 border-slate-700 font-bold"><td class="p-2">Total</td><td class="text-center font-mono">${n}</td><td class="text-center font-mono text-amber-400">${(pts / n).toFixed(2)}</td><td class="text-center font-mono ${pts - xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(pts - xp)}</td></tr>`);
+  if (n) document.getElementById('playbookAnalyticsTable').insertAdjacentHTML('beforeend', `<tr class="text-slate-200 border-t-2 border-slate-700 font-bold"><td class="p-2">Total</td><td class="text-center font-mono">${poss.length}</td><td class="text-center font-mono text-amber-400">${(pts / n).toFixed(2)}</td><td class="text-center font-mono ${pts - xp >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(pts - xp)}</td></tr>`);
 }
 
-const LOG_COLS = [['idx','#'],['player','PLAYER'],['play','PLAY CALL'],['time','CLOCK PHASE'],['dist','DIST'],['outcome','OUTCOME'],['pts','PTS'],['xp','xP'],['poe','POE']];
+const LOG_COLS = [['idx','#'],['half','HALF'],['player','PLAYER'],['play','PLAY CALL'],['time','CLOCK PHASE'],['dist','DIST'],['outcome','OUTCOME'],['pts','PTS'],['xp','xP'],['poe','POE']];
 function sortLog(k) { if (ui.sortKey === k) ui.sortDir *= -1; else { ui.sortKey = k; ui.sortDir = 1; } renderAll(); }
 function setLogSearch() { ui.logQ = document.getElementById('logQ').value; ui.logField = document.getElementById('logField').value; renderAll(); }
 function renderGameLog(all) {
   document.getElementById('logHead').innerHTML = LOG_COLS.map(c =>
     `<th class="p-2 cursor-pointer select-none hover:text-white ${['dist','pts','xp','poe'].includes(c[0]) ? 'text-center' : ''}" onclick="sortLog('${c[0]}')">${c[1]}${ui.sortKey === c[0] ? (ui.sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '<th class="p-2"></th>';
   const q = ui.logQ.trim().toLowerCase();
-  let rows = all.map((p, i) => ({...p, idx:i + 1}));
+  const ord = new Map(), size = {}, seen = {};
+  all.forEach(p => { if (!ord.has(p.chain)) ord.set(p.chain, ord.size + 1); size[p.chain] = (size[p.chain] || 0) + 1; });
+  let rows = all.map((p, i) => { const k = seen[p.chain] = (seen[p.chain] || 0) + 1;
+    return {...p, idx:i + 1, ord:ord.get(p.chain), k, linked:size[p.chain] > 1, label:ord.get(p.chain) + (size[p.chain] > 1 ? String.fromCharCode(96 + k) : '')}; });
+  if (ui.half !== 'all') rows = rows.filter(p => p.half === ui.half);
   if (q) rows = rows.filter(p => {
     const f = {player:`${p.playerNum} ${p.playerName}`, play:p.playCode, time:p.clockPhase || '', outcome:outcomeLabel(p)};
     return (ui.logField === 'all' ? Object.values(f).join(' ') : f[ui.logField]).toLowerCase().includes(q);
   });
-  const key = {idx:p => p.idx, player:p => p.playerName.toLowerCase(), play:p => p.playCode.toLowerCase(), time:p => ['First 8s','22-10s','<= 10s'].indexOf(p.clockPhase),
+  const key = {idx:p => p.ord * 1000 + p.k, half:p => p.half, player:p => p.playerName.toLowerCase(), play:p => p.playCode.toLowerCase(), time:p => ['First 8s','22-10s','<= 10s'].indexOf(p.clockPhase),
     outcome:p => outcomeLabel(p), dist:p => p.fga ? p.distFt : -1, pts:p => p.pts, xp:p => p.xp, poe:p => p.poe}[ui.sortKey];
   rows.sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : a.idx - b.idx) * ui.sortDir; });
   document.getElementById('logCount').innerText = `Showing ${rows.length} of ${all.length}`;
   document.getElementById('gameLogTable').innerHTML = rows.map(p => `
-    <tr class="text-slate-200">
-      <td class="p-2 text-slate-500 font-mono">${p.idx}</td>
+    <tr class="text-slate-200 ${p.linked ? 'bg-amber-500/5' : ''}">
+      <td class="p-2 text-slate-500 font-mono">${p.label}</td>
+      <td class="p-2"><select class="field !w-auto !p-1 !text-[10px]" aria-label="Half" onchange="setPossessionHalf(${p.chain}, this.value)"><option value="1" ${p.half === '1' ? 'selected' : ''}>1H</option><option value="2" ${p.half === '2' ? 'selected' : ''}>2H</option></select></td>
       <td class="p-2 font-bold">#${esc(p.playerNum)} ${esc(p.playerName)}</td>
       <td class="p-2">${esc(p.playCode)}${p.executed === false ? ' <span class="text-[10px] font-bold text-rose-400 px-1 rounded bg-rose-500/10 border border-rose-500/30">Broken</span>' : ''}</td>
       <td class="p-2">${esc(p.clockPhase)}</td>
@@ -950,8 +1137,8 @@ function renderGameLog(all) {
       <td class="p-2 text-center font-bold text-emerald-400">${p.pts}</td>
       <td class="p-2 text-center font-mono text-slate-400">${p.xp.toFixed(2)}</td>
       <td class="p-2 text-center font-mono ${p.poe >= 0 ? 'text-amber-400' : 'text-rose-400'}">${fmtSigned(p.poe)}</td>
-      <td class="p-2 text-right"><button onclick="deletePossession(${p.id})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></td>
-    </tr>`).join('') || `<tr><td colspan="10" class="p-4 text-center text-slate-500">${all.length ? 'No possessions match your search' : 'No possessions logged yet'}</td></tr>`;
+      <td class="p-2 text-right whitespace-nowrap"><button onclick="continuePossession(${p.chain})" title="Add to this possession" class="text-slate-500 hover:text-amber-400 mr-2"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i></button>${p.k === 1 && p.ord > 1 ? `<button onclick="mergeUp(${p.chain})" title="Merge into the previous possession" class="text-slate-500 hover:text-amber-400 mr-2"><i data-lucide="link" class="w-3.5 h-3.5"></i></button>` : ''}${p.k > 1 ? `<button onclick="unlinkEvent(${p.id})" title="Split off as its own possession" class="text-slate-500 hover:text-amber-400 mr-2"><i data-lucide="unlink" class="w-3.5 h-3.5"></i></button>` : ''}<button onclick="deletePossession(${p.id})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></td>
+    </tr>`).join('') || `<tr><td colspan="11" class="p-4 text-center text-slate-500">${all.length ? 'No possessions match your search' : 'No possessions logged yet'}</td></tr>`;
 }
 
 function renderRoster(poss) {
@@ -968,7 +1155,7 @@ function renderRoster(poss) {
         <button onclick="removeRosterPlayer(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
       </div>
       <div class="grid grid-cols-5 gap-1 pt-1 border-t border-slate-800/60 text-center text-[10px]">
-        ${cell('PTS', s.pts)}${cell('FG', `${s.fgm}/${s.fga} (${pct(s.fgm, s.fga)})`)}${cell('3PT', `${s.f3m}/${s.f3a} (${pct(s.f3m, s.f3a)})`)}${cell('FT', `${s.ftm}/${s.fta} (${pct(s.ftm, s.fta)})`)}${cell('POSS', mine.length)}
+        ${cell('PTS', s.pts)}${cell('FG', `${s.fgm}/${s.fga} (${pct(s.fgm, s.fga)})`)}${cell('3PT', `${s.f3m}/${s.f3a} (${pct(s.f3m, s.f3a)})`)}${cell('FT', `${s.ftm}/${s.fta} (${pct(s.ftm, s.fta)})`)}${cell('POSS', new Set(mine.map(p => p.chain)).size)}
       </div>${seasonHtml(r, i)}</div>`;
   }).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No roster players added yet</div>`;
 }
@@ -1024,19 +1211,35 @@ function removeRosterPlayer(i) {
   state.roster.splice(i, 1); normalizeLineups(); save(); populateDropdowns(); renderAll(); showToast(`Removed #${r.num}`);
 }
 
+// ---------- Playbook (one list per section; only the play name is required) ----------
 function renderPlaybook() {
-  document.getElementById('playbookCards').innerHTML = state.playbook.map((p, i) => `
-    <div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 flex items-center justify-between">
-      <div><div class="font-bold text-slate-100 text-xs">${esc(p.name)}</div><div class="text-[10px] text-slate-400 mt-0.5">Code: <span class="text-amber-400 font-mono font-bold">${esc(p.code)}</span> | Cat: ${esc(p.cat || 'Set')}</div></div>
-      ${p.locked ? '<span class="text-[10px] font-bold text-amber-400/80 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">Required</span>' : `<button onclick="removePlaybookItem(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`}
-    </div>`).join('') || `<div class="col-span-2 p-4 text-center text-slate-500 text-xs">No play calls in playbook</div>`;
+  document.getElementById('playbookCards').innerHTML = ALL_CATS.map(([k, label], ci) => {
+    const items = state.playbook.map((p, i) => ({p, i})).filter(o => o.p.cat === k), canAdd = ci < PLAY_CATS.length;
+    return `<div class="bg-[#080d1a] p-3 rounded-xl border border-slate-800/80 space-y-2">
+      <div class="flex items-center justify-between"><h3 class="text-xs font-black text-amber-400 tracking-wider">${esc(label.toUpperCase())}</h3><span class="text-[10px] text-slate-500">${items.length} play${items.length === 1 ? '' : 's'}</span></div>
+      <div class="space-y-1.5">${items.map(({p, i}) => `
+        <div class="bg-[#0d1424] px-3 py-2 rounded-lg border border-slate-800/60 flex items-center justify-between gap-2">
+          <span class="font-bold text-slate-100 text-xs">${esc(p.name)}</span>
+          ${p.locked ? '<span class="text-[10px] font-bold text-amber-400/80 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">Required</span>' : `<div class="flex items-center gap-2 shrink-0"><select class="field !w-auto !p-1 !text-[10px]" aria-label="Play type" onchange="movePlay(${i}, this.value)">${PLAY_CATS.map(c => `<option value="${esc(c[0])}" ${c[0] === p.cat ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select><button onclick="removePlaybookItem(${i})" class="text-slate-500 hover:text-rose-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>`}
+        </div>`).join('') || '<div class="text-[11px] text-slate-500">No plays yet</div>'}</div>
+      ${canAdd ? `<div class="flex gap-2 pt-1">
+        <input id="pbIn_${ci}" class="field !p-1.5 !text-[11px]" placeholder="Play name" onkeydown="if(event.key==='Enter'){event.preventDefault();addPlaybookItem(${ci})}">
+        <button onclick="addPlaybookItem(${ci})" class="px-3 py-1.5 bg-amber-500 text-slate-950 text-xs font-bold rounded-xl shrink-0">+ Add</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
 }
-function addPlaybookItemPrompt() {
-  const code = (prompt('Short play code (e.g. Horns, DHO):') || '').trim(); if (!code) return;
-  const name = (prompt('Full play name:') || '').trim(); if (!name) return;
-  const cat = (prompt('Category (P&R, Motion, ISO, Set):') || 'Set').trim();
-  if (state.playbook.some(p => p.code.toLowerCase() === code.toLowerCase())) { showToast(`Play code ${code} already exists`); return; }
-  state.playbook.push({code, name, cat}); save(); populateDropdowns(); renderAll(); showToast(`Added ${code}`);
+function addPlaybookItem(ci) {
+  const input = document.getElementById('pbIn_' + ci), name = input.value.trim(), cat = PLAY_CATS[ci][0];
+  if (!name) { showToast('Enter a play name'); return; }
+  if (state.playbook.some(p => p.code.toLowerCase() === name.toLowerCase() || p.name.toLowerCase() === name.toLowerCase())) { showToast(`"${name}" already exists`); return; }
+  state.playbook.push({code:name, name, cat});
+  save(); populateDropdowns(); renderAll(); showToast(`Added ${name}`);
+}
+function movePlay(i, cat) {
+  const p = state.playbook[i];
+  if (!p || p.locked || !PLAY_CATS.some(c => c[0] === cat)) return;
+  p.cat = cat; save(); populateDropdowns(); renderAll(); showToast(`${p.name} moved to ${playTypeLabel(cat)}`);
 }
 function removePlaybookItem(i) {
   const p = state.playbook[i]; if (!p) return;
@@ -1051,7 +1254,7 @@ function handleLocalVideoUpload(e) {
 }
 
 // ---------- CSV ----------
-const CSV_COLS = ['num','player','play','result','shotType','contest','clockPhase','timestamp','x','y','dist','pts','xp','poe','executed','ftm','fta','lineup'];
+const CSV_COLS = ['num','player','play','result','shotType','contest','clockPhase','timestamp','x','y','dist','pts','xp','poe','executed','ftm','fta','lineup','chain','half'];
 const csvCell = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
 function parseCsv(text) {
   const rows = []; let row = [], cur = '', q = false;
@@ -1069,7 +1272,7 @@ function parseCsv(text) {
 function exportGameCsv() {
   const g = getActiveGame(), poss = g.possessions.map(derive);
   if (!poss.length) { showToast('No possessions to export'); return; }
-  const lines = [CSV_COLS.join(',')].concat(poss.map(p => [p.playerNum, p.playerName, p.playCode, p.result, p.shotType, p.contest, p.clockPhase, p.timestamp, p.x, p.y, p.distFt, p.pts, p.xp, p.poe, p.executed !== false, p.ftm, p.fta, Array.isArray(p.lineup) ? JSON.stringify(p.lineup) : ''].map(csvCell).join(',')));
+  const lines = [CSV_COLS.join(',')].concat(poss.map(p => [p.playerNum, p.playerName, p.playCode, p.result, p.shotType, p.contest, p.clockPhase, p.timestamp, p.x, p.y, p.distFt, p.pts, p.xp, p.poe, p.executed !== false, p.ftm, p.fta, Array.isArray(p.lineup) ? JSON.stringify(p.lineup) : '', p.chain, p.half].map(csvCell).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'}));
   a.download = g.name.replace(/[^\w\-]+/g, '_') + '.csv';
@@ -1088,16 +1291,17 @@ function handleCsvFileUpload(e) {
     rows.forEach((r, i) => {
       const get = k => (idx(k) >= 0 ? r[idx(k)] : '') || '';
       const x = +get('x'), y = +get('y'), result = get('result');
-      if (!['Made','Miss','FT','TO'].includes(result) || isNaN(x) || isNaN(y)) { bad++; return; }
+      if (!['Made','Miss','AND1','FT','BONUS','TO','NS'].includes(result) || isNaN(x) || isNaN(y)) { bad++; return; }
       const num = get('num'), pl = state.roster.find(p => p.num === num);
       let lineup;
       try {
         const parsed = JSON.parse(get('lineup'));
         if (Array.isArray(parsed) && parsed.length === 5 && parsed.every(n => typeof n === 'string' && n.trim()) && new Set(parsed).size === 5) lineup = parsed;
       } catch(e) {} // Older exports have no lineup column; do not invent a historical lineup.
-      g.possessions.push({id:Date.now() + i, ftm:(result === 'FT' && get('ftm') !== '' ? +get('ftm') : undefined), fta:(result === 'FT' && get('fta') !== '' ? +get('fta') : undefined), playerNum:num, playerName:pl ? pl.name : (get('player') || 'Player'), playCode:get('play') || 'Unknown',
+      g.possessions.push({id:Date.now() + i, ftm:(['FT','AND1','BONUS'].includes(result) && get('ftm') !== '' ? +get('ftm') : undefined), fta:(['FT','AND1','BONUS'].includes(result) && get('fta') !== '' ? +get('fta') : undefined), playerNum:num, playerName:pl ? pl.name : (get('player') || 'Player'), playCode:get('play') || 'Unknown',
         result, shotType:SHOT_TYPES.includes(get('shotType')) ? get('shotType') : 'Other', contest:get('contest') || 'Slight',
-        clockPhase:get('clockPhase') || '22-10s', ...(get('timestamp') ? {timestamp:get('timestamp')} : {}), x, y, executed:get('executed') !== 'false', ...(lineup ? {lineup} : {})});
+        clockPhase:get('clockPhase') || '22-10s', ...(get('timestamp') ? {timestamp:get('timestamp')} : {}), x, y, executed:get('executed') !== 'false', ...(lineup ? {lineup} : {}),
+        ...(get('chain') ? {chain:+get('chain')} : {}), ...(['1','2'].includes(get('half')) ? {half:get('half')} : {})});
       ok++;
     });
     save(); closeSynergyModal(); renderAll();
